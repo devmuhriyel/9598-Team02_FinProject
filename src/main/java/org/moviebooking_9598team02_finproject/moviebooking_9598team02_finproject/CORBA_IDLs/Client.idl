@@ -1,0 +1,16 @@
+module MovieBooking {
+    interface Client {
+        struct Movie {
+            long movieId;
+            string movieTitle;
+            string movieGenre;
+            string movieDescription;
+            short movieRating;
+            string moviePosterURL;
+            long createdByAdmin;
+            string createdAt;
+            string updatedAt;
+        }
+        sequence<Movie> movieList;
+    }
+}
