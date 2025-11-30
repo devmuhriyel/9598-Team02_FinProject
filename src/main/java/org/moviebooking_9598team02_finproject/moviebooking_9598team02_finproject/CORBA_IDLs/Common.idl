@@ -1,0 +1,186 @@
+// Common.idl - Shared data structures and common operations
+module MovieBookingCommon {
+    
+    // ==================== DATA STRUCTURES (struct) ====================
+    
+    struct Movie {
+        long movieId;
+        string movieTitle;
+        sequence<string> movieGenres;
+        string movieDescription;
+        long movieRating;              // Rating out of 10
+        string moviePosterURL;
+        long createdByAdmin;
+        string createdAt;
+        string updatedAt;
+    };
+    
+    struct MovieSchedule {
+        long movieScheduleId;
+        string screeningDate;          // Format: "YYYY-MM-DD"
+        string screeningTime;          // Format: "HH:MM"
+        long createdByAdmin;
+        string createdAt;
+        string updatedAt;
+    };
+    
+    struct Schedule {
+        long scheduleId;
+        long movieId;
+        long movieScheduleId;
+        string createdAt;
+        string updatedAt;
+    };
+    
+    struct Customer {
+        long customerId;
+        string username;
+        string email;
+        string password;               // Hashed password
+        string phoneNumber;
+        string fullName;
+        string createdAt;
+        string updatedAt;
+    };
+    
+    struct Admin {
+        long adminId;
+        string username;
+        string email;
+        string password;               // Hashed password
+        string fullName;
+        string phoneNumber;
+        string createdAt;
+        string updatedAt;
+    };
+    
+    struct ScheduleListSeat {
+        long scheduleListSeatId;
+        long scheduleListId;
+        long seatId;
+        string status;                 // "available", "reserved", "booked"
+        string createdAt;
+        string updatedAt;
+    };
+    
+    struct Seat {
+        long seatId;
+        string seatRow;                // e.g., "A", "B", "C"
+        long seatNumber;               // Seat number in the row
+        string seatType;               // "regular", "vip", "premium"
+        double seatPrice;              // Changed from string to double
+        string createdAt;
+        string updatedAt;
+    };
+    
+    struct Booking {
+        long bookingId;
+        long customerId;
+        sequence<long> scheduleListSeatIds;  // Added type
+        string bookingStatus;          // "pending", "confirmed", "cancelled"
+        double totalPrice;             // Changed from long to double
+        string bookingDate;
+        string createdAt;
+        string updatedAt;
+    };
+    
+    // ==================== TYPEDEFS FOR SEQUENCES ====================
+    
+    typedef sequence<Movie> MovieList;
+    typedef sequence<MovieSchedule> MovieScheduleList;
+    typedef sequence<Schedule> ScheduleList;
+    typedef sequence<Customer> CustomerList;
+    typedef sequence<Admin> AdminList;
+    typedef sequence<ScheduleListSeat> ScheduleListSeatList;
+    typedef sequence<Seat> SeatList;
+    typedef sequence<Booking> BookingList;
+    typedef sequence<string> GenreList;
+    typedef sequence<long> IdList;
+    
+    // ==================== EXCEPTIONS ====================
+    
+    exception MovieNotFoundException {
+        string message;
+        long movieId;
+    };
+    
+    exception ScheduleNotFoundException {
+        string message;
+        long scheduleId;
+    };
+    
+    exception SeatNotAvailableException {
+        string message;
+        long seatId;
+    };
+    
+    exception BookingException {
+        string message;
+        long errorCode;
+    };
+    
+    exception AuthenticationException {
+        string message;
+    };
+    
+    exception InvalidInputException {
+        string message;
+        string fieldName;
+    };
+    
+    // ==================== COMMON INTERFACE ====================
+    // Read-only operations available to both clients and admins
+    
+    interface CommonService {
+        
+        // ===== MOVIE QUERIES =====
+        
+        // Get all movies in the system
+        MovieList getAllMovies();
+        
+        // Get a specific movie by ID
+        Movie getMovieById(in long movieId) 
+            raises (MovieNotFoundException);
+        
+        // Filter movies by schedule date (returns movies showing on that date)
+        MovieList filterMoviesByScheduleDate(in long dayNumber, in long monthNumber, in long yearNumber);
+        
+        // Filter movies by genres (returns movies matching ANY of the genres)
+        MovieList filterMoviesByGenres(in GenreList genres);
+        
+        // Filter movies by minimum rating (returns movies >= rating)
+        MovieList filterMoviesByRating(in long minRating);
+        
+        // Search movies by title (partial match, case-insensitive)
+        MovieList searchMoviesByTitle(in string searchString);
+        
+        // ===== SCHEDULE QUERIES =====
+        
+        // Get all movie schedules
+        MovieScheduleList getAllMovieSchedules();
+        
+        // Get all schedules for a specific movie by movie ID
+        ScheduleList getSchedulesByMovieId(in long movieId) raises (MovieNotFoundException);
+        
+        // Get all schedules for a specific date
+        ScheduleList getSchedulesByDate(
+            in long dayNumber, 
+            in long monthNumber, 
+            in long yearNumber
+        );
+        
+        // Get full schedule details (movie + schedule + seats) by schedule ID
+        MovieSchedule getMovieScheduleById(in long scheduleId) raises (ScheduleNotFoundException);
+        
+        // ===== SEAT QUERIES =====
+        
+        // Get all seats for a specific schedule
+        SeatList getSeatsByScheduleId(in long scheduleId) raises (ScheduleNotFoundException);
+        
+        // Get available seats for a specific schedule
+        SeatList getAvailableSeatsByScheduleId(in long scheduleId) raises (ScheduleNotFoundException);
+        
+        // Check if specific seats are available
+        boolean areSeatsAvailable(in IdList seatIds);
+    };
+};
