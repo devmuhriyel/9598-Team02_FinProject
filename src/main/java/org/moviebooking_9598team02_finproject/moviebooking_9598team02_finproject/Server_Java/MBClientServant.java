@@ -1,17 +1,17 @@
 package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Server_Java;
 
-import MovieBookingClient.ClientServicePOA;
-import MovieBookingCommon.AuthenticationException;
-import MovieBookingCommon.Booking;
-import MovieBookingCommon.BookingException;
-import MovieBookingCommon.Customer;
-import MovieBookingCommon.InvalidInputException;
-import MovieBookingCommon.Movie;
-import MovieBookingCommon.MovieNotFoundException;
-import MovieBookingCommon.Schedule;
-import MovieBookingCommon.ScheduleNotFoundException;
-import MovieBookingCommon.Seat;
-import MovieBookingCommon.SeatNotAvailableException;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingClient.ClientServicePOA;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.AuthenticationException;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Booking;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.BookingException;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Customer;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.InvalidInputException;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Movie;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.MovieNotFoundException;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Schedule;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.ScheduleNotFoundException;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Seat;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.SeatNotAvailableException;
 
 public class MBClientServant extends ClientServicePOA {
     @Override
@@ -50,7 +50,7 @@ public class MBClientServant extends ClientServicePOA {
     }
 
     @Override
-    public Movie getMovieDetails(int movieId) throws MovieBookingCommon.MovieNotFoundException {
+    public Movie getMovieDetails(int movieId) throws MovieNotFoundException {
         return null;
     }
 

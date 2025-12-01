@@ -1,12 +1,12 @@
 package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Server_Java;
 
-import MovieBookingCommon.CommonServicePOA;
-import MovieBookingCommon.Movie;
-import MovieBookingCommon.MovieNotFoundException;
-import MovieBookingCommon.MovieSchedule;
-import MovieBookingCommon.Schedule;
-import MovieBookingCommon.ScheduleNotFoundException;
-import MovieBookingCommon.Seat;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.CommonServicePOA;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Movie;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.MovieNotFoundException;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.MovieSchedule;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Schedule;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.ScheduleNotFoundException;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Seat;
 
 public class MBCommonServant extends CommonServicePOA{
     @Override
@@ -45,7 +45,7 @@ public class MBCommonServant extends CommonServicePOA{
     }
 
     @Override
-    public MovieBookingCommon.Schedule[] getSchedulesByMovieId(int movieId) throws MovieNotFoundException {
+    public Schedule[] getSchedulesByMovieId(int movieId) throws MovieNotFoundException {
         return new Schedule[0];
     }
 

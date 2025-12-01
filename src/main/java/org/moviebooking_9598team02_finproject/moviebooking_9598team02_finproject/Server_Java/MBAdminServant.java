@@ -1,17 +1,17 @@
 package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Server_Java;
 
-import MovieBookingAdmin.AdminServicePOA;
-import MovieBookingCommon.Admin;
-import MovieBookingCommon.AuthenticationException;
-import MovieBookingCommon.Booking;
-import MovieBookingCommon.BookingException;
-import MovieBookingCommon.Customer;
-import MovieBookingCommon.InvalidInputException;
-import MovieBookingCommon.Movie;
-import MovieBookingCommon.MovieNotFoundException;
-import MovieBookingCommon.Schedule;
-import MovieBookingCommon.ScheduleNotFoundException;
-import MovieBookingCommon.Seat;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingAdmin.AdminServicePOA;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Admin;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.AuthenticationException;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Booking;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.BookingException;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Customer;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.InvalidInputException;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Movie;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.MovieNotFoundException;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Schedule;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.ScheduleNotFoundException;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Seat;
 
 public class MBAdminServant extends AdminServicePOA {
     @Override
@@ -60,7 +60,7 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public MovieBookingCommon.Movie[] getAllMovies(int adminId) throws AuthenticationException {
+    public Movie[] getAllMovies(int adminId) throws AuthenticationException {
         return new Movie[0];
     }
 
