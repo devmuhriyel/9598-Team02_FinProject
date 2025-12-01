@@ -4,38 +4,58 @@ import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.*;
 import org.omg.CORBA.ORB;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+
 public class MBAdminServant extends AdminServicePOA {
 
-    //CORBA SETUP AND METHODS
+    // ===== CORBA VARIABLES, METHODS, AND SETUP =====
     private ORB orb;
 
     public void setOrb(ORB orb_value) {
         this.orb = orb_value;
     }
 
-    public void shutdown(){
+    public void shutdown() throws SQLException {
+        DatabaseAccess.closeConnection();
         orb.shutdown(false);
     }
 
-    // ===== AUTHENTICATION METHODS =====
+    // ===== CONSTRUCTORS =====
+    public MBAdminServant() {}
 
+    // ===== AUTHENTICATION METHODS =====
     @Override
     public Admin loginAdmin(String username, String password) throws AuthenticationException {
+        Admin admin = null;
+        try(Connection connection = DatabaseAccess.getConnection()){
+
+        } catch (SQLException e){
+            e.printStackTrace();
+        }
         return null;
     }
 
     @Override
     public void logoutAdmin(int adminId) {
+        try(Connection connection = DatabaseAccess.getConnection()){
 
+        } catch (SQLException e){
+            e.printStackTrace();
+        }
     }
 
     @Override
     public int createAdmin(int creatorAdminId, String username, String email, String password, String fullName, String phoneNumber) throws AuthenticationException, InvalidInputException {
+        try(Connection connection = DatabaseAccess.getConnection()){
+
+        } catch (SQLException e){
+            e.printStackTrace();
+        }
         return 0;
     }
 
-    // ===== ADMIM MANAGEMENT METHODs =====
-
+    // ===== ADMIN MANAGEMENT METHODS =====
     @Override
     public Admin getAdminById(int adminId, int requestingAdminId) throws AuthenticationException {
         return null;
@@ -77,7 +97,6 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     // ===== MOVIE METHODS =====
-
     @Override
     public int addMovie(int adminId, String movieTitle, String[] movieGenres, String movieDescription, int movieRating, String moviePosterURL) throws AuthenticationException, InvalidInputException {
         return 0;
@@ -119,7 +138,6 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     // ===== MOVIE SCHEDULES METHODS =====
-
     @Override
     public int createMovieSchedule(int adminId, String screeningDate, String screeningTime) throws AuthenticationException, InvalidInputException {
         return 0;
@@ -151,7 +169,6 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     // ===== SEATS MANAGEMENT METHODS =====
-
     @Override
     public int addSeat(int adminId, String seatRow, int seatNumber, String seatType, double seatPrice) throws AuthenticationException, InvalidInputException {
         return 0;
@@ -178,7 +195,6 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     // ===== SEAT SCHEDULE METHODS =====
-
     @Override
     public int assignSeatToSchedule(int adminId, int scheduleId, int seatId, String status) throws AuthenticationException, ScheduleNotFoundException {
         return 0;
@@ -205,7 +221,6 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     // ===== BOOKINGS METHODS =====
-
     @Override
     public Booking[] getAllBookings(int adminId) throws AuthenticationException {
         return new Booking[0];
@@ -237,7 +252,6 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     // ===== CUSTOMER MANAGEMENT METHODS =====
-
     @Override
     public Customer[] getAllCustomers(int adminId) throws AuthenticationException {
         return new Customer[0];
@@ -264,7 +278,6 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     // ===== PAYMENT PROCESSING METHODS =====
-
     @Override
     public Payment[] getAllPayments(int adminId) throws AuthenticationException {
         return new Payment[0];
@@ -296,7 +309,6 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     // ===== ADDITIONAL METHODS =====
-
     @Override
     public String generateSalesReport(int adminId, String startDate, String endDate) throws AuthenticationException {
         return "";

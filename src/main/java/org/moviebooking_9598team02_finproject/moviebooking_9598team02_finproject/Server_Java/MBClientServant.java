@@ -4,18 +4,14 @@ import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.*;
 import org.omg.CORBA.ORB;
 
+import java.sql.Connection;
+
 public class MBClientServant extends ClientServicePOA {
 
-    //CORBA SETUP AND METHODS
-    private ORB orb;
-
-    public void setOrb(ORB orb_value) {
-        this.orb = orb_value;
-    }
-
+    // ===== DATABASE VARIABLES =====
+    private Connection conn = null;
 
     // ===== AUTHENTICATION METHODS =====
-
     @Override
     public int registerCustomer(String username, String email, String password, String phoneNumber, String fullName) throws InvalidInputException {
         return 0;
@@ -32,7 +28,6 @@ public class MBClientServant extends ClientServicePOA {
     }
 
     // ===== ACCOUNT MANAGEMENT METHODS =====
-
     @Override
     public void updateCustomerProfile(int customerId, String phoneNumber, String fullName) throws AuthenticationException {
 
@@ -44,7 +39,6 @@ public class MBClientServant extends ClientServicePOA {
     }
 
     // ===== HOME PAGE METHODS =====
-
     @Override
     public Movie[] browseMovies() {
         return new Movie[0];
@@ -82,7 +76,6 @@ public class MBClientServant extends ClientServicePOA {
 
 
     // ===== SEAT BOOKING METHODS
-
     @Override
     public Seat[] getAvailableSeats(int scheduleId) throws ScheduleNotFoundException {
         return new Seat[0];

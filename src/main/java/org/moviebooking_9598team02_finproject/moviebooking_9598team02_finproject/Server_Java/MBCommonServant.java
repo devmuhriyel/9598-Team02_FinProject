@@ -1,8 +1,16 @@
 package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Server_Java;
 
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.*;
+import org.omg.CORBA.ORB;
+
+import java.sql.Connection;
 
 public class MBCommonServant extends CommonServicePOA{
+
+    // ===== DATABASE VARIABLES =====
+    private Connection conn = null;
+
+    //
     @Override
     public Movie[] getAllMovies() {
         return new Movie[0];
