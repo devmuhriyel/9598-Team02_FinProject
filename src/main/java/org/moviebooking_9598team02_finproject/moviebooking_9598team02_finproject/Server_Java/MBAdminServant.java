@@ -12,8 +12,21 @@ import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Schedule;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.ScheduleNotFoundException;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Seat;
+import org.omg.CORBA.ORB;
 
 public class MBAdminServant extends AdminServicePOA {
+
+    //CORBA SETUP AND METHODS
+    private ORB orb;
+
+    public void setOrb(ORB orb_value) {
+        this.orb = orb_value;
+    }
+
+    public void shutdown(){
+        orb.shutdown(false);
+    }
+
     @Override
     public Admin loginAdmin(String username, String password) throws AuthenticationException {
         return null;
