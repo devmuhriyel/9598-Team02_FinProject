@@ -1,4 +1,4 @@
-package MovieBookingCommon;
+package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon;
 
 
 /**
@@ -23,17 +23,17 @@ public final class GenreListHolder implements org.omg.CORBA.portable.Streamable
 
   public void _read (org.omg.CORBA.portable.InputStream i)
   {
-    value = MovieBookingCommon.GenreListHelper.read (i);
+    value = GenreListHelper.read (i);
   }
 
   public void _write (org.omg.CORBA.portable.OutputStream o)
   {
-    MovieBookingCommon.GenreListHelper.write (o, value);
+    GenreListHelper.write (o, value);
   }
 
   public org.omg.CORBA.TypeCode _type ()
   {
-    return MovieBookingCommon.GenreListHelper.type ();
+    return GenreListHelper.type ();
   }
 
 }

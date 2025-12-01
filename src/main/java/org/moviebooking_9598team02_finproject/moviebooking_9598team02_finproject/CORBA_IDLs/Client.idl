@@ -12,101 +12,123 @@ module MovieBookingClient {
     typedef MovieBookingCommon::ScheduleList ScheduleList;
     typedef MovieBookingCommon::GenreList GenreList;
     typedef MovieBookingCommon::IdList IdList;
+    typedef MovieBookingCommon::Payment Payment;              // ADD THIS
+    typedef MovieBookingCommon::PaymentList PaymentList;
     
     // ==================== CLIENT INTERFACE ====================
     
     interface ClientService {
-        
+
         // ===== AUTHENTICATION =====
-        
+
         // Register a new customer account
         // Returns the newly created customer ID
         long registerCustomer(in string username, in string email, in string password, in string phoneNumber, in string fullName) raises (MovieBookingCommon::InvalidInputException);
-        
+
         // Login customer and return customer details
         Customer loginCustomer(in string username, in string password) raises (MovieBookingCommon::AuthenticationException);
-        
+
         // Logout customer (for cleanup/tracking)
         void logoutCustomer(in long customerId);
-        
+
         // Update customer profile
         void updateCustomerProfile(in long customerId, in string phoneNumber, in string fullName) raises (MovieBookingCommon::AuthenticationException);
-        
+
         // Change password
         void changePassword(in long customerId, in string oldPassword, in string newPassword) raises (MovieBookingCommon::AuthenticationException);
-        
+
         // ===== MOVIE BROWSING =====
-        
+
         // Get all available movies (delegates to CommonService)
         MovieList browseMovies();
-        
+
         // Search movies by title
         MovieList searchMovies(in string searchString);
-        
+
         // Get movie details by ID
         Movie getMovieDetails(in long movieId) raises (MovieBookingCommon::MovieNotFoundException);
-        
+
         // Filter movies by genres
         MovieList filterByGenres(in GenreList genres);
-        
+
         // Filter movies by rating
         MovieList filterByRating(in long minRating);
-        
+
         // Get movies showing on specific date
         MovieList getMoviesByDate(in long dayNumber, in long monthNumber, in long yearNumber);
-        
+
         // ===== SCHEDULE BROWSING =====
-        
+
         // Get all available schedules for a movie
         ScheduleList getMovieSchedules(in long movieId) raises (MovieBookingCommon::MovieNotFoundException);
-        
+
         // Get available seats for a specific schedule
         SeatList getAvailableSeats(in long scheduleId) raises (MovieBookingCommon::ScheduleNotFoundException);
-        
+
         // ===== BOOKING OPERATIONS =====
-        
+
         // Create a new booking
         // Returns the booking ID
         long createBooking(in long customerId, in long scheduleId, in IdList seatIds) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::SeatNotAvailableException, MovieBookingCommon::BookingException);
-        
+
         // Get booking details
         Booking getBookingDetails(in long bookingId) raises (MovieBookingCommon::BookingException);
-        
+
         // Get all bookings for a customer
         BookingList getCustomerBookings(in long customerId) raises (MovieBookingCommon::AuthenticationException);
-        
+
         // Cancel a booking (must be customer's own booking)
         void cancelBooking(in long customerId, in long bookingId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::BookingException);
-        
+
         // Confirm payment for a booking (changes status from pending to confirmed)
         void confirmPayment(in long customerId,in long bookingId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::BookingException);
-        
+
+        // Modify booking (change seats, before confirmation)
+        void updateBooking(in long customerId, in long bookingId, in IdList newSeatIds) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::BookingException, MovieBookingCommon::SeatNotAvailableException);
+
+        // Update booking status
+        void updateBookingStatus(in long customerId, in long bookingId, in string status) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::BookingException);
+
         // ===== BOOKING HISTORY =====
-        
+
         // Get customer's booking history (completed bookings)
         BookingList getBookingHistory(in long customerId) raises (MovieBookingCommon::AuthenticationException);
-        
+
         // Get customer's active bookings (pending/confirmed)
         BookingList getActiveBookings(in long customerId) raises (MovieBookingCommon::AuthenticationException);
+
+        // ===== PAYMENT PROCESSING =====
+
+        // Process payment for booking
+        long processPayment(in long customerId, in long bookingId, in double amount, in string paymentMethod, in string transactionId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::BookingException, MovieBookingCommon::PaymentException);
+
+        // Get payment details
+        Payment getPaymentDetails(in long customerId, in long paymentId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::PaymentNotFoundException);
+
+        // Get all payments for customer
+        PaymentList getCustomerPayments(in long customerId) raises (MovieBookingCommon::AuthenticationException);
+
+        // Get payment for specific booking
+        Payment getBookingPayment(in long customerId, in long bookingId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::BookingException);
     };
-    
+
     // ==================== CLIENT CALLBACK INTERFACE ====================
     // For server-to-client notifications
-    
+
     interface ClientCallback {
-        
+
         // Notify client when booking is confirmed
         void onBookingConfirmed(in Booking booking);
-        
+
         // Notify client when booking is cancelled
         void onBookingCancelled(in long bookingId, in string reason);
-        
+
         // Notify client when payment is processed
         void onPaymentProcessed(in long bookingId, in double amount);
-        
+
         // Notify client of seat availability changes for watched movies
         void onSeatAvailabilityChanged(in long scheduleId, in long availableSeats);
-        
+
         // Notify client of new movie additions (if subscribed to genre)
         void onNewMovieAdded(in Movie movie);
     };

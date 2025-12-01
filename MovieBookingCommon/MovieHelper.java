@@ -1,4 +1,4 @@
-package MovieBookingCommon;
+package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon;
 
 
 /**
@@ -12,7 +12,7 @@ abstract public class MovieHelper
 {
   private static String  _id = "IDL:MovieBookingCommon/Movie:1.0";
 
-  public static void insert (org.omg.CORBA.Any a, MovieBookingCommon.Movie that)
+  public static void insert (org.omg.CORBA.Any a, Movie that)
   {
     org.omg.CORBA.portable.OutputStream out = a.create_output_stream ();
     a.type (type ());
@@ -20,7 +20,7 @@ abstract public class MovieHelper
     a.read_value (out.create_input_stream (), type ());
   }
 
-  public static MovieBookingCommon.Movie extract (org.omg.CORBA.Any a)
+  public static Movie extract (org.omg.CORBA.Any a)
   {
     return read (a.create_input_stream ());
   }
@@ -88,7 +88,7 @@ abstract public class MovieHelper
             "updatedAt",
             _tcOf_members0,
             null);
-          __typeCode = org.omg.CORBA.ORB.init ().create_struct_tc (MovieBookingCommon.MovieHelper.id (), "Movie", _members0);
+          __typeCode = org.omg.CORBA.ORB.init ().create_struct_tc (MovieHelper.id (), "Movie", _members0);
           __active = false;
         }
       }
@@ -101,9 +101,9 @@ abstract public class MovieHelper
     return _id;
   }
 
-  public static MovieBookingCommon.Movie read (org.omg.CORBA.portable.InputStream istream)
+  public static Movie read (org.omg.CORBA.portable.InputStream istream)
   {
-    MovieBookingCommon.Movie value = new MovieBookingCommon.Movie ();
+    Movie value = new Movie ();
     value.movieId = istream.read_long ();
     value.movieTitle = istream.read_string ();
     int _len0 = istream.read_long ();
@@ -119,7 +119,7 @@ abstract public class MovieHelper
     return value;
   }
 
-  public static void write (org.omg.CORBA.portable.OutputStream ostream, MovieBookingCommon.Movie value)
+  public static void write (org.omg.CORBA.portable.OutputStream ostream, Movie value)
   {
     ostream.write_long (value.movieId);
     ostream.write_string (value.movieTitle);

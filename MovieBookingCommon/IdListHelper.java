@@ -1,4 +1,4 @@
-package MovieBookingCommon;
+package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon;
 
 
 /**
@@ -32,7 +32,7 @@ abstract public class IdListHelper
     {
       __typeCode = org.omg.CORBA.ORB.init ().get_primitive_tc (org.omg.CORBA.TCKind.tk_long);
       __typeCode = org.omg.CORBA.ORB.init ().create_sequence_tc (0, __typeCode);
-      __typeCode = org.omg.CORBA.ORB.init ().create_alias_tc (MovieBookingCommon.IdListHelper.id (), "IdList", __typeCode);
+      __typeCode = org.omg.CORBA.ORB.init ().create_alias_tc (IdListHelper.id (), "IdList", __typeCode);
     }
     return __typeCode;
   }

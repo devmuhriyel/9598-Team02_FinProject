@@ -1,4 +1,4 @@
-package MovieBookingCommon;
+package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon;
 
 /**
 * MovieBookingCommon/CommonServiceHolder.java .
@@ -11,30 +11,30 @@ package MovieBookingCommon;
 // Read-only operations available to both clients and admins
 public final class CommonServiceHolder implements org.omg.CORBA.portable.Streamable
 {
-  public MovieBookingCommon.CommonService value = null;
+  public CommonService value = null;
 
   public CommonServiceHolder ()
   {
   }
 
-  public CommonServiceHolder (MovieBookingCommon.CommonService initialValue)
+  public CommonServiceHolder (CommonService initialValue)
   {
     value = initialValue;
   }
 
   public void _read (org.omg.CORBA.portable.InputStream i)
   {
-    value = MovieBookingCommon.CommonServiceHelper.read (i);
+    value = CommonServiceHelper.read (i);
   }
 
   public void _write (org.omg.CORBA.portable.OutputStream o)
   {
-    MovieBookingCommon.CommonServiceHelper.write (o, value);
+    CommonServiceHelper.write (o, value);
   }
 
   public org.omg.CORBA.TypeCode _type ()
   {
-    return MovieBookingCommon.CommonServiceHelper.type ();
+    return CommonServiceHelper.type ();
   }
 
 }

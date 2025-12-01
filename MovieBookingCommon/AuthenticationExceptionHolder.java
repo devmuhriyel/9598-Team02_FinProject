@@ -1,4 +1,4 @@
-package MovieBookingCommon;
+package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon;
 
 /**
 * MovieBookingCommon/AuthenticationExceptionHolder.java .
@@ -9,30 +9,30 @@ package MovieBookingCommon;
 
 public final class AuthenticationExceptionHolder implements org.omg.CORBA.portable.Streamable
 {
-  public MovieBookingCommon.AuthenticationException value = null;
+  public AuthenticationException value = null;
 
   public AuthenticationExceptionHolder ()
   {
   }
 
-  public AuthenticationExceptionHolder (MovieBookingCommon.AuthenticationException initialValue)
+  public AuthenticationExceptionHolder (AuthenticationException initialValue)
   {
     value = initialValue;
   }
 
   public void _read (org.omg.CORBA.portable.InputStream i)
   {
-    value = MovieBookingCommon.AuthenticationExceptionHelper.read (i);
+    value = AuthenticationExceptionHelper.read (i);
   }
 
   public void _write (org.omg.CORBA.portable.OutputStream o)
   {
-    MovieBookingCommon.AuthenticationExceptionHelper.write (o, value);
+    AuthenticationExceptionHelper.write (o, value);
   }
 
   public org.omg.CORBA.TypeCode _type ()
   {
-    return MovieBookingCommon.AuthenticationExceptionHelper.type ();
+    return AuthenticationExceptionHelper.type ();
   }
 
 }

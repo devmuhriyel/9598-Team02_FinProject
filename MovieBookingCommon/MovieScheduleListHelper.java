@@ -1,4 +1,4 @@
-package MovieBookingCommon;
+package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon;
 
 
 /**
@@ -12,7 +12,7 @@ abstract public class MovieScheduleListHelper
 {
   private static String  _id = "IDL:MovieBookingCommon/MovieScheduleList:1.0";
 
-  public static void insert (org.omg.CORBA.Any a, MovieBookingCommon.MovieSchedule[] that)
+  public static void insert (org.omg.CORBA.Any a, MovieSchedule[] that)
   {
     org.omg.CORBA.portable.OutputStream out = a.create_output_stream ();
     a.type (type ());
@@ -20,7 +20,7 @@ abstract public class MovieScheduleListHelper
     a.read_value (out.create_input_stream (), type ());
   }
 
-  public static MovieBookingCommon.MovieSchedule[] extract (org.omg.CORBA.Any a)
+  public static MovieSchedule[] extract (org.omg.CORBA.Any a)
   {
     return read (a.create_input_stream ());
   }
@@ -30,9 +30,9 @@ abstract public class MovieScheduleListHelper
   {
     if (__typeCode == null)
     {
-      __typeCode = MovieBookingCommon.MovieScheduleHelper.type ();
+      __typeCode = MovieScheduleHelper.type ();
       __typeCode = org.omg.CORBA.ORB.init ().create_sequence_tc (0, __typeCode);
-      __typeCode = org.omg.CORBA.ORB.init ().create_alias_tc (MovieBookingCommon.MovieScheduleListHelper.id (), "MovieScheduleList", __typeCode);
+      __typeCode = org.omg.CORBA.ORB.init ().create_alias_tc (MovieScheduleListHelper.id (), "MovieScheduleList", __typeCode);
     }
     return __typeCode;
   }
@@ -42,21 +42,21 @@ abstract public class MovieScheduleListHelper
     return _id;
   }
 
-  public static MovieBookingCommon.MovieSchedule[] read (org.omg.CORBA.portable.InputStream istream)
+  public static MovieSchedule[] read (org.omg.CORBA.portable.InputStream istream)
   {
-    MovieBookingCommon.MovieSchedule value[] = null;
+    MovieSchedule value[] = null;
     int _len0 = istream.read_long ();
-    value = new MovieBookingCommon.MovieSchedule[_len0];
+    value = new MovieSchedule[_len0];
     for (int _o1 = 0;_o1 < value.length; ++_o1)
-      value[_o1] = MovieBookingCommon.MovieScheduleHelper.read (istream);
+      value[_o1] = MovieScheduleHelper.read (istream);
     return value;
   }
 
-  public static void write (org.omg.CORBA.portable.OutputStream ostream, MovieBookingCommon.MovieSchedule[] value)
+  public static void write (org.omg.CORBA.portable.OutputStream ostream, MovieSchedule[] value)
   {
     ostream.write_long (value.length);
     for (int _i0 = 0;_i0 < value.length; ++_i0)
-      MovieBookingCommon.MovieScheduleHelper.write (ostream, value[_i0]);
+      MovieScheduleHelper.write (ostream, value[_i0]);
   }
 
 }

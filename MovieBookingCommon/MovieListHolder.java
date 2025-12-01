@@ -1,4 +1,4 @@
-package MovieBookingCommon;
+package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon;
 
 
 /**
@@ -12,30 +12,30 @@ package MovieBookingCommon;
 // ==================== TYPEDEFS FOR SEQUENCES ====================
 public final class MovieListHolder implements org.omg.CORBA.portable.Streamable
 {
-  public MovieBookingCommon.Movie value[] = null;
+  public Movie value[] = null;
 
   public MovieListHolder ()
   {
   }
 
-  public MovieListHolder (MovieBookingCommon.Movie[] initialValue)
+  public MovieListHolder (Movie[] initialValue)
   {
     value = initialValue;
   }
 
   public void _read (org.omg.CORBA.portable.InputStream i)
   {
-    value = MovieBookingCommon.MovieListHelper.read (i);
+    value = MovieListHelper.read (i);
   }
 
   public void _write (org.omg.CORBA.portable.OutputStream o)
   {
-    MovieBookingCommon.MovieListHelper.write (o, value);
+    MovieListHelper.write (o, value);
   }
 
   public org.omg.CORBA.TypeCode _type ()
   {
-    return MovieBookingCommon.MovieListHelper.type ();
+    return MovieListHelper.type ();
   }
 
 }

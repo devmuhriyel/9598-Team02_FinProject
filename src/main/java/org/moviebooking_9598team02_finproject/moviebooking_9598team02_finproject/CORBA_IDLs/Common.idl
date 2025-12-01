@@ -83,6 +83,24 @@ module MovieBookingCommon {
         string createdAt;
         string updatedAt;
     };
+
+    struct Review {
+        long reviewId;
+        long customerId;
+        long movieId;
+        long rating;  // 1-10
+        string comment;
+        string createdAt;
+    };
+
+    struct Payment {
+        long paymentId;
+        long bookingId;
+        double amount;
+        string paymentMethod;  // "credit_card", "cash", "online"
+        string paymentStatus;  // "pending", "completed", "refunded"
+        string paymentDate;
+    };
     
     // ==================== TYPEDEFS FOR SEQUENCES ====================
     
@@ -96,6 +114,7 @@ module MovieBookingCommon {
     typedef sequence<Booking> BookingList;
     typedef sequence<string> GenreList;
     typedef sequence<long> IdList;
+    typedef sequence<Payment> PaymentList;
     
     // ==================== EXCEPTIONS ====================
     
@@ -126,6 +145,16 @@ module MovieBookingCommon {
     exception InvalidInputException {
         string message;
         string fieldName;
+    };
+
+    exception PaymentException {
+        string message;
+        long errorCode;
+    };
+
+    exception PaymentNotFoundException {
+        string message;
+        long paymentId;
     };
     
     // ==================== COMMON INTERFACE ====================
@@ -182,5 +211,14 @@ module MovieBookingCommon {
         
         // Check if specific seats are available
         boolean areSeatsAvailable(in IdList seatIds);
+
+        ScheduleListSeatList getScheduleSeats(in long scheduleId) raises (ScheduleNotFoundException);
+
+        ScheduleListSeat getScheduleSeatById(in long scheduleListSeatId);
+
+        // Check seat availability for specific schedule
+        boolean isSeatAvailableForSchedule(in long scheduleId, in long seatId);
+
+
     };
 };

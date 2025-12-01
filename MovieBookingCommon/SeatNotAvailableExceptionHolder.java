@@ -1,4 +1,4 @@
-package MovieBookingCommon;
+package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon;
 
 /**
 * MovieBookingCommon/SeatNotAvailableExceptionHolder.java .
@@ -9,30 +9,30 @@ package MovieBookingCommon;
 
 public final class SeatNotAvailableExceptionHolder implements org.omg.CORBA.portable.Streamable
 {
-  public MovieBookingCommon.SeatNotAvailableException value = null;
+  public SeatNotAvailableException value = null;
 
   public SeatNotAvailableExceptionHolder ()
   {
   }
 
-  public SeatNotAvailableExceptionHolder (MovieBookingCommon.SeatNotAvailableException initialValue)
+  public SeatNotAvailableExceptionHolder (SeatNotAvailableException initialValue)
   {
     value = initialValue;
   }
 
   public void _read (org.omg.CORBA.portable.InputStream i)
   {
-    value = MovieBookingCommon.SeatNotAvailableExceptionHelper.read (i);
+    value = SeatNotAvailableExceptionHelper.read (i);
   }
 
   public void _write (org.omg.CORBA.portable.OutputStream o)
   {
-    MovieBookingCommon.SeatNotAvailableExceptionHelper.write (o, value);
+    SeatNotAvailableExceptionHelper.write (o, value);
   }
 
   public org.omg.CORBA.TypeCode _type ()
   {
-    return MovieBookingCommon.SeatNotAvailableExceptionHelper.type ();
+    return SeatNotAvailableExceptionHelper.type ();
   }
 
 }

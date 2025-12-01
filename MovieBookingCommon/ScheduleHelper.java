@@ -1,4 +1,4 @@
-package MovieBookingCommon;
+package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon;
 
 
 /**
@@ -12,7 +12,7 @@ abstract public class ScheduleHelper
 {
   private static String  _id = "IDL:MovieBookingCommon/Schedule:1.0";
 
-  public static void insert (org.omg.CORBA.Any a, MovieBookingCommon.Schedule that)
+  public static void insert (org.omg.CORBA.Any a, Schedule that)
   {
     org.omg.CORBA.portable.OutputStream out = a.create_output_stream ();
     a.type (type ());
@@ -20,7 +20,7 @@ abstract public class ScheduleHelper
     a.read_value (out.create_input_stream (), type ());
   }
 
-  public static MovieBookingCommon.Schedule extract (org.omg.CORBA.Any a)
+  public static Schedule extract (org.omg.CORBA.Any a)
   {
     return read (a.create_input_stream ());
   }
@@ -67,7 +67,7 @@ abstract public class ScheduleHelper
             "updatedAt",
             _tcOf_members0,
             null);
-          __typeCode = org.omg.CORBA.ORB.init ().create_struct_tc (MovieBookingCommon.ScheduleHelper.id (), "Schedule", _members0);
+          __typeCode = org.omg.CORBA.ORB.init ().create_struct_tc (ScheduleHelper.id (), "Schedule", _members0);
           __active = false;
         }
       }
@@ -80,9 +80,9 @@ abstract public class ScheduleHelper
     return _id;
   }
 
-  public static MovieBookingCommon.Schedule read (org.omg.CORBA.portable.InputStream istream)
+  public static Schedule read (org.omg.CORBA.portable.InputStream istream)
   {
-    MovieBookingCommon.Schedule value = new MovieBookingCommon.Schedule ();
+    Schedule value = new Schedule ();
     value.scheduleId = istream.read_long ();
     value.movieId = istream.read_long ();
     value.movieScheduleId = istream.read_long ();
@@ -91,7 +91,7 @@ abstract public class ScheduleHelper
     return value;
   }
 
-  public static void write (org.omg.CORBA.portable.OutputStream ostream, MovieBookingCommon.Schedule value)
+  public static void write (org.omg.CORBA.portable.OutputStream ostream, Schedule value)
   {
     ostream.write_long (value.scheduleId);
     ostream.write_long (value.movieId);

@@ -1,4 +1,4 @@
-package MovieBookingCommon;
+package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon;
 
 /**
 * MovieBookingCommon/ScheduleListSeatHolder.java .
@@ -9,30 +9,30 @@ package MovieBookingCommon;
 
 public final class ScheduleListSeatHolder implements org.omg.CORBA.portable.Streamable
 {
-  public MovieBookingCommon.ScheduleListSeat value = null;
+  public ScheduleListSeat value = null;
 
   public ScheduleListSeatHolder ()
   {
   }
 
-  public ScheduleListSeatHolder (MovieBookingCommon.ScheduleListSeat initialValue)
+  public ScheduleListSeatHolder (ScheduleListSeat initialValue)
   {
     value = initialValue;
   }
 
   public void _read (org.omg.CORBA.portable.InputStream i)
   {
-    value = MovieBookingCommon.ScheduleListSeatHelper.read (i);
+    value = ScheduleListSeatHelper.read (i);
   }
 
   public void _write (org.omg.CORBA.portable.OutputStream o)
   {
-    MovieBookingCommon.ScheduleListSeatHelper.write (o, value);
+    ScheduleListSeatHelper.write (o, value);
   }
 
   public org.omg.CORBA.TypeCode _type ()
   {
-    return MovieBookingCommon.ScheduleListSeatHelper.type ();
+    return ScheduleListSeatHelper.type ();
   }
 
 }

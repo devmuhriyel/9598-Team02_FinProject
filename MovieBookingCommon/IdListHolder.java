@@ -1,4 +1,4 @@
-package MovieBookingCommon;
+package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon;
 
 
 /**
@@ -23,17 +23,17 @@ public final class IdListHolder implements org.omg.CORBA.portable.Streamable
 
   public void _read (org.omg.CORBA.portable.InputStream i)
   {
-    value = MovieBookingCommon.IdListHelper.read (i);
+    value = IdListHelper.read (i);
   }
 
   public void _write (org.omg.CORBA.portable.OutputStream o)
   {
-    MovieBookingCommon.IdListHelper.write (o, value);
+    IdListHelper.write (o, value);
   }
 
   public org.omg.CORBA.TypeCode _type ()
   {
-    return MovieBookingCommon.IdListHelper.type ();
+    return IdListHelper.type ();
   }
 
 }

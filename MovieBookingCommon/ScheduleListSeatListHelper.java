@@ -1,4 +1,4 @@
-package MovieBookingCommon;
+package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon;
 
 
 /**
@@ -12,7 +12,7 @@ abstract public class ScheduleListSeatListHelper
 {
   private static String  _id = "IDL:MovieBookingCommon/ScheduleListSeatList:1.0";
 
-  public static void insert (org.omg.CORBA.Any a, MovieBookingCommon.ScheduleListSeat[] that)
+  public static void insert (org.omg.CORBA.Any a, ScheduleListSeat[] that)
   {
     org.omg.CORBA.portable.OutputStream out = a.create_output_stream ();
     a.type (type ());
@@ -20,7 +20,7 @@ abstract public class ScheduleListSeatListHelper
     a.read_value (out.create_input_stream (), type ());
   }
 
-  public static MovieBookingCommon.ScheduleListSeat[] extract (org.omg.CORBA.Any a)
+  public static ScheduleListSeat[] extract (org.omg.CORBA.Any a)
   {
     return read (a.create_input_stream ());
   }
@@ -30,9 +30,9 @@ abstract public class ScheduleListSeatListHelper
   {
     if (__typeCode == null)
     {
-      __typeCode = MovieBookingCommon.ScheduleListSeatHelper.type ();
+      __typeCode = ScheduleListSeatHelper.type ();
       __typeCode = org.omg.CORBA.ORB.init ().create_sequence_tc (0, __typeCode);
-      __typeCode = org.omg.CORBA.ORB.init ().create_alias_tc (MovieBookingCommon.ScheduleListSeatListHelper.id (), "ScheduleListSeatList", __typeCode);
+      __typeCode = org.omg.CORBA.ORB.init ().create_alias_tc (ScheduleListSeatListHelper.id (), "ScheduleListSeatList", __typeCode);
     }
     return __typeCode;
   }
@@ -42,21 +42,21 @@ abstract public class ScheduleListSeatListHelper
     return _id;
   }
 
-  public static MovieBookingCommon.ScheduleListSeat[] read (org.omg.CORBA.portable.InputStream istream)
+  public static ScheduleListSeat[] read (org.omg.CORBA.portable.InputStream istream)
   {
-    MovieBookingCommon.ScheduleListSeat value[] = null;
+    ScheduleListSeat value[] = null;
     int _len0 = istream.read_long ();
-    value = new MovieBookingCommon.ScheduleListSeat[_len0];
+    value = new ScheduleListSeat[_len0];
     for (int _o1 = 0;_o1 < value.length; ++_o1)
-      value[_o1] = MovieBookingCommon.ScheduleListSeatHelper.read (istream);
+      value[_o1] = ScheduleListSeatHelper.read (istream);
     return value;
   }
 
-  public static void write (org.omg.CORBA.portable.OutputStream ostream, MovieBookingCommon.ScheduleListSeat[] value)
+  public static void write (org.omg.CORBA.portable.OutputStream ostream, ScheduleListSeat[] value)
   {
     ostream.write_long (value.length);
     for (int _i0 = 0;_i0 < value.length; ++_i0)
-      MovieBookingCommon.ScheduleListSeatHelper.write (ostream, value[_i0]);
+      ScheduleListSeatHelper.write (ostream, value[_i0]);
   }
 
 }

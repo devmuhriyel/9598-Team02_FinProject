@@ -1,4 +1,4 @@
-package MovieBookingCommon;
+package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon;
 
 
 /**
@@ -12,7 +12,7 @@ abstract public class BookingExceptionHelper
 {
   private static String  _id = "IDL:MovieBookingCommon/BookingException:1.0";
 
-  public static void insert (org.omg.CORBA.Any a, MovieBookingCommon.BookingException that)
+  public static void insert (org.omg.CORBA.Any a, BookingException that)
   {
     org.omg.CORBA.portable.OutputStream out = a.create_output_stream ();
     a.type (type ());
@@ -20,7 +20,7 @@ abstract public class BookingExceptionHelper
     a.read_value (out.create_input_stream (), type ());
   }
 
-  public static MovieBookingCommon.BookingException extract (org.omg.CORBA.Any a)
+  public static BookingException extract (org.omg.CORBA.Any a)
   {
     return read (a.create_input_stream ());
   }
@@ -52,7 +52,7 @@ abstract public class BookingExceptionHelper
             "errorCode",
             _tcOf_members0,
             null);
-          __typeCode = org.omg.CORBA.ORB.init ().create_exception_tc (MovieBookingCommon.BookingExceptionHelper.id (), "BookingException", _members0);
+          __typeCode = org.omg.CORBA.ORB.init ().create_exception_tc (BookingExceptionHelper.id (), "BookingException", _members0);
           __active = false;
         }
       }
@@ -65,9 +65,9 @@ abstract public class BookingExceptionHelper
     return _id;
   }
 
-  public static MovieBookingCommon.BookingException read (org.omg.CORBA.portable.InputStream istream)
+  public static BookingException read (org.omg.CORBA.portable.InputStream istream)
   {
-    MovieBookingCommon.BookingException value = new MovieBookingCommon.BookingException ();
+    BookingException value = new BookingException ();
     // read and discard the repository ID
     istream.read_string ();
     value.message = istream.read_string ();
@@ -75,7 +75,7 @@ abstract public class BookingExceptionHelper
     return value;
   }
 
-  public static void write (org.omg.CORBA.portable.OutputStream ostream, MovieBookingCommon.BookingException value)
+  public static void write (org.omg.CORBA.portable.OutputStream ostream, BookingException value)
   {
     // write the repository ID
     ostream.write_string (id ());

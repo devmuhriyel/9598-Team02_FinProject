@@ -1,4 +1,4 @@
-package MovieBookingCommon;
+package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon;
 
 
 /**
@@ -12,7 +12,7 @@ abstract public class MovieScheduleHelper
 {
   private static String  _id = "IDL:MovieBookingCommon/MovieSchedule:1.0";
 
-  public static void insert (org.omg.CORBA.Any a, MovieBookingCommon.MovieSchedule that)
+  public static void insert (org.omg.CORBA.Any a, MovieSchedule that)
   {
     org.omg.CORBA.portable.OutputStream out = a.create_output_stream ();
     a.type (type ());
@@ -20,7 +20,7 @@ abstract public class MovieScheduleHelper
     a.read_value (out.create_input_stream (), type ());
   }
 
-  public static MovieBookingCommon.MovieSchedule extract (org.omg.CORBA.Any a)
+  public static MovieSchedule extract (org.omg.CORBA.Any a)
   {
     return read (a.create_input_stream ());
   }
@@ -72,7 +72,7 @@ abstract public class MovieScheduleHelper
             "updatedAt",
             _tcOf_members0,
             null);
-          __typeCode = org.omg.CORBA.ORB.init ().create_struct_tc (MovieBookingCommon.MovieScheduleHelper.id (), "MovieSchedule", _members0);
+          __typeCode = org.omg.CORBA.ORB.init ().create_struct_tc (MovieScheduleHelper.id (), "MovieSchedule", _members0);
           __active = false;
         }
       }
@@ -85,9 +85,9 @@ abstract public class MovieScheduleHelper
     return _id;
   }
 
-  public static MovieBookingCommon.MovieSchedule read (org.omg.CORBA.portable.InputStream istream)
+  public static MovieSchedule read (org.omg.CORBA.portable.InputStream istream)
   {
-    MovieBookingCommon.MovieSchedule value = new MovieBookingCommon.MovieSchedule ();
+    MovieSchedule value = new MovieSchedule ();
     value.movieScheduleId = istream.read_long ();
     value.screeningDate = istream.read_string ();
     value.screeningTime = istream.read_string ();
@@ -97,7 +97,7 @@ abstract public class MovieScheduleHelper
     return value;
   }
 
-  public static void write (org.omg.CORBA.portable.OutputStream ostream, MovieBookingCommon.MovieSchedule value)
+  public static void write (org.omg.CORBA.portable.OutputStream ostream, MovieSchedule value)
   {
     ostream.write_long (value.movieScheduleId);
     ostream.write_string (value.screeningDate);

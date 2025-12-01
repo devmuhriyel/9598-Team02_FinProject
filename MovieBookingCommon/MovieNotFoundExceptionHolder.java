@@ -1,4 +1,4 @@
-package MovieBookingCommon;
+package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon;
 
 /**
 * MovieBookingCommon/MovieNotFoundExceptionHolder.java .
@@ -9,30 +9,30 @@ package MovieBookingCommon;
 
 public final class MovieNotFoundExceptionHolder implements org.omg.CORBA.portable.Streamable
 {
-  public MovieBookingCommon.MovieNotFoundException value = null;
+  public MovieNotFoundException value = null;
 
   public MovieNotFoundExceptionHolder ()
   {
   }
 
-  public MovieNotFoundExceptionHolder (MovieBookingCommon.MovieNotFoundException initialValue)
+  public MovieNotFoundExceptionHolder (MovieNotFoundException initialValue)
   {
     value = initialValue;
   }
 
   public void _read (org.omg.CORBA.portable.InputStream i)
   {
-    value = MovieBookingCommon.MovieNotFoundExceptionHelper.read (i);
+    value = MovieNotFoundExceptionHelper.read (i);
   }
 
   public void _write (org.omg.CORBA.portable.OutputStream o)
   {
-    MovieBookingCommon.MovieNotFoundExceptionHelper.write (o, value);
+    MovieNotFoundExceptionHelper.write (o, value);
   }
 
   public org.omg.CORBA.TypeCode _type ()
   {
-    return MovieBookingCommon.MovieNotFoundExceptionHelper.type ();
+    return MovieNotFoundExceptionHelper.type ();
   }
 
 }

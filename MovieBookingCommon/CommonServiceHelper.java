@@ -1,4 +1,4 @@
-package MovieBookingCommon;
+package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon;
 
 
 /**
@@ -14,7 +14,7 @@ abstract public class CommonServiceHelper
 {
   private static String  _id = "IDL:MovieBookingCommon/CommonService:1.0";
 
-  public static void insert (org.omg.CORBA.Any a, MovieBookingCommon.CommonService that)
+  public static void insert (org.omg.CORBA.Any a, CommonService that)
   {
     org.omg.CORBA.portable.OutputStream out = a.create_output_stream ();
     a.type (type ());
@@ -22,7 +22,7 @@ abstract public class CommonServiceHelper
     a.read_value (out.create_input_stream (), type ());
   }
 
-  public static MovieBookingCommon.CommonService extract (org.omg.CORBA.Any a)
+  public static CommonService extract (org.omg.CORBA.Any a)
   {
     return read (a.create_input_stream ());
   }
@@ -32,7 +32,7 @@ abstract public class CommonServiceHelper
   {
     if (__typeCode == null)
     {
-      __typeCode = org.omg.CORBA.ORB.init ().create_interface_tc (MovieBookingCommon.CommonServiceHelper.id (), "CommonService");
+      __typeCode = org.omg.CORBA.ORB.init ().create_interface_tc (CommonServiceHelper.id (), "CommonService");
     }
     return __typeCode;
   }
@@ -42,43 +42,43 @@ abstract public class CommonServiceHelper
     return _id;
   }
 
-  public static MovieBookingCommon.CommonService read (org.omg.CORBA.portable.InputStream istream)
+  public static CommonService read (org.omg.CORBA.portable.InputStream istream)
   {
     return narrow (istream.read_Object (_CommonServiceStub.class));
   }
 
-  public static void write (org.omg.CORBA.portable.OutputStream ostream, MovieBookingCommon.CommonService value)
+  public static void write (org.omg.CORBA.portable.OutputStream ostream, CommonService value)
   {
     ostream.write_Object ((org.omg.CORBA.Object) value);
   }
 
-  public static MovieBookingCommon.CommonService narrow (org.omg.CORBA.Object obj)
+  public static CommonService narrow (org.omg.CORBA.Object obj)
   {
     if (obj == null)
       return null;
-    else if (obj instanceof MovieBookingCommon.CommonService)
-      return (MovieBookingCommon.CommonService)obj;
+    else if (obj instanceof CommonService)
+      return (CommonService)obj;
     else if (!obj._is_a (id ()))
       throw new org.omg.CORBA.BAD_PARAM ();
     else
     {
       org.omg.CORBA.portable.Delegate delegate = ((org.omg.CORBA.portable.ObjectImpl)obj)._get_delegate ();
-      MovieBookingCommon._CommonServiceStub stub = new MovieBookingCommon._CommonServiceStub ();
+      _CommonServiceStub stub = new _CommonServiceStub ();
       stub._set_delegate(delegate);
       return stub;
     }
   }
 
-  public static MovieBookingCommon.CommonService unchecked_narrow (org.omg.CORBA.Object obj)
+  public static CommonService unchecked_narrow (org.omg.CORBA.Object obj)
   {
     if (obj == null)
       return null;
-    else if (obj instanceof MovieBookingCommon.CommonService)
-      return (MovieBookingCommon.CommonService)obj;
+    else if (obj instanceof CommonService)
+      return (CommonService)obj;
     else
     {
       org.omg.CORBA.portable.Delegate delegate = ((org.omg.CORBA.portable.ObjectImpl)obj)._get_delegate ();
-      MovieBookingCommon._CommonServiceStub stub = new MovieBookingCommon._CommonServiceStub ();
+      _CommonServiceStub stub = new _CommonServiceStub ();
       stub._set_delegate(delegate);
       return stub;
     }

@@ -1,4 +1,4 @@
-package MovieBookingCommon;
+package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon;
 
 
 /**
@@ -12,7 +12,7 @@ abstract public class CustomerListHelper
 {
   private static String  _id = "IDL:MovieBookingCommon/CustomerList:1.0";
 
-  public static void insert (org.omg.CORBA.Any a, MovieBookingCommon.Customer[] that)
+  public static void insert (org.omg.CORBA.Any a, Customer[] that)
   {
     org.omg.CORBA.portable.OutputStream out = a.create_output_stream ();
     a.type (type ());
@@ -20,7 +20,7 @@ abstract public class CustomerListHelper
     a.read_value (out.create_input_stream (), type ());
   }
 
-  public static MovieBookingCommon.Customer[] extract (org.omg.CORBA.Any a)
+  public static Customer[] extract (org.omg.CORBA.Any a)
   {
     return read (a.create_input_stream ());
   }
@@ -30,9 +30,9 @@ abstract public class CustomerListHelper
   {
     if (__typeCode == null)
     {
-      __typeCode = MovieBookingCommon.CustomerHelper.type ();
+      __typeCode = CustomerHelper.type ();
       __typeCode = org.omg.CORBA.ORB.init ().create_sequence_tc (0, __typeCode);
-      __typeCode = org.omg.CORBA.ORB.init ().create_alias_tc (MovieBookingCommon.CustomerListHelper.id (), "CustomerList", __typeCode);
+      __typeCode = org.omg.CORBA.ORB.init ().create_alias_tc (CustomerListHelper.id (), "CustomerList", __typeCode);
     }
     return __typeCode;
   }
@@ -42,21 +42,21 @@ abstract public class CustomerListHelper
     return _id;
   }
 
-  public static MovieBookingCommon.Customer[] read (org.omg.CORBA.portable.InputStream istream)
+  public static Customer[] read (org.omg.CORBA.portable.InputStream istream)
   {
-    MovieBookingCommon.Customer value[] = null;
+    Customer value[] = null;
     int _len0 = istream.read_long ();
-    value = new MovieBookingCommon.Customer[_len0];
+    value = new Customer[_len0];
     for (int _o1 = 0;_o1 < value.length; ++_o1)
-      value[_o1] = MovieBookingCommon.CustomerHelper.read (istream);
+      value[_o1] = CustomerHelper.read (istream);
     return value;
   }
 
-  public static void write (org.omg.CORBA.portable.OutputStream ostream, MovieBookingCommon.Customer[] value)
+  public static void write (org.omg.CORBA.portable.OutputStream ostream, Customer[] value)
   {
     ostream.write_long (value.length);
     for (int _i0 = 0;_i0 < value.length; ++_i0)
-      MovieBookingCommon.CustomerHelper.write (ostream, value[_i0]);
+      CustomerHelper.write (ostream, value[_i0]);
   }
 
 }

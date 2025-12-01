@@ -1,4 +1,4 @@
-package MovieBookingCommon;
+package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon;
 
 /**
 * MovieBookingCommon/ScheduleNotFoundExceptionHolder.java .
@@ -9,30 +9,30 @@ package MovieBookingCommon;
 
 public final class ScheduleNotFoundExceptionHolder implements org.omg.CORBA.portable.Streamable
 {
-  public MovieBookingCommon.ScheduleNotFoundException value = null;
+  public ScheduleNotFoundException value = null;
 
   public ScheduleNotFoundExceptionHolder ()
   {
   }
 
-  public ScheduleNotFoundExceptionHolder (MovieBookingCommon.ScheduleNotFoundException initialValue)
+  public ScheduleNotFoundExceptionHolder (ScheduleNotFoundException initialValue)
   {
     value = initialValue;
   }
 
   public void _read (org.omg.CORBA.portable.InputStream i)
   {
-    value = MovieBookingCommon.ScheduleNotFoundExceptionHelper.read (i);
+    value = ScheduleNotFoundExceptionHelper.read (i);
   }
 
   public void _write (org.omg.CORBA.portable.OutputStream o)
   {
-    MovieBookingCommon.ScheduleNotFoundExceptionHelper.write (o, value);
+    ScheduleNotFoundExceptionHelper.write (o, value);
   }
 
   public org.omg.CORBA.TypeCode _type ()
   {
-    return MovieBookingCommon.ScheduleNotFoundExceptionHelper.type ();
+    return ScheduleNotFoundExceptionHelper.type ();
   }
 
 }

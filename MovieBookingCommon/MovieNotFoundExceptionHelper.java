@@ -1,4 +1,4 @@
-package MovieBookingCommon;
+package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon;
 
 
 /**
@@ -12,7 +12,7 @@ abstract public class MovieNotFoundExceptionHelper
 {
   private static String  _id = "IDL:MovieBookingCommon/MovieNotFoundException:1.0";
 
-  public static void insert (org.omg.CORBA.Any a, MovieBookingCommon.MovieNotFoundException that)
+  public static void insert (org.omg.CORBA.Any a, MovieNotFoundException that)
   {
     org.omg.CORBA.portable.OutputStream out = a.create_output_stream ();
     a.type (type ());
@@ -20,7 +20,7 @@ abstract public class MovieNotFoundExceptionHelper
     a.read_value (out.create_input_stream (), type ());
   }
 
-  public static MovieBookingCommon.MovieNotFoundException extract (org.omg.CORBA.Any a)
+  public static MovieNotFoundException extract (org.omg.CORBA.Any a)
   {
     return read (a.create_input_stream ());
   }
@@ -52,7 +52,7 @@ abstract public class MovieNotFoundExceptionHelper
             "movieId",
             _tcOf_members0,
             null);
-          __typeCode = org.omg.CORBA.ORB.init ().create_exception_tc (MovieBookingCommon.MovieNotFoundExceptionHelper.id (), "MovieNotFoundException", _members0);
+          __typeCode = org.omg.CORBA.ORB.init ().create_exception_tc (MovieNotFoundExceptionHelper.id (), "MovieNotFoundException", _members0);
           __active = false;
         }
       }
@@ -65,9 +65,9 @@ abstract public class MovieNotFoundExceptionHelper
     return _id;
   }
 
-  public static MovieBookingCommon.MovieNotFoundException read (org.omg.CORBA.portable.InputStream istream)
+  public static MovieNotFoundException read (org.omg.CORBA.portable.InputStream istream)
   {
-    MovieBookingCommon.MovieNotFoundException value = new MovieBookingCommon.MovieNotFoundException ();
+    MovieNotFoundException value = new MovieNotFoundException ();
     // read and discard the repository ID
     istream.read_string ();
     value.message = istream.read_string ();
@@ -75,7 +75,7 @@ abstract public class MovieNotFoundExceptionHelper
     return value;
   }
 
-  public static void write (org.omg.CORBA.portable.OutputStream ostream, MovieBookingCommon.MovieNotFoundException value)
+  public static void write (org.omg.CORBA.portable.OutputStream ostream, MovieNotFoundException value)
   {
     // write the repository ID
     ostream.write_string (id ());

@@ -1,4 +1,4 @@
-package MovieBookingCommon;
+package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon;
 
 
 /**
@@ -10,30 +10,30 @@ package MovieBookingCommon;
 
 public final class AdminListHolder implements org.omg.CORBA.portable.Streamable
 {
-  public MovieBookingCommon.Admin value[] = null;
+  public Admin value[] = null;
 
   public AdminListHolder ()
   {
   }
 
-  public AdminListHolder (MovieBookingCommon.Admin[] initialValue)
+  public AdminListHolder (Admin[] initialValue)
   {
     value = initialValue;
   }
 
   public void _read (org.omg.CORBA.portable.InputStream i)
   {
-    value = MovieBookingCommon.AdminListHelper.read (i);
+    value = AdminListHelper.read (i);
   }
 
   public void _write (org.omg.CORBA.portable.OutputStream o)
   {
-    MovieBookingCommon.AdminListHelper.write (o, value);
+    AdminListHelper.write (o, value);
   }
 
   public org.omg.CORBA.TypeCode _type ()
   {
-    return MovieBookingCommon.AdminListHelper.type ();
+    return AdminListHelper.type ();
   }
 
 }

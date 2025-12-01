@@ -1,4 +1,4 @@
-package MovieBookingCommon;
+package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon;
 
 /**
 * MovieBookingCommon/InvalidInputExceptionHolder.java .
@@ -9,30 +9,30 @@ package MovieBookingCommon;
 
 public final class InvalidInputExceptionHolder implements org.omg.CORBA.portable.Streamable
 {
-  public MovieBookingCommon.InvalidInputException value = null;
+  public InvalidInputException value = null;
 
   public InvalidInputExceptionHolder ()
   {
   }
 
-  public InvalidInputExceptionHolder (MovieBookingCommon.InvalidInputException initialValue)
+  public InvalidInputExceptionHolder (InvalidInputException initialValue)
   {
     value = initialValue;
   }
 
   public void _read (org.omg.CORBA.portable.InputStream i)
   {
-    value = MovieBookingCommon.InvalidInputExceptionHelper.read (i);
+    value = InvalidInputExceptionHelper.read (i);
   }
 
   public void _write (org.omg.CORBA.portable.OutputStream o)
   {
-    MovieBookingCommon.InvalidInputExceptionHelper.write (o, value);
+    InvalidInputExceptionHelper.write (o, value);
   }
 
   public org.omg.CORBA.TypeCode _type ()
   {
-    return MovieBookingCommon.InvalidInputExceptionHelper.type ();
+    return InvalidInputExceptionHelper.type ();
   }
 
 }

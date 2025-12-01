@@ -1,4 +1,4 @@
-package MovieBookingCommon;
+package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon;
 
 
 /**
@@ -12,7 +12,7 @@ abstract public class SeatHelper
 {
   private static String  _id = "IDL:MovieBookingCommon/Seat:1.0";
 
-  public static void insert (org.omg.CORBA.Any a, MovieBookingCommon.Seat that)
+  public static void insert (org.omg.CORBA.Any a, Seat that)
   {
     org.omg.CORBA.portable.OutputStream out = a.create_output_stream ();
     a.type (type ());
@@ -20,7 +20,7 @@ abstract public class SeatHelper
     a.read_value (out.create_input_stream (), type ());
   }
 
-  public static MovieBookingCommon.Seat extract (org.omg.CORBA.Any a)
+  public static Seat extract (org.omg.CORBA.Any a)
   {
     return read (a.create_input_stream ());
   }
@@ -77,7 +77,7 @@ abstract public class SeatHelper
             "updatedAt",
             _tcOf_members0,
             null);
-          __typeCode = org.omg.CORBA.ORB.init ().create_struct_tc (MovieBookingCommon.SeatHelper.id (), "Seat", _members0);
+          __typeCode = org.omg.CORBA.ORB.init ().create_struct_tc (SeatHelper.id (), "Seat", _members0);
           __active = false;
         }
       }
@@ -90,9 +90,9 @@ abstract public class SeatHelper
     return _id;
   }
 
-  public static MovieBookingCommon.Seat read (org.omg.CORBA.portable.InputStream istream)
+  public static Seat read (org.omg.CORBA.portable.InputStream istream)
   {
-    MovieBookingCommon.Seat value = new MovieBookingCommon.Seat ();
+    Seat value = new Seat ();
     value.seatId = istream.read_long ();
     value.seatRow = istream.read_string ();
     value.seatNumber = istream.read_long ();
@@ -103,7 +103,7 @@ abstract public class SeatHelper
     return value;
   }
 
-  public static void write (org.omg.CORBA.portable.OutputStream ostream, MovieBookingCommon.Seat value)
+  public static void write (org.omg.CORBA.portable.OutputStream ostream, Seat value)
   {
     ostream.write_long (value.seatId);
     ostream.write_string (value.seatRow);
