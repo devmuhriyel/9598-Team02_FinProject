@@ -1,12 +1,6 @@
 package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Server_Java;
 
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.CommonServicePOA;
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Movie;
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.MovieNotFoundException;
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.MovieSchedule;
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Schedule;
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.ScheduleNotFoundException;
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Seat;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.*;
 
 public class MBCommonServant extends CommonServicePOA{
     @Override
@@ -71,6 +65,21 @@ public class MBCommonServant extends CommonServicePOA{
 
     @Override
     public boolean areSeatsAvailable(int[] seatIds) {
+        return false;
+    }
+
+    @Override
+    public ScheduleListSeat[] getScheduleSeats(int scheduleId) throws ScheduleNotFoundException {
+        return new ScheduleListSeat[0];
+    }
+
+    @Override
+    public ScheduleListSeat getScheduleSeatById(int scheduleListSeatId) {
+        return null;
+    }
+
+    @Override
+    public boolean isSeatAvailableForSchedule(int scheduleId, int seatId) {
         return false;
     }
 }

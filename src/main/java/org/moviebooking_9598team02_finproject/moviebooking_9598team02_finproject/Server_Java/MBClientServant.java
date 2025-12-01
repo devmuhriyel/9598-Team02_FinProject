@@ -1,19 +1,21 @@
 package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Server_Java;
 
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingClient.ClientServicePOA;
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.AuthenticationException;
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Booking;
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.BookingException;
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Customer;
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.InvalidInputException;
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Movie;
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.MovieNotFoundException;
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Schedule;
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.ScheduleNotFoundException;
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Seat;
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.SeatNotAvailableException;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.*;
+import org.omg.CORBA.ORB;
 
 public class MBClientServant extends ClientServicePOA {
+
+    //CORBA SETUP AND METHODS
+    private ORB orb;
+
+    public void setOrb(ORB orb_value) {
+        this.orb = orb_value;
+    }
+
+
+    // ===== AUTHENTICATION METHODS =====
+
     @Override
     public int registerCustomer(String username, String email, String password, String phoneNumber, String fullName) throws InvalidInputException {
         return 0;
@@ -29,6 +31,8 @@ public class MBClientServant extends ClientServicePOA {
 
     }
 
+    // ===== ACCOUNT MANAGEMENT METHODS =====
+
     @Override
     public void updateCustomerProfile(int customerId, String phoneNumber, String fullName) throws AuthenticationException {
 
@@ -38,6 +42,8 @@ public class MBClientServant extends ClientServicePOA {
     public void changePassword(int customerId, String oldPassword, String newPassword) throws AuthenticationException {
 
     }
+
+    // ===== HOME PAGE METHODS =====
 
     @Override
     public Movie[] browseMovies() {
@@ -74,6 +80,9 @@ public class MBClientServant extends ClientServicePOA {
         return new Schedule[0];
     }
 
+
+    // ===== SEAT BOOKING METHODS
+
     @Override
     public Seat[] getAvailableSeats(int scheduleId) throws ScheduleNotFoundException {
         return new Seat[0];
@@ -105,6 +114,16 @@ public class MBClientServant extends ClientServicePOA {
     }
 
     @Override
+    public void updateBooking(int customerId, int bookingId, int[] newSeatIds) throws AuthenticationException, BookingException, SeatNotAvailableException {
+
+    }
+
+    @Override
+    public void updateBookingStatus(int customerId, int bookingId, String status) throws AuthenticationException, BookingException {
+
+    }
+
+    @Override
     public Booking[] getBookingHistory(int customerId) throws AuthenticationException {
         return new Booking[0];
     }
@@ -112,5 +131,25 @@ public class MBClientServant extends ClientServicePOA {
     @Override
     public Booking[] getActiveBookings(int customerId) throws AuthenticationException {
         return new Booking[0];
+    }
+
+    @Override
+    public int processPayment(int customerId, int bookingId, double amount, String paymentMethod, String transactionId) throws AuthenticationException, BookingException, PaymentException {
+        return 0;
+    }
+
+    @Override
+    public Payment getPaymentDetails(int customerId, int paymentId) throws AuthenticationException, PaymentNotFoundException {
+        return null;
+    }
+
+    @Override
+    public Payment[] getCustomerPayments(int customerId) throws AuthenticationException {
+        return new Payment[0];
+    }
+
+    @Override
+    public Payment getBookingPayment(int customerId, int bookingId) throws AuthenticationException, BookingException {
+        return null;
     }
 }
