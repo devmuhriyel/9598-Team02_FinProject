@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+<?import javafx.geometry.Insets?>
+<?import java.lang.String?>
+
+<?import javafx.collections.FXCollections?>
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Admin.AdminBase"
+            prefHeight="720.0" prefWidth="1280.0"
+            style="-fx-background-color: #1A1A1A;"> <top>
+    <HBox alignment="CENTER_LEFT" prefHeight="60.0" spacing="20.0"
+          style="-fx-background-color: #000000; -fx-padding: 0 20 0 20;"> <Label text="CinemaAdmin" style="-fx-text-fill: #FFC72C;"> <font><Font size="24.0" /></font>
+    </Label>
+        <Region HBox.hgrow="ALWAYS" />
+        <Label text="Admin Name | Logout" style="-fx-text-fill: #FFFFFF;"> <font><Font size="14.0" /></font>
+        </Label>
+    </HBox>
+</top>
+
+    <left>
+        <VBox prefWidth="220.0" spacing="10.0"
+              style="-fx-background-color: #000000; -fx-border-color: #AAAAAA; -fx-border-width: 0 1 0 0;"> <padding>
+            <Insets top="20.0" right="10.0" bottom="20.0" left="10.0" />
+        </padding>
+
+            <Label text="DASHBOARD" prefWidth="1.7976931348623157E308"
+                   style="-fx-text-fill: #FFFFFF; -fx-padding: 8 10; -fx-cursor: hand;" />
+
+            <Label text="MOVIE MANAGEMENT" prefWidth="1.7976931348623157E308"
+                   style="-fx-text-fill: #FFFFFF; -fx-padding: 8 10; -fx-cursor: hand;"/>
+
+            <Label text="SHOWTIME SCHEDULING" prefWidth="1.7976931348623157E308"
+                   style="-fx-text-fill: #FFFFFF; -fx-padding: 8 10; -fx-cursor: hand;" />
+
+            <Label text="BOOKING MANAGEMENT" prefWidth="1.7976931348623157E308"
+                   style="-fx-text-fill: #FFC72C; -fx-background-color: #1A1A1A; -fx-padding: 8 10; -fx-font-weight: bold; -fx-border-radius: 5; -fx-background-radius: 5;"> </Label>
+
+            <Label text="CUSTOMER MANAGEMENT" prefWidth="1.7976931348623157E308"
+                   style="-fx-text-fill: #FFFFFF; -fx-padding: 8 10; -fx-cursor: hand;" />
+            <Label text="REPORTS &amp; ANALYTICS" prefWidth="1.7976931348623157E308"
+                   style="-fx-text-fill: #FFFFFF; -fx-padding: 8 10; -fx-cursor: hand;" />
+        </VBox>
+    </left>
+
+    <center>
+        <VBox spacing="20.0" style="-fx-background-color: #1A1A1A;"> <padding>
+            <Insets top="20.0" right="20.0" bottom="20.0" left="20.0" />
+        </padding>
+
+            <Label text="Booking Management" style="-fx-text-fill: #FFFFFF; -fx-font-weight: bold;">
+                <font><Font size="22.0" /></font>
+            </Label>
+            <Label text="Search, view, and manage all customer ticket bookings." style="-fx-text-fill: #AAAAAA;">
+                <font><Font size="14.0" /></font>
+            </Label>
+
+            <HBox spacing="10.0" alignment="CENTER_LEFT" style="-fx-padding: 15; -fx-background-color: #2e2e2e; -fx-background-radius: 8;">
+                <TextField promptText="Search by Booking ID, Customer Name, or Phone..." prefWidth="400.0" style="-fx-background-color: #404040; -fx-text-fill: #FFFFFF; -fx-prompt-text-fill: #AAAAAA;"/>
+
+                <ComboBox promptText="Filter by Status" style="-fx-background-color: #404040; -fx-prompt-text-fill: #AAAAAA;">
+                    <items>
+                        <FXCollections fx:factory="observableArrayList">
+                            <String fx:value="All" />
+                            <String fx:value="Confirmed" />
+                            <String fx:value="Pending" />
+                            <String fx:value="Cancelled" />
+                        </FXCollections>
+                    </items>
+                </ComboBox>
+
+                <DatePicker promptText="Filter by Date" style="-fx-background-color: #404040; -fx-prompt-text-fill: #AAAAAA;"/>
+
+                <Button text="Search" style="-fx-background-color: #FFC72C; -fx-text-fill: #000000; -fx-font-weight: bold; -fx-background-radius: 5;"/>
+                <Region HBox.hgrow="ALWAYS" />
+                <Button text="Export Bookings" style="-fx-background-color: #00A693; -fx-text-fill: #FFFFFF; -fx-font-weight: bold; -fx-background-radius: 5;"/> </HBox>
+
+            <TableView VBox.vgrow="ALWAYS" style="-fx-background-color: #2e2e2e; -fx-background-radius: 8;">
+                <columns>
+                    <TableColumn text="Booking ID" prefWidth="100" />
+                    <TableColumn text="Customer Name" prefWidth="180" />
+                    <TableColumn text="Movie / Showtime" prefWidth="250" />
+                    <TableColumn text="Seats" prefWidth="100" />
+                    <TableColumn text="Total Price" prefWidth="120" />
+                    <TableColumn text="Status" prefWidth="100" />
+                    <TableColumn text="Actions" prefWidth="150" />
+                </columns>
+                <placeholder>
+                    <Label text="No current bookings match your search criteria." style="-fx-text-fill: #AAAAAA;" />
+                </placeholder>
+            </TableView>
+
+        </VBox>
+    </center>
+
+</BorderPane>

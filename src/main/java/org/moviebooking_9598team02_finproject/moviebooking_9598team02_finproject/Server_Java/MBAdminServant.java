@@ -39,6 +39,12 @@ public class MBAdminServant extends AdminServicePOA {
             if(rs.next()){
                 String hashedPassword = rs.getString("password");
                 if(PasswordManager.checkPassword(password, hashedPassword)){
+                    int admin_id = rs.getInt("admin_id");
+                    String sessionToken = SessionManager.createAdminSession(admin_id, rs.getString("username"));
+                    if (SessionManager.isAdminLoggedIn(rs.getInt(admin_id))) {
+                        logoutAdmin(admin_id);
+                        SessionManager.removeAdminSession(admin_id);
+                    }
                     admin.adminId = rs.getInt("admin_id");
                     admin.username = rs.getString("username");
                     admin.email = rs.getString("email");
@@ -62,19 +68,24 @@ public class MBAdminServant extends AdminServicePOA {
 
     @Override
     public void logoutAdmin(int adminId) {
-        try(Connection connection = DatabaseAccess.getConnection()){
-
-        } catch (SQLException e){
-            e.printStackTrace();
+        if(SessionManager.isAdminLoggedIn(adminId)){
+            SessionManager.removeAdminSession(adminId);
         }
     }
 
     @Override
     public int createAdmin(int creatorAdminId, String username, String email, String password, String fullName, String phoneNumber) throws AuthenticationException, InvalidInputException {
-        try(Connection connection = DatabaseAccess.getConnection()){
+        if(!SessionManager.isAdminLoggedIn(creatorAdminId)){
+            throw new AuthenticationException("Log in before creating a new admin account");
+        }
 
-        } catch (SQLException e){
-            e.printStackTrace();
+        try (Connection connection = DatabaseAccess.getConnection()){
+            String query = "SELECT * FROM admins where username = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setString(1, username);
+            ResultSet rs = statement.executeQuery();
+        } catch (SQLException e) {
+            throw new InvalidInputException("Account Already Exists", "Username already exists");
         }
         return 0;
     }

@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+<?import javafx.geometry.Insets?>
+<?import java.lang.String?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Admin.AdminBase"
+            prefHeight="720.0" prefWidth="1280.0"
+            style="-fx-background-color: #1A1A1A;"> <top>
+    <HBox alignment="CENTER_LEFT" prefHeight="60.0" spacing="20.0"
+          style="-fx-background-color: #000000; -fx-padding: 0 20 0 20;"> <Label text="CinemaAdmin" style="-fx-text-fill: #FFC72C;"> <font><Font size="24.0" /></font>
+    </Label>
+        <Region HBox.hgrow="ALWAYS" />
+        <Label text="Admin Name | Logout" style="-fx-text-fill: #FFFFFF;"> <font><Font size="14.0" /></font>
+        </Label>
+    </HBox>
+</top>
+
+    <left>
+        <VBox prefWidth="220.0" spacing="10.0"
+              style="-fx-background-color: #000000; -fx-border-color: #AAAAAA; -fx-border-width: 0 1 0 0;"> <padding>
+            <Insets top="20.0" right="10.0" bottom="20.0" left="10.0" />
+        </padding>
+
+            <Label text="DASHBOARD" prefWidth="1.7976931348623157E308"
+                   style="-fx-text-fill: #FFFFFF; -fx-padding: 8 10; -fx-cursor: hand;" />
+
+            <Label text="MOVIE MANAGEMENT" prefWidth="1.7976931348623157E308"
+                   style="-fx-text-fill: #FFFFFF; -fx-padding: 8 10; -fx-cursor: hand;"/>
+
+            <Label text="SHOWTIME SCHEDULING" prefWidth="1.7976931348623157E308"
+                   style="-fx-text-fill: #FFC72C; -fx-background-color: #1A1A1A; -fx-padding: 8 10; -fx-font-weight: bold; -fx-border-radius: 5; -fx-background-radius: 5;"> </Label>
+
+            <Label text="BOOKING MANAGEMENT" prefWidth="1.7976931348623157E308"
+                   style="-fx-text-fill: #FFFFFF; -fx-padding: 8 10; -fx-cursor: hand;" />
+            <Label text="CUSTOMER MANAGEMENT" prefWidth="1.7976931348623157E308"
+                   style="-fx-text-fill: #FFFFFF; -fx-padding: 8 10; -fx-cursor: hand;" />
+            <Label text="REPORTS &amp; ANALYTICS" prefWidth="1.7976931348623157E308"
+                   style="-fx-text-fill: #FFFFFF; -fx-padding: 8 10; -fx-cursor: hand;" />
+        </VBox>
+    </left>
+
+    <center>
+        <VBox spacing="20.0" style="-fx-background-color: #1A1A1A;"> <padding>
+            <Insets top="20.0" right="20.0" bottom="20.0" left="20.0" />
+        </padding>
+
+            <Label text="Manage Showtimes" style="-fx-text-fill: #FFFFFF; -fx-font-weight: bold;">
+                <font><Font size="22.0" /></font>
+            </Label>
+            <Label text="Create, view, and modify the screening schedules for all movies and auditoriums." style="-fx-text-fill: #AAAAAA;">
+                <font><Font size="14.0" /></font>
+            </Label>
+
+            <GridPane hgap="20.0" vgap="15.0" style="-fx-padding: 20; -fx-background-color: #2e2e2e; -fx-background-radius: 8;">
+                <columnConstraints>
+                    <ColumnConstraints percentWidth="20" />
+                    <ColumnConstraints percentWidth="30" />
+                    <ColumnConstraints percentWidth="20" />
+                    <ColumnConstraints percentWidth="30" />
+                </columnConstraints>
+                <Label text="Movie:" style="-fx-text-fill: #FFFFFF;" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                <ComboBox promptText="Select Movie" prefWidth="1.7976931348623157E308" style="-fx-background-color: #404040; -fx-prompt-text-fill: #AAAAAA;" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+                <Label text="Auditorium/Screen:" style="-fx-text-fill: #FFFFFF;" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
+                <ComboBox promptText="Select Screen" prefWidth="1.7976931348623157E308" style="-fx-background-color: #404040; -fx-prompt-text-fill: #AAAAAA;" GridPane.columnIndex="3" GridPane.rowIndex="0"/>
+
+                <Label text="Show Date:" style="-fx-text-fill: #FFFFFF;" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                <DatePicker style="-fx-background-color: #404040; -fx-prompt-text-fill: #AAAAAA;" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+
+                <Label text="Start Time:" style="-fx-text-fill: #FFFFFF;" GridPane.columnIndex="2" GridPane.rowIndex="1"/>
+                <TextField promptText="HH:MM (e.g., 18:30)" style="-fx-background-color: #404040; -fx-text-fill: #FFFFFF; -fx-prompt-text-fill: #AAAAAA;" GridPane.columnIndex="3" GridPane.rowIndex="1"/>
+
+                <HBox spacing="10.0" alignment="CENTER_RIGHT" GridPane.columnIndex="3" GridPane.rowIndex="2">
+                    <Button text="Add Showtime" style="-fx-background-color: #00CC66; -fx-text-fill: #000000; -fx-font-weight: bold; -fx-padding: 8 20; -fx-background-radius: 5;" onAction="#handleAddShowtime"/> </HBox>
+            </GridPane>
+
+            <Label text="Existing Schedules" style="-fx-text-fill: #FFFFFF; -fx-font-weight: bold; -fx-padding: 10 0 0 0;">
+                <font><Font size="18.0" /></font>
+            </Label>
+
+            <TableView VBox.vgrow="ALWAYS" prefHeight="400.0" style="-fx-background-color: #2e2e2e; -fx-background-radius: 8;">
+                <columns>
+                    <TableColumn text="Movie" prefWidth="250" />
+                    <TableColumn text="Screen" prefWidth="100" />
+                    <TableColumn text="Date" prefWidth="120" />
+                    <TableColumn text="Time" prefWidth="100" />
+                    <TableColumn text="End Time" prefWidth="100" />
+                    <TableColumn text="Status" prefWidth="100" />
+                    <TableColumn text="Actions" prefWidth="150" />
+                </columns>
+                <placeholder>
+                    <Label text="No showtimes have been scheduled yet." style="-fx-text-fill: #AAAAAA;" />
+                </placeholder>
+            </TableView>
+
+        </VBox>
+    </center>
+
+</BorderPane>

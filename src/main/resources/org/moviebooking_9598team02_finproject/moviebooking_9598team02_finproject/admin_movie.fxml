@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+<?import javafx.geometry.Insets?>
+
+<!--
+    JavaFX FXML Implementation of the Admin Dashboard Layout,
+    currently displaying the Movie Management feature with an ADD/EDIT Movie Form.
+-->
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Admin.AdminBase"
+            prefHeight="720.0" prefWidth="1280.0"
+            style="-fx-background-color: #1A1A1A;"> <!-- SecondaryBackground -->
+
+    <!-- 1. Top Header Component -->
+    <top>
+        <HBox alignment="CENTER_LEFT" prefHeight="60.0" spacing="20.0"
+              style="-fx-background-color: #000000; -fx-padding: 0 20 0 20;"> <!-- PrimaryBackground -->
+            <Label text="CinemaAdmin" style="-fx-text-fill: #FFC72C;"> <!-- Active Color -->
+                <font><Font size="24.0" /></font>
+            </Label>
+            <Region HBox.hgrow="ALWAYS" />
+            <Label text="Admin Name | Logout" style="-fx-text-fill: #FFFFFF;"> <!-- TextPrimary -->
+                <font><Font size="14.0" /></font>
+            </Label>
+        </HBox>
+    </top>
+
+    <!-- 2. Main Body -->
+    <left>
+        <!-- 2.1. Navigation Sidebar (VBox) -->
+        <VBox prefWidth="220.0" spacing="10.0"
+              style="-fx-background-color: #000000; -fx-border-color: #AAAAAA; -fx-border-width: 0 1 0 0;"> <!-- PrimaryBackground & TextSecondary border -->
+            <padding>
+                <Insets top="20.0" right="10.0" bottom="20.0" left="10.0" />
+            </padding>
+
+            <!-- MenuItem: Dashboard (Inactive) -->
+            <Label text="DASHBOARD" prefWidth="1.7976931348623157E308"
+                   style="-fx-text-fill: #FFFFFF; -fx-padding: 8 10; -fx-cursor: hand;" />
+
+            <!-- MenuItem: Movie Management (Active) -->
+            <Label text="MOVIE MANAGEMENT" prefWidth="1.7976931348623157E308"
+                   style="-fx-text-fill: #FFC72C; -fx-background-color: #1A1A1A; -fx-padding: 8 10; -fx-font-weight: bold; -fx-border-radius: 5; -fx-background-radius: 5;"> <!-- Active Color & SecondaryBackground hover effect -->
+            </Label>
+
+            <!-- Other Menu Items (Inactive) -->
+            <Label text="SHOWTIME SCHEDULING" prefWidth="1.7976931348623157E308"
+                   style="-fx-text-fill: #FFFFFF; -fx-padding: 8 10; -fx-cursor: hand;" />
+            <Label text="BOOKING MANAGEMENT" prefWidth="1.7976931348623157E308"
+                   style="-fx-text-fill: #FFFFFF; -fx-padding: 8 10; -fx-cursor: hand;" />
+            <Label text="CUSTOMER MANAGEMENT" prefWidth="1.7976931348623157E308"
+                   style="-fx-text-fill: #FFFFFF; -fx-padding: 8 10; -fx-cursor: hand;" />
+            <Label text="REPORTS &amp; ANALYTICS" prefWidth="1.7976931348623157E308"
+                   style="-fx-text-fill: #FFFFFF; -fx-padding: 8 10; -fx-cursor: hand;" />
+        </VBox>
+    </left>
+
+    <!-- 2.2. Main Content Area (Center) - Now showing Add/Edit Movie Form -->
+    <center>
+        <!-- ScrollPane is added to ensure the form is usable on smaller screens -->
+        <ScrollPane fitToWidth="true" style="-fx-background-color: #1A1A1A; -fx-border-insets: 0; -fx-padding: 0;">
+            <content>
+                <VBox spacing="20.0" style="-fx-background-color: #1A1A1A;"> <!-- SecondaryBackground -->
+                    <padding>
+                        <Insets top="20.0" right="20.0" bottom="20.0" left="20.0" />
+                    </padding>
+
+                    <!-- Header -->
+                    <Label text="Add/Edit Movie Details" style="-fx-text-fill: #FFFFFF; -fx-font-weight: bold;">
+                        <font><Font size="22.0" /></font>
+                    </Label>
+                    <Label text="Enter or modify the information for the new cinema release." style="-fx-text-fill: #AAAAAA;">
+                        <font><Font size="14.0" /></font>
+                    </Label>
+
+                    <!-- Movie Form Container (GridPane for structure) -->
+                    <GridPane hgap="20.0" vgap="15.0" style="-fx-padding: 20; -fx-background-color: #2e2e2e; -fx-background-radius: 8;">
+                        <columnConstraints>
+                            <ColumnConstraints percentWidth="20" /> <!-- Labels -->
+                            <ColumnConstraints percentWidth="80" /> <!-- Fields -->
+                        </columnConstraints>
+
+                        <!-- Row 1: Title -->
+                        <Label text="Movie Title:" style="-fx-text-fill: #FFFFFF;" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                        <TextField promptText="e.g., The Midnight Rider" style="-fx-background-color: #404040; -fx-text-fill: #FFFFFF; -fx-prompt-text-fill: #AAAAAA;" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+                        <!-- Row 2: Genre -->
+                        <Label text="Genre:" style="-fx-text-fill: #FFFFFF;" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                        <ComboBox promptText="Select Genre" prefWidth="250.0" style="-fx-background-color: #404040; -fx-prompt-text-fill: #AAAAAA;" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+
+                        <!-- Row 3: Duration -->
+                        <Label text="Duration (min):" style="-fx-text-fill: #FFFFFF;" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                        <TextField promptText="e.g., 120" style="-fx-background-color: #404040; -fx-text-fill: #FFFFFF; -fx-prompt-text-fill: #AAAAAA;" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+
+                        <!-- Row 4: Release Date -->
+                        <Label text="Release Date:" style="-fx-text-fill: #FFFFFF;" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+                        <DatePicker style="-fx-background-color: #404040; -fx-prompt-text-fill: #AAAAAA;" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+
+                        <!-- Row 5: Status -->
+                        <Label text="Status:" style="-fx-text-fill: #FFFFFF;" GridPane.columnIndex="0" GridPane.rowIndex="4"/>
+                        <ComboBox promptText="Select Status (e.g., Active, Coming Soon)" prefWidth="250.0" style="-fx-background-color: #404040; -fx-prompt-text-fill: #AAAAAA;" GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+
+                        <!-- Row 6: Synopsis / Description -->
+                        <Label text="Synopsis:" style="-fx-text-fill: #FFFFFF;" GridPane.columnIndex="0" GridPane.rowIndex="5"/>
+                        <TextArea promptText="Briefly describe the movie plot and highlights..." VBox.vgrow="ALWAYS" prefHeight="100.0" style="-fx-background-color: #404040; -fx-text-fill: #FFFFFF; -fx-prompt-text-fill: #AAAAAA;" GridPane.columnIndex="1" GridPane.rowIndex="5"/>
+
+                        <!-- Row 7: Poster Image Upload -->
+                        <Label text="Poster Image:" style="-fx-text-fill: #FFFFFF;" GridPane.columnIndex="0" GridPane.rowIndex="6"/>
+                        <HBox spacing="10" GridPane.columnIndex="1" GridPane.rowIndex="6">
+                            <TextField promptText="No file selected..." editable="false" HBox.hgrow="ALWAYS" style="-fx-background-color: #404040; -fx-text-fill: #FFFFFF; -fx-prompt-text-fill: #AAAAAA;"/>
+                            <Button text="Browse..." style="-fx-background-color: #FFC72C; -fx-text-fill: #000000; -fx-font-weight: bold; -fx-background-radius: 5;"/> <!-- Yellow Highlight -->
+                        </HBox>
+
+                        <!-- Row 8: Action Buttons -->
+                        <HBox spacing="10.0" alignment="CENTER_RIGHT" GridPane.columnIndex="1" GridPane.rowIndex="7">
+                            <Button text="Cancel" style="-fx-background-color: #AAAAAA; -fx-text-fill: #000000; -fx-font-weight: bold; -fx-padding: 8 20; -fx-background-radius: 5;" onAction="#handleCancel"/>
+                            <Button text="Save Movie" style="-fx-background-color: #FF0000; -fx-text-fill: #FFFFFF; -fx-font-weight: bold; -fx-padding: 8 20; -fx-background-radius: 5;" onAction="#handleSaveMovie"/> <!-- Red Highlight -->
+                        </HBox>
+
+                    </GridPane>
+
+                </VBox>
+            </content>
+        </ScrollPane>
+    </center>
+
+</BorderPane>
