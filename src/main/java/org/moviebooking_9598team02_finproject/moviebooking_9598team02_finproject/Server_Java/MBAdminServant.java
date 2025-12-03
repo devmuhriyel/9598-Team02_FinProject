@@ -23,8 +23,6 @@ public class MBAdminServant extends AdminServicePOA {
         orb.shutdown(false);
     }
 
-
-
     // ===== CONSTRUCTORS =====
     public MBAdminServant() {}
 
@@ -49,10 +47,15 @@ public class MBAdminServant extends AdminServicePOA {
                     admin.phoneNumber = rs.getString("phone_number");
                     admin.createdAt = rs.getString("created_at");
                     admin.updatedAt = rs.getString("updated_at");
+                } else {
+                    throw new AuthenticationException("Incorrect password");
                 }
+            } else {
+                throw new AuthenticationException("Account does not exist");
             }
         } catch (SQLException e){
             e.printStackTrace();
+            throw new AuthenticationException("Database error:" + e.getMessage());
         }
         return admin;
     }
@@ -64,6 +67,16 @@ public class MBAdminServant extends AdminServicePOA {
         } catch (SQLException e){
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public int createAdmin(int creatorAdminId, String username, String email, String password, String fullName, String phoneNumber) throws AuthenticationException, InvalidInputException {
+        try(Connection connection = DatabaseAccess.getConnection()){
+
+        } catch (SQLException e){
+            e.printStackTrace();
+        }
+        return 0;
     }
 
     @Override
@@ -93,16 +106,6 @@ public class MBAdminServant extends AdminServicePOA {
 
     @Override
     public int addMovie(int adminId, String movieTitle, int[] genreIds, String movieDescription, int movieRating, String moviePosterURL) throws AuthenticationException, InvalidInputException {
-        return 0;
-    }
-
-    @Override
-    public int createAdmin(int creatorAdminId, String username, String email, String password, String fullName, String phoneNumber) throws AuthenticationException, InvalidInputException {
-        try(Connection connection = DatabaseAccess.getConnection()){
-
-        } catch (SQLException e){
-            e.printStackTrace();
-        }
         return 0;
     }
 
