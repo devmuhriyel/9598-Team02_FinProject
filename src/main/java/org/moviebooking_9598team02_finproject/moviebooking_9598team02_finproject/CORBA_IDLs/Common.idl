@@ -16,7 +16,6 @@ module MovieBookingCommon {
     struct Movie {
         long movieId;
         string movieTitle;
-        sequence<string> movieGenres;  // Fetched from movie_genres table
         string movieDescription;
         long movieRating;              // Rating out of 10
         string moviePosterURL;
@@ -140,7 +139,7 @@ module MovieBookingCommon {
         string screeningTime;
 
         // Seats info
-        string seatsBooked;  // "A1, A2, B5" - concatenated from GROUP_CONCAT
+        string seats;  // "A1, A2, B5" - concatenated from GROUP_CONCAT
 
         // Timestamps
         string createdAt;
