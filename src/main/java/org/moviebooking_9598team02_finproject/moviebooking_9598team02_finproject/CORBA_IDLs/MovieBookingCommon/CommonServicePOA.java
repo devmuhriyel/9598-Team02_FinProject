@@ -374,7 +374,4 @@ public abstract class CommonServicePOA extends org.omg.PortableServer.Servant
     return CommonServiceHelper.narrow(
     super._this_object(orb));
   }
-
-
-    public abstract Movie[] filterMoviesByGenres(String[] genres);
 } // class CommonServicePOA

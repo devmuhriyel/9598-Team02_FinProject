@@ -1485,10 +1485,4 @@ public abstract class AdminServicePOA extends org.omg.PortableServer.Servant
     return AdminServiceHelper.narrow(
     super._this_object(orb));
   }
-
-
-  // ===== MOVIE METHODS =====
-  public abstract int addMovie(int adminId, String movieTitle, String[] movieGenres, String movieDescription, int movieRating, String moviePosterURL) throws AuthenticationException, InvalidInputException;
-
-  public abstract void updateMovieGenres(int adminId, int movieId, String[] newGenres) throws AuthenticationException, MovieNotFoundException;
 } // class AdminServicePOA

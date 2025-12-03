@@ -708,7 +708,4 @@ public abstract class ClientServicePOA extends org.omg.PortableServer.Servant
     return ClientServiceHelper.narrow(
     super._this_object(orb));
   }
-
-
-  public abstract Movie[] filterByGenres(String[] genres);
 } // class ClientServicePOA

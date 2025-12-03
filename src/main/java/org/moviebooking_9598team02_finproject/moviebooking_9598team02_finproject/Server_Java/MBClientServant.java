@@ -79,11 +79,6 @@ public class MBClientServant extends ClientServicePOA {
     }
 
     @Override
-    public Movie[] filterByGenres(String[] genres) {
-        return new Movie[0];
-    }
-
-    @Override
     public Movie[] filterByRating(int minRating) {
         return new Movie[0];
     }

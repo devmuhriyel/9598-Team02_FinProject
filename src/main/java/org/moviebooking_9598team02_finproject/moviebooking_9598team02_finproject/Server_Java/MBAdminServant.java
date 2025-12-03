@@ -148,10 +148,6 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     // ===== MOVIE METHODS =====
-    @Override
-    public int addMovie(int adminId, String movieTitle, String[] movieGenres, String movieDescription, int movieRating, String moviePosterURL) throws AuthenticationException, InvalidInputException {
-        return 0;
-    }
 
     @Override
     public void updateMovieTitle(int adminId, int movieId, String newTitle) throws AuthenticationException, MovieNotFoundException {
@@ -176,11 +172,6 @@ public class MBAdminServant extends AdminServicePOA {
     @Override
     public Genre[] getMovieGenres(int adminId, int movieId) throws AuthenticationException, MovieNotFoundException {
         return new Genre[0];
-    }
-
-    @Override
-    public void updateMovieGenres(int adminId, int movieId, String[] newGenres) throws AuthenticationException, MovieNotFoundException {
-
     }
 
     @Override

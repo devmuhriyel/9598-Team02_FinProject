@@ -36,11 +36,6 @@ public class MBCommonServant extends CommonServicePOA {
     }
 
     @Override
-    public Movie[] filterMoviesByGenres(String[] genres) {
-        return new Movie[0];
-    }
-
-    @Override
     public Movie[] filterMoviesByRating(int minRating) {
         return new Movie[0];
     }
