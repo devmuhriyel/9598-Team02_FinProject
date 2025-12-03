@@ -20,10 +20,18 @@ module MovieBookingAdmin {
     typedef MovieBookingCommon::SeatList SeatList;
     typedef MovieBookingCommon::ScheduleListSeat ScheduleListSeat;
     typedef MovieBookingCommon::ScheduleListSeatList ScheduleListSeatList;
+    typedef MovieBookingCommon::Genre Genre;
     typedef MovieBookingCommon::GenreList GenreList;
+    typedef MovieBookingCommon::GenreNameList GenreNameList;
     typedef MovieBookingCommon::IdList IdList;
     typedef MovieBookingCommon::Payment Payment;
     typedef MovieBookingCommon::PaymentList PaymentList;
+    typedef MovieBookingCommon::BookingDetails BookingDetails;
+    typedef MovieBookingCommon::BookingDetailsList BookingDetailsList;
+    typedef MovieBookingCommon::ScheduleDetails ScheduleDetails;
+    typedef MovieBookingCommon::ScheduleDetailsList ScheduleDetailsList;
+    typedef MovieBookingCommon::PaymentDetails PaymentDetails;
+    typedef MovieBookingCommon::PaymentDetailsList PaymentDetailsList;
 
     // ==================== ADMIN INTERFACE ====================
 
@@ -32,22 +40,48 @@ module MovieBookingAdmin {
         // ===== ADMIN AUTHENTICATION =====
 
         // Admin login
-        Admin loginAdmin(in string username,in string password) raises (MovieBookingCommon::AuthenticationException);
+        Admin loginAdmin(in string username, in string password) raises (MovieBookingCommon::AuthenticationException);
 
         // Admin logout
         void logoutAdmin(in long adminId);
 
+        // ===== GENRE MANAGEMENT =====
+
+        // Create a new genre
+        long addGenre(in long adminId, in string genreName, in string genreDescription) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::InvalidInputException);
+
+        // Update genre details
+        void updateGenre(in long adminId, in long genreId, in string genreName, in string genreDescription) raises (MovieBookingCommon::AuthenticationException);
+
+        // Delete a genre (only if no movies are using it)
+        void deleteGenre(in long adminId, in long genreId) raises (MovieBookingCommon::AuthenticationException);
+
+        // Get all genres
+        GenreList getAllGenres(in long adminId) raises (MovieBookingCommon::AuthenticationException);
+
+        // Get a specific genre
+        Genre getGenreById(in long adminId, in long genreId) raises (MovieBookingCommon::AuthenticationException);
+
         // ===== MOVIE MANAGEMENT =====
 
-        // Add a new movie to the system
+        // Add a new movie to the system with genres
         // Returns the newly created movie ID
-        long addMovie(in long adminId, in string movieTitle, in GenreList movieGenres, in string movieDescription, in long movieRating, in string moviePosterURL) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::InvalidInputException);
+        long addMovie(in long adminId, in string movieTitle, in IdList genreIds, in string movieDescription, in long movieRating, in string moviePosterURL) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::InvalidInputException);
 
         // Update movie title
         void updateMovieTitle(in long adminId, in long movieId, in string newTitle) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::MovieNotFoundException);
 
-        // Update movie genres
-        void updateMovieGenres(in long adminId, in long movieId, in GenreList newGenres) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::MovieNotFoundException);
+        // Update movie genres (replaces all existing genres)
+        void updateMovieGenres(in long adminId, in long movieId, in IdList newGenreIds) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::MovieNotFoundException);
+
+        // Add a single genre to a movie
+        void addGenreToMovie(in long adminId, in long movieId, in long genreId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::MovieNotFoundException);
+
+        // Remove a single genre from a movie
+        void removeGenreFromMovie(in long adminId, in long movieId, in long genreId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::MovieNotFoundException);
+
+        // Get genres for a specific movie
+        GenreList getMovieGenres(in long adminId, in long movieId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::MovieNotFoundException);
 
         // Update movie description
         void updateMovieDescription(in long adminId, in long movieId, in string newDescription) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::MovieNotFoundException);
@@ -58,10 +92,10 @@ module MovieBookingAdmin {
         // Update movie poster URL
         void updateMoviePoster(in long adminId, in long movieId, in string newPosterURL) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::MovieNotFoundException);
 
-        // Delete a movie (soft delete - marks as inactive)
+        // Delete a movie (hard delete - also removes all genre associations)
         void deleteMovie(in long adminId, in long movieId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::MovieNotFoundException);
 
-        // Get all movies (including inactive ones)
+        // Get all movies
         MovieList getAllMovies(in long adminId) raises (MovieBookingCommon::AuthenticationException);
 
         // ===== SCHEDULE MANAGEMENT =====
@@ -73,7 +107,7 @@ module MovieBookingAdmin {
         long assignMovieToSchedule(in long adminId, in long movieId, in long movieScheduleId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::MovieNotFoundException, MovieBookingCommon::ScheduleNotFoundException);
 
         // Update schedule date/time
-        void updateScheduleDateTime(in long adminId, in long scheduleId, in string newDate, in string newTime) raises ( MovieBookingCommon::AuthenticationException, MovieBookingCommon::ScheduleNotFoundException);
+        void updateScheduleDateTime(in long adminId, in long scheduleId, in string newDate, in string newTime) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::ScheduleNotFoundException);
 
         // Delete a schedule
         void deleteSchedule(in long adminId, in long scheduleId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::ScheduleNotFoundException);
@@ -82,7 +116,7 @@ module MovieBookingAdmin {
         ScheduleList getAllSchedules(in long adminId) raises (MovieBookingCommon::AuthenticationException);
 
         // Get schedules for a specific movie
-        ScheduleList getSchedulesByMovie( in long adminId, in long movieId ) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::MovieNotFoundException);
+        ScheduleList getSchedulesByMovie(in long adminId, in long movieId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::MovieNotFoundException);
 
         // ===== SEAT MANAGEMENT =====
 
@@ -110,10 +144,10 @@ module MovieBookingAdmin {
         // Change seat status for a schedule
         void updateScheduleSeatStatus(in long adminId, in long scheduleListSeatId, in string status) raises (MovieBookingCommon::AuthenticationException);
 
-        //  Remove seat from schedule (rare, but for flexibility)
+        // Remove seat from schedule (rare, but for flexibility)
         void removeScheduleSeat(in long adminId, in long scheduleListSeatId) raises (MovieBookingCommon::AuthenticationException);
 
-        //  Get all schedule seats (admin view)
+        // Get all schedule seats (admin view)
         ScheduleListSeatList getAllScheduleSeats(in long adminId, in long scheduleId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::ScheduleNotFoundException);
 
         // ===== BOOKING MANAGEMENT =====
@@ -122,7 +156,7 @@ module MovieBookingAdmin {
         BookingList getAllBookings(in long adminId) raises (MovieBookingCommon::AuthenticationException);
 
         // Get bookings for a specific movie
-        BookingList getBookingsByMovie(in long adminId, in long movieId ) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::MovieNotFoundException);
+        BookingList getBookingsByMovie(in long adminId, in long movieId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::MovieNotFoundException);
 
         // Get bookings for a specific schedule
         BookingList getBookingsBySchedule(in long adminId, in long scheduleId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::ScheduleNotFoundException);
@@ -134,7 +168,25 @@ module MovieBookingAdmin {
         void cancelBooking(in long adminId, in long bookingId, in string reason) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::BookingException);
 
         // Admin modifies booking
-        void updateBookingAdmin(in long adminId, in long bookingId, in IdList newSeatIds, in string status) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::BookingException);
+        void updateBookingAdmin(in long adminId, in long bookingId, in IdList newScheduleListSeatIds, in string status) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::BookingException);
+
+        // Get booking with full details
+        BookingDetails getBookingDetailsView(in long adminId, in long bookingId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::BookingException);
+
+        // Get all bookings with details
+        BookingDetailsList getAllBookingsWithDetails(in long adminId) raises (MovieBookingCommon::AuthenticationException);
+
+        // Get schedule with movie info and availability
+        ScheduleDetails getScheduleDetailsView(in long adminId, in long scheduleId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::ScheduleNotFoundException);
+
+        // Get all schedules with details
+        ScheduleDetailsList getAllSchedulesWithDetails(in long adminId) raises (MovieBookingCommon::AuthenticationException);
+
+        // Get payment with full context
+        PaymentDetails getPaymentDetailsView(in long adminId, in long paymentId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::PaymentNotFoundException);
+
+        // Get all payments with details
+        PaymentDetailsList getAllPaymentsWithDetails(in long adminId) raises (MovieBookingCommon::AuthenticationException);
 
         // ===== CUSTOMER MANAGEMENT =====
 
@@ -148,9 +200,9 @@ module MovieBookingAdmin {
         Customer getCustomerDetails(in long adminId, in long customerId) raises (MovieBookingCommon::AuthenticationException);
 
         // Admin updates customer info
-        void updateCustomerInfo(in long adminId, in long customerId, in string email, in string phoneNumber, in string fullName)  raises (MovieBookingCommon::AuthenticationException);
+        void updateCustomerInfo(in long adminId, in long customerId, in string email, in string phoneNumber, in string fullName) raises (MovieBookingCommon::AuthenticationException);
 
-        // Admin deactivates customer account
+        // Admin deactivates customer account (with reason)
         void deactivateCustomer(in long adminId, in long customerId, in string reason) raises (MovieBookingCommon::AuthenticationException);
 
         // ===== REPORTS & ANALYTICS =====
@@ -167,10 +219,13 @@ module MovieBookingAdmin {
         // Get most popular movies (by booking count)
         MovieList getPopularMovies(in long adminId, in long top) raises (MovieBookingCommon::AuthenticationException);
 
+        // Get movies by genre (analytics)
+        MovieList getMoviesByGenre(in long adminId, in long genreId) raises (MovieBookingCommon::AuthenticationException);
+
         // ===== ADMIN MANAGEMENT =====
 
         // CREATE - Create new admin (require super admin or existing admin)
-        long createAdmin(in long creatorAdminId, in string username, in string email, in string password, in string fullName, in string phoneNumber) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::InvalidInputException );
+        long createAdmin(in long creatorAdminId, in string username, in string email, in string password, in string fullName, in string phoneNumber) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::InvalidInputException);
 
         // READ - Get admin by ID
         Admin getAdminById(in long adminId, in long requestingAdminId) raises (MovieBookingCommon::AuthenticationException);
@@ -178,41 +233,42 @@ module MovieBookingAdmin {
         // READ - Get all admins
         AdminList getAllAdmins(in long adminId) raises (MovieBookingCommon::AuthenticationException);
 
-        //  Search admins
+        // Search admins
         AdminList searchAdmins(in long adminId, in string searchString) raises (MovieBookingCommon::AuthenticationException);
 
-        //  Update admin profile
+        // Update admin profile
         void updateAdminProfile(in long adminId, in string fullName, in string phoneNumber) raises (MovieBookingCommon::AuthenticationException);
 
-        //  Update admin email
-        void updateAdminEmail(in long adminId, in string newEmail, in string password) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::InvalidInputException );
+        // Update admin email
+        void updateAdminEmail(in long adminId, in string newEmail, in string password) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::InvalidInputException);
 
-        //  Change admin password
+        // Change admin password
         void changeAdminPassword(in long adminId, in string oldPassword, in string newPassword) raises (MovieBookingCommon::AuthenticationException);
 
-        //  Deactivate admin (soft delete)
+        // Deactivate admin (soft delete)
         void deactivateAdmin(in long superAdminId, in long targetAdminId, in string reason) raises (MovieBookingCommon::AuthenticationException);
 
-        //  Permanently delete admin (use with caution)
-        void deleteAdmin(in long superAdminId, in long targetAdminId)  raises (MovieBookingCommon::AuthenticationException);
+        // Permanently delete admin (use with caution)
+        void deleteAdmin(in long superAdminId, in long targetAdminId) raises (MovieBookingCommon::AuthenticationException);
 
         // ===== PAYMENT PROCESSING =====
+
         // Get all payments
         PaymentList getAllPayments(in long adminId) raises (MovieBookingCommon::AuthenticationException);
 
         // Get payment by ID
-        Payment getPaymentById(in long adminId, in long paymentId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::PaymentNotFoundException );
+        Payment getPaymentById(in long adminId, in long paymentId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::PaymentNotFoundException);
 
         // Get payments by status
         PaymentList getPaymentsByStatus(in long adminId, in string status) raises (MovieBookingCommon::AuthenticationException);
 
         // Get payments for a booking
-        PaymentList getBookingPayments(in long adminId, in long bookingId)  raises (MovieBookingCommon::AuthenticationException);
+        PaymentList getBookingPayments(in long adminId, in long bookingId) raises (MovieBookingCommon::AuthenticationException);
 
         // Update payment status
-        void updatePaymentStatus(in long adminId, in long paymentId, in string status)  raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::PaymentNotFoundException );
+        void updatePaymentStatus(in long adminId, in long paymentId, in string status) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::PaymentNotFoundException);
 
         // Process refund
-        void refundPayment(in long adminId, in long paymentId, in string reason)  raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::PaymentNotFoundException , MovieBookingCommon::PaymentException);
+        void refundPayment(in long adminId, in long paymentId, in string reason) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::PaymentNotFoundException, MovieBookingCommon::PaymentException);
     };
 };

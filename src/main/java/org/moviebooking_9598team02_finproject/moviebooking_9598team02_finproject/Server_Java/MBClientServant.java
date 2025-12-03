@@ -2,7 +2,6 @@ package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finprojec
 
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingClient.ClientServicePOA;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.*;
-import org.omg.CORBA.ORB;
 
 import java.sql.Connection;
 
@@ -38,6 +37,21 @@ public class MBClientServant extends ClientServicePOA {
 
     }
 
+    @Override
+    public Genre[] browseGenres() {
+        return new Genre[0];
+    }
+
+    @Override
+    public Genre getGenreDetails(int genreId) {
+        return null;
+    }
+
+    @Override
+    public Genre[] getMovieGenres(int movieId) throws MovieNotFoundException {
+        return new Genre[0];
+    }
+
     // ===== HOME PAGE METHODS =====
     @Override
     public Movie[] browseMovies() {
@@ -52,6 +66,16 @@ public class MBClientServant extends ClientServicePOA {
     @Override
     public Movie getMovieDetails(int movieId) throws MovieNotFoundException {
         return null;
+    }
+
+    @Override
+    public Movie[] filterByGenreIds(int[] genreIds) {
+        return new Movie[0];
+    }
+
+    @Override
+    public Movie[] filterByGenreNames(String[] genreNames) {
+        return new Movie[0];
     }
 
     @Override
@@ -79,6 +103,16 @@ public class MBClientServant extends ClientServicePOA {
     @Override
     public Seat[] getAvailableSeats(int scheduleId) throws ScheduleNotFoundException {
         return new Seat[0];
+    }
+
+    @Override
+    public ScheduleDetails getScheduleDetailsView(int scheduleId) throws ScheduleNotFoundException {
+        return null;
+    }
+
+    @Override
+    public ScheduleDetails[] getAllSchedulesWithDetails() {
+        return new ScheduleDetails[0];
     }
 
     @Override
@@ -127,6 +161,16 @@ public class MBClientServant extends ClientServicePOA {
     }
 
     @Override
+    public BookingDetails getBookingDetailsView(int customerId, int bookingId) throws AuthenticationException, BookingException {
+        return null;
+    }
+
+    @Override
+    public BookingDetails[] getCustomerBookingsWithDetails(int customerId) throws AuthenticationException {
+        return new BookingDetails[0];
+    }
+
+    @Override
     public int processPayment(int customerId, int bookingId, double amount, String paymentMethod, String transactionId) throws AuthenticationException, BookingException, PaymentException {
         return 0;
     }
@@ -144,5 +188,15 @@ public class MBClientServant extends ClientServicePOA {
     @Override
     public Payment getBookingPayment(int customerId, int bookingId) throws AuthenticationException, BookingException {
         return null;
+    }
+
+    @Override
+    public PaymentDetails getPaymentDetailsView(int customerId, int paymentId) throws AuthenticationException, PaymentNotFoundException {
+        return null;
+    }
+
+    @Override
+    public PaymentDetails[] getCustomerPaymentsWithDetails(int customerId) throws AuthenticationException {
+        return new PaymentDetails[0];
     }
 }

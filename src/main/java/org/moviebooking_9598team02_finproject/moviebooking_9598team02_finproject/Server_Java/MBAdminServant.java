@@ -5,6 +5,8 @@ import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject
 import org.omg.CORBA.ORB;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class MBAdminServant extends AdminServicePOA {
@@ -21,19 +23,38 @@ public class MBAdminServant extends AdminServicePOA {
         orb.shutdown(false);
     }
 
+
+
     // ===== CONSTRUCTORS =====
     public MBAdminServant() {}
 
     // ===== AUTHENTICATION METHODS =====
     @Override
     public Admin loginAdmin(String username, String password) throws AuthenticationException {
-        Admin admin = null;
+        Admin admin = new Admin();
         try(Connection connection = DatabaseAccess.getConnection()){
+            String query = "SELECT * FROM admins where username = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setString(1, username);
+            ResultSet rs = statement.executeQuery();
 
+            if(rs.next()){
+                String hashedPassword = rs.getString("password");
+                if(PasswordManager.checkPassword(password, hashedPassword)){
+                    admin.adminId = rs.getInt("admin_id");
+                    admin.username = rs.getString("username");
+                    admin.email = rs.getString("email");
+                    admin.password = "";
+                    admin.fullName = rs.getString("full_name");
+                    admin.phoneNumber = rs.getString("phone_number");
+                    admin.createdAt = rs.getString("created_at");
+                    admin.updatedAt = rs.getString("updated_at");
+                }
+            }
         } catch (SQLException e){
             e.printStackTrace();
         }
-        return null;
+        return admin;
     }
 
     @Override
@@ -43,6 +64,36 @@ public class MBAdminServant extends AdminServicePOA {
         } catch (SQLException e){
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public int addGenre(int adminId, String genreName, String genreDescription) throws AuthenticationException, InvalidInputException {
+        return 0;
+    }
+
+    @Override
+    public void updateGenre(int adminId, int genreId, String genreName, String genreDescription) throws AuthenticationException {
+
+    }
+
+    @Override
+    public void deleteGenre(int adminId, int genreId) throws AuthenticationException {
+
+    }
+
+    @Override
+    public Genre[] getAllGenres(int adminId) throws AuthenticationException {
+        return new Genre[0];
+    }
+
+    @Override
+    public Genre getGenreById(int adminId, int genreId) throws AuthenticationException {
+        return null;
+    }
+
+    @Override
+    public int addMovie(int adminId, String movieTitle, int[] genreIds, String movieDescription, int movieRating, String moviePosterURL) throws AuthenticationException, InvalidInputException {
+        return 0;
     }
 
     @Override
@@ -105,6 +156,26 @@ public class MBAdminServant extends AdminServicePOA {
     @Override
     public void updateMovieTitle(int adminId, int movieId, String newTitle) throws AuthenticationException, MovieNotFoundException {
 
+    }
+
+    @Override
+    public void updateMovieGenres(int adminId, int movieId, int[] newGenreIds) throws AuthenticationException, MovieNotFoundException {
+
+    }
+
+    @Override
+    public void addGenreToMovie(int adminId, int movieId, int genreId) throws AuthenticationException, MovieNotFoundException {
+
+    }
+
+    @Override
+    public void removeGenreFromMovie(int adminId, int movieId, int genreId) throws AuthenticationException, MovieNotFoundException {
+
+    }
+
+    @Override
+    public Genre[] getMovieGenres(int adminId, int movieId) throws AuthenticationException, MovieNotFoundException {
+        return new Genre[0];
     }
 
     @Override
@@ -251,6 +322,36 @@ public class MBAdminServant extends AdminServicePOA {
 
     }
 
+    @Override
+    public BookingDetails getBookingDetailsView(int adminId, int bookingId) throws AuthenticationException, BookingException {
+        return null;
+    }
+
+    @Override
+    public BookingDetails[] getAllBookingsWithDetails(int adminId) throws AuthenticationException {
+        return new BookingDetails[0];
+    }
+
+    @Override
+    public ScheduleDetails getScheduleDetailsView(int adminId, int scheduleId) throws AuthenticationException, ScheduleNotFoundException {
+        return null;
+    }
+
+    @Override
+    public ScheduleDetails[] getAllSchedulesWithDetails(int adminId) throws AuthenticationException {
+        return new ScheduleDetails[0];
+    }
+
+    @Override
+    public PaymentDetails getPaymentDetailsView(int adminId, int paymentId) throws AuthenticationException, PaymentNotFoundException {
+        return null;
+    }
+
+    @Override
+    public PaymentDetails[] getAllPaymentsWithDetails(int adminId) throws AuthenticationException {
+        return new PaymentDetails[0];
+    }
+
     // ===== CUSTOMER MANAGEMENT METHODS =====
     @Override
     public Customer[] getAllCustomers(int adminId) throws AuthenticationException {
@@ -326,6 +427,11 @@ public class MBAdminServant extends AdminServicePOA {
 
     @Override
     public Movie[] getPopularMovies(int adminId, int top) throws AuthenticationException {
+        return new Movie[0];
+    }
+
+    @Override
+    public Movie[] getMoviesByGenre(int adminId, int genreId) throws AuthenticationException {
         return new Movie[0];
     }
 }

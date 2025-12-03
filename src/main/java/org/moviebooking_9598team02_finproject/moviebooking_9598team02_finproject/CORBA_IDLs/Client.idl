@@ -10,13 +10,21 @@ module MovieBookingClient {
     typedef MovieBookingCommon::Customer Customer;
     typedef MovieBookingCommon::SeatList SeatList;
     typedef MovieBookingCommon::ScheduleList ScheduleList;
+    typedef MovieBookingCommon::Genre Genre;
     typedef MovieBookingCommon::GenreList GenreList;
+    typedef MovieBookingCommon::GenreNameList GenreNameList;
     typedef MovieBookingCommon::IdList IdList;
-    typedef MovieBookingCommon::Payment Payment;              // ADD THIS
+    typedef MovieBookingCommon::Payment Payment;
     typedef MovieBookingCommon::PaymentList PaymentList;
-    
+    typedef MovieBookingCommon::BookingDetails BookingDetails;
+    typedef MovieBookingCommon::BookingDetailsList BookingDetailsList;
+    typedef MovieBookingCommon::ScheduleDetails ScheduleDetails;
+    typedef MovieBookingCommon::ScheduleDetailsList ScheduleDetailsList;
+    typedef MovieBookingCommon::PaymentDetails PaymentDetails;
+    typedef MovieBookingCommon::PaymentDetailsList PaymentDetailsList;
+
     // ==================== CLIENT INTERFACE ====================
-    
+
     interface ClientService {
 
         // ===== AUTHENTICATION =====
@@ -37,6 +45,17 @@ module MovieBookingClient {
         // Change password
         void changePassword(in long customerId, in string oldPassword, in string newPassword) raises (MovieBookingCommon::AuthenticationException);
 
+        // ===== GENRE BROWSING =====
+
+        // Get all available genres
+        GenreList browseGenres();
+
+        // Get a specific genre by ID
+        Genre getGenreDetails(in long genreId);
+
+        // Get genres for a specific movie
+        GenreList getMovieGenres(in long movieId) raises (MovieBookingCommon::MovieNotFoundException);
+
         // ===== MOVIE BROWSING =====
 
         // Get all available movies (delegates to CommonService)
@@ -48,8 +67,11 @@ module MovieBookingClient {
         // Get movie details by ID
         Movie getMovieDetails(in long movieId) raises (MovieBookingCommon::MovieNotFoundException);
 
-        // Filter movies by genres
-        MovieList filterByGenres(in GenreList genres);
+        // Filter movies by genre IDs (returns movies with ANY of these genres)
+        MovieList filterByGenreIds(in IdList genreIds);
+
+        // Filter movies by genre names (returns movies with ANY of these genres)
+        MovieList filterByGenreNames(in GenreNameList genreNames);
 
         // Filter movies by rating
         MovieList filterByRating(in long minRating);
@@ -65,11 +87,18 @@ module MovieBookingClient {
         // Get available seats for a specific schedule
         SeatList getAvailableSeats(in long scheduleId) raises (MovieBookingCommon::ScheduleNotFoundException);
 
+        // Get schedule with movie info and availability
+        ScheduleDetails getScheduleDetailsView(in long scheduleId) raises (MovieBookingCommon::ScheduleNotFoundException);
+
+        // Get all schedules with details
+        ScheduleDetailsList getAllSchedulesWithDetails();
+
         // ===== BOOKING OPERATIONS =====
 
         // Create a new booking
         // Returns the booking ID
-        long createBooking(in long customerId, in long scheduleId, in IdList seatIds) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::SeatNotAvailableException, MovieBookingCommon::BookingException);
+        // seatIds parameter contains schedule_list_seat_ids
+        long createBooking(in long customerId, in long scheduleId, in IdList scheduleListSeatIds) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::SeatNotAvailableException, MovieBookingCommon::BookingException);
 
         // Get booking details
         Booking getBookingDetails(in long bookingId) raises (MovieBookingCommon::BookingException);
@@ -81,10 +110,10 @@ module MovieBookingClient {
         void cancelBooking(in long customerId, in long bookingId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::BookingException);
 
         // Confirm payment for a booking (changes status from pending to confirmed)
-        void confirmPayment(in long customerId,in long bookingId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::BookingException);
+        void confirmPayment(in long customerId, in long bookingId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::BookingException);
 
         // Modify booking (change seats, before confirmation)
-        void updateBooking(in long customerId, in long bookingId, in IdList newSeatIds) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::BookingException, MovieBookingCommon::SeatNotAvailableException);
+        void updateBooking(in long customerId, in long bookingId, in IdList newScheduleListSeatIds) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::BookingException, MovieBookingCommon::SeatNotAvailableException);
 
         // Update booking status
         void updateBookingStatus(in long customerId, in long bookingId, in string status) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::BookingException);
@@ -96,6 +125,12 @@ module MovieBookingClient {
 
         // Get customer's active bookings (pending/confirmed)
         BookingList getActiveBookings(in long customerId) raises (MovieBookingCommon::AuthenticationException);
+
+        // Get booking with full details
+        BookingDetails getBookingDetailsView(in long customerId, in long bookingId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::BookingException);
+
+        // Get all customer's bookings with details
+        BookingDetailsList getCustomerBookingsWithDetails(in long customerId) raises (MovieBookingCommon::AuthenticationException);
 
         // ===== PAYMENT PROCESSING =====
 
@@ -110,6 +145,12 @@ module MovieBookingClient {
 
         // Get payment for specific booking
         Payment getBookingPayment(in long customerId, in long bookingId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::BookingException);
+
+        // Get payment with full context
+        PaymentDetails getPaymentDetailsView(in long customerId, in long paymentId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::PaymentNotFoundException);
+
+        // Get all customer's payments with details
+        PaymentDetailsList getCustomerPaymentsWithDetails(in long customerId) raises (MovieBookingCommon::AuthenticationException);
     };
 
     // ==================== CLIENT CALLBACK INTERFACE ====================
