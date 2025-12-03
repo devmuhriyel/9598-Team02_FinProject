@@ -96,8 +96,8 @@ public class MBCommonServant extends CommonServicePOA {
     }
 
     @Override
-    public Seat[] getAvailableSeatsByScheduleId(int scheduleId) throws ScheduleNotFoundException {
-        return new Seat[0];
+    public SeatAvailability[] getAvailableSeatsByScheduleId(int scheduleId) throws ScheduleNotFoundException {
+        return new SeatAvailability[0];
     }
 
     @Override

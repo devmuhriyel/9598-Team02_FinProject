@@ -62,7 +62,7 @@ public interface CommonServiceOperations
   Seat[] getSeatsByScheduleId (int scheduleId) throws ScheduleNotFoundException;
 
   // Get available seats for a specific schedule (uses v_available_seats_by_schedule view)
-  Seat[] getAvailableSeatsByScheduleId (int scheduleId) throws ScheduleNotFoundException;
+  SeatAvailability[] getAvailableSeatsByScheduleId (int scheduleId) throws ScheduleNotFoundException;
 
   // Check if specific seats are available
   boolean areSeatsAvailable (int[] scheduleListSeatIds);

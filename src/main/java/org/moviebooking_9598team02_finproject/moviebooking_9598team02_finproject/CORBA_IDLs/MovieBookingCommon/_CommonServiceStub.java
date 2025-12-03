@@ -386,7 +386,7 @@ public class _CommonServiceStub extends org.omg.CORBA.portable.ObjectImpl implem
 
 
   // Get available seats for a specific schedule (uses v_available_seats_by_schedule view)
-  public Seat[] getAvailableSeatsByScheduleId (int scheduleId) throws ScheduleNotFoundException
+  public SeatAvailability[] getAvailableSeatsByScheduleId (int scheduleId) throws ScheduleNotFoundException
   {
             org.omg.CORBA.portable.InputStream $in = null;
             try {
