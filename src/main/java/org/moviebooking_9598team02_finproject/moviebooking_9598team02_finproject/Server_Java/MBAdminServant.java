@@ -8,6 +8,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 
 public class MBAdminServant extends AdminServicePOA {
 
@@ -40,7 +41,7 @@ public class MBAdminServant extends AdminServicePOA {
                 String hashedPassword = rs.getString("password");
                 if(PasswordManager.checkPassword(password, hashedPassword)){
                     int admin_id = rs.getInt("admin_id");
-                    String sessionToken = SessionManager.createAdminSession(admin_id, rs.getString("username"));
+                    SessionManager.createAdminSession(admin_id, rs.getString("username"));
                     if (SessionManager.isAdminLoggedIn(rs.getInt(admin_id))) {
                         logoutAdmin(admin_id);
                         SessionManager.removeAdminSession(admin_id);
@@ -75,19 +76,25 @@ public class MBAdminServant extends AdminServicePOA {
 
     @Override
     public int createAdmin(int creatorAdminId, String username, String email, String password, String fullName, String phoneNumber) throws AuthenticationException, InvalidInputException {
-        if(!SessionManager.isAdminLoggedIn(creatorAdminId)){
-            throw new AuthenticationException("Log in before creating a new admin account");
-        }
-
         try (Connection connection = DatabaseAccess.getConnection()){
-            String query = "SELECT * FROM admins where username = ?";
+            int adminID = getLatestAdminID();
+            LocalDateTime timeOfCreation = LocalDateTime.now();
+            timeOfCreation.toString();
+            String query = "INSERT INTO admin (adminID, username, email, password, fullName, phoneNumber, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
             PreparedStatement statement = connection.prepareStatement(query);
-            statement.setString(1, username);
+            statement.setInt(1, adminID);
+            statement.setString(2, username);
+            statement.setString(3, email);
+            statement.setString(4, password);
+            statement.setString(5, fullName);
+            statement.setString(6, phoneNumber);
+            statement.setString(7, timeOfCreation.toString());
+            statement.setString(8, timeOfCreation.toString());
             ResultSet rs = statement.executeQuery();
         } catch (SQLException e) {
             throw new InvalidInputException("Account Already Exists", "Username already exists");
         }
-        return 0;
+        return 1;
     }
 
     @Override
@@ -438,5 +445,23 @@ public class MBAdminServant extends AdminServicePOA {
     @Override
     public Movie[] getMoviesByGenre(int adminId, int genreId) throws AuthenticationException {
         return new Movie[0];
+    }
+
+    // ===== HELPER METHODS (NOT IN THE IDL) =====
+
+    private int getLatestAdminID() throws AuthenticationException {
+        try(Connection connection = DatabaseAccess.getConnection()){
+            String query = "SELECT MAX(admin_id) as max_id from admins";
+            PreparedStatement statement = connection.prepareStatement(query);
+            ResultSet resultSet = statement.executeQuery();
+
+            if(resultSet.next()){
+                int maxID = resultSet.getInt("max_id");
+                return resultSet.wasNull() ? 0 : maxID ;
+            }
+        } catch (SQLException e){
+            e.printStackTrace();
+        }
+        return 0;
     }
 }
