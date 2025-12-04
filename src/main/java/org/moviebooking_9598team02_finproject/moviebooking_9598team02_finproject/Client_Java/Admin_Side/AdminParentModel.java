@@ -2,6 +2,8 @@ package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finprojec
 
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingAdmin.AdminService;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingAdmin.AdminServiceHelper;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.CommonService;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.CommonServiceHelper;
 import org.omg.CORBA.ORB;
 import org.omg.CosNaming.NamingContextExt;
 import org.omg.CosNaming.NamingContextExtHelper;
@@ -12,6 +14,7 @@ import org.omg.CosNaming.NamingContextPackage.NotFound;
 
 public abstract class AdminParentModel {
     protected static AdminService adminServices;
+    protected static CommonService commonServices;
 
     public static void initializeCORBAConnection(String[] args){
         try {
@@ -19,8 +22,12 @@ public abstract class AdminParentModel {
 
             org.omg.CORBA.Object objectRef = orb.resolve_initial_references("NameService");
             NamingContextExt nameContextExt = NamingContextExtHelper.narrow(objectRef);
-            String name = "AdminService";
-            adminServices = AdminServiceHelper.narrow(nameContextExt.resolve_str(name));
+
+            String adminName = "AdminService";
+            adminServices = AdminServiceHelper.narrow(nameContextExt.resolve_str(adminName));
+
+            String commonName = "CommonService";
+            commonServices = CommonServiceHelper.narrow(nameContextExt.resolve_str(commonName));
         } catch (org.omg.CORBA.ORBPackage.InvalidName e) {
 
         } catch (InvalidName e) {
@@ -30,10 +37,9 @@ public abstract class AdminParentModel {
         } catch (NotFound e) {
 
         }
-
     }
 
     public boolean isConnected(){
-        return adminServices != null;
+        return adminServices != null && commonServices != null;
     }
 }
