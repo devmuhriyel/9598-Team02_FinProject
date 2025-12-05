@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Hyperlink?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.effect.Blend?>
+<?import javafx.scene.effect.BoxBlur?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.text.Text?>
+
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.AuthenticationMVCs.Signup.AdminSignupView">
+   <left>
+      <AnchorPane prefHeight="400.0" prefWidth="240.0" BorderPane.alignment="CENTER">
+         <children>
+            <Pane prefHeight="400.0" prefWidth="217.0" style="-fx-background-color: #292929;">
+               <children>
+                  <Button fx:id="signupButton" layoutX="33.0" layoutY="312.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="150.0" style="-fx-background-color: #ff2525;" text="Sign Up" textFill="#e1e1e1">
+                     <font>
+                        <Font name="SansSerif Regular" size="12.0" />
+                     </font>
+                  </Button>
+                  <TextField fx:id="emailField" layoutX="33.0" layoutY="222.0" prefHeight="25.0" prefWidth="150.0" promptText="Enter your email address" />
+                  <Text fill="WHITE" layoutX="65.0" layoutY="110.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Sign Up" textAlignment="CENTER">
+                     <font>
+                        <Font name="SansSerif Bold" size="24.0" />
+                     </font>
+                  </Text>
+                  <Text fill="WHITE" layoutX="48.0" layoutY="74.0" strokeType="OUTSIDE" strokeWidth="0.0" text="ShowBook" textAlignment="CENTER">
+                     <font>
+                        <Font name="SansSerif Bold" size="24.0" />
+                     </font>
+                     <effect>
+                        <BoxBlur height="20.0" iterations="3" width="41.0" />
+                     </effect>
+                  </Text>
+                  <Text blendMode="LIGHTEN" fill="#ff2525" layoutX="24.0" layoutY="59.0" strokeType="OUTSIDE" strokeWidth="0.0" text="FILMBOOK" textAlignment="CENTER">
+                     <font>
+                        <Font name="SansSerif Bold" size="32.0" />
+                     </font>
+                     <effect>
+                        <Blend />
+                     </effect>
+                  </Text>
+                  <Hyperlink fx:id="logInLink" layoutX="44.0" layoutY="342.0" text="Log in to your account" textFill="WHITE">
+                     <font>
+                        <Font name="SansSerif Regular" size="12.0" />
+                     </font></Hyperlink>
+                  <Text fx:id="errorText" fill="#ff2525" layoutX="33.0" layoutY="382.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Invalid credentials" textAlignment="CENTER" wrappingWidth="150.0">
+                     <font>
+                        <Font name="SansSerif Regular" size="12.0" />
+                     </font>
+                  </Text>
+                  <PasswordField fx:id="confirmPasswordField" layoutX="33.0" layoutY="282.0" prefHeight="25.0" prefWidth="150.0" promptText="Confirm password" />
+                  <PasswordField fx:id="passwordField" layoutX="33.0" layoutY="252.0" prefHeight="25.0" prefWidth="150.0" promptText="Enter your password" />
+                  <TextField fx:id="fullNameField" layoutX="33.0" layoutY="162.0" prefHeight="25.0" prefWidth="150.0" promptText="Enter your full name" />
+                  <TextField fx:id="userNameField" layoutX="33.0" layoutY="132.0" prefHeight="25.0" prefWidth="150.0" promptText="Enter your username" />
+                  <TextField fx:id="phoneNumberField" layoutX="33.0" layoutY="192.0" prefHeight="25.0" prefWidth="150.0" promptText="Enter your phone number" />
+               </children>
+            </Pane>
+         </children>
+      </AnchorPane>
+   </left>
+   <right>
+      <AnchorPane prefHeight="400.0" prefWidth="400.0" BorderPane.alignment="CENTER">
+         <children>
+            <AnchorPane layoutX="82.0">
+               <children>
+                  <ImageView fitHeight="400.0" fitWidth="385.0" layoutX="16.0" pickOnBounds="true" smooth="false">
+                     <image>
+                        <Image url="@../../../Images/LoginPicture.jpg" />
+                     </image>
+                  </ImageView>
+               </children>
+            </AnchorPane>
+         </children>
+      </AnchorPane>
+   </right>
+</BorderPane>
