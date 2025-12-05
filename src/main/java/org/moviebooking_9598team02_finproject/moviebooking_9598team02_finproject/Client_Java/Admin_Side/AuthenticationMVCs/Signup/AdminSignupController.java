@@ -2,14 +2,14 @@ package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finprojec
 
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.AuthenticationException;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.InvalidInputException;
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.AuthenticationMVCs.AdminAuthenticationManager;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.AdminNavigationManager;
 
 public class AdminSignupController {
     private AdminSignupView view;
     private AdminSignupModel model;
-    private AdminAuthenticationManager authManager;
+    private AdminNavigationManager authManager;
 
-    public AdminSignupController(AdminSignupView signupView, AdminSignupModel signupModel, AdminAuthenticationManager authManager) {
+    public AdminSignupController(AdminSignupView signupView, AdminSignupModel signupModel, AdminNavigationManager authManager) {
         this.view = signupView;
         this.model = signupModel;
         this.authManager = authManager;

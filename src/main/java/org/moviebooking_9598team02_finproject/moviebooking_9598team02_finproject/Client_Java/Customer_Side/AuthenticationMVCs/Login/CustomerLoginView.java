@@ -11,7 +11,7 @@ public class CustomerLoginView {
 
     // ===== VARIABLES =====
     @FXML
-    private TextField usernameField;
+    private TextField userNameField;
     @FXML
     private PasswordField passwordField;
     @FXML
@@ -22,26 +22,10 @@ public class CustomerLoginView {
     private Text errorText;
 
     // ===== METHODS =====
-
     public void clearFields(){
-        usernameField.clear();
+        userNameField.clear();
         passwordField.clear();
     }
-
-    //GETTERS
-    public String getUsername() {
-        return usernameField.getText();
-    }
-    public String getPassword() {
-        return passwordField.getText();
-    }
-    public Button getLoginButton() {
-        return loginButton;
-    }
-    public Hyperlink getCreateAccountLink() {
-        return createAccountLink;
-    }
-
     public void showError(String message){
         if(errorText != null){
             errorText.setText(message);
@@ -55,4 +39,21 @@ public class CustomerLoginView {
             errorText.setVisible(false);
         }
     }
+
+    // ===== GETTERS =====
+    public String getUserName() {
+        return userNameField.getText();
+    }
+    public String getPassword() {
+        return passwordField.getText();
+    }
+    public Button getLoginButton() {
+        return loginButton;
+    }
+    public Hyperlink getCreateAccountLink() {
+        return createAccountLink;
+    }
+
+
+
 }

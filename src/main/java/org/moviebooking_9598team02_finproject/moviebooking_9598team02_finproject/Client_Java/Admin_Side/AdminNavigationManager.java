@@ -1,4 +1,4 @@
-package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.AuthenticationMVCs;
+package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side;
 
 import javafx.fxml.FXMLLoader;
 import javafx.scene.layout.Pane;
@@ -12,7 +12,7 @@ import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject
 
 import java.io.IOException;
 
-public class AdminAuthenticationManager {
+public class AdminNavigationManager {
     private StackPane stackPane;
     private Pane loginPane;
     private Pane signupPane;
@@ -20,7 +20,7 @@ public class AdminAuthenticationManager {
     private AdminLoginController loginController;
     private AdminSignupController signupController;
 
-    public AdminAuthenticationManager(StackPane stackPane) {
+    public AdminNavigationManager(StackPane stackPane) {
         this.stackPane = stackPane;
         initializeViews();
     }

@@ -2,15 +2,15 @@ package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finprojec
 
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Admin;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.AuthenticationException;
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.AuthenticationMVCs.AdminAuthenticationManager;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.AdminNavigationManager;
 
 public class AdminLoginController {
     private AdminLoginView view;
     private AdminLoginModel model;
-    private AdminAuthenticationManager authManager;
+    private AdminNavigationManager authManager;
     private Admin admin;
 
-    public AdminLoginController(AdminLoginView loginView, AdminLoginModel loginModel, AdminAuthenticationManager authManager) {
+    public AdminLoginController(AdminLoginView loginView, AdminLoginModel loginModel, AdminNavigationManager authManager) {
         this.view = loginView;
         this.model = loginModel;
         this.authManager = authManager;

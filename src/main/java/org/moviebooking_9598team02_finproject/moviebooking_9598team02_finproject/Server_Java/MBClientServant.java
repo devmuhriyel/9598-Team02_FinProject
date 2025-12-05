@@ -4,6 +4,10 @@ import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.*;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDateTime;
 
 public class MBClientServant extends ClientServicePOA {
 
@@ -13,12 +17,80 @@ public class MBClientServant extends ClientServicePOA {
     // ===== AUTHENTICATION METHODS =====
     @Override
     public int registerCustomer(String username, String email, String password, String phoneNumber, String fullName) throws InvalidInputException {
-        return 0;
+        try (Connection connection = DatabaseAccess.getConnection()){
+            int nextCustomerID = getLatestCustomerID() + 1;
+            String hashedPassword = PasswordManager.hashPassword(password);
+            LocalDateTime timeOfCreation = LocalDateTime.now();
+            String query = "INSERT INTO customers (customer_id, username, email, password, full_name, phone_number, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1, nextCustomerID);
+            statement.setString(2, username);
+            statement.setString(3, email);
+            statement.setString(4, hashedPassword);  // Store hashed password
+            statement.setString(5, fullName);
+            statement.setString(6, phoneNumber);
+            statement.setString(7, timeOfCreation.toString());
+            statement.setString(8, timeOfCreation.toString());
+
+            // Use executeUpdate() for INSERT statements, not executeQuery()
+            int rowsAffected = statement.executeUpdate();
+
+            if (rowsAffected > 0) {
+                System.out.println("Successfully created admin: " + username + " with ID: " + nextCustomerID);
+                return nextCustomerID;
+            } else {
+                throw new InvalidInputException("Failed to create admin", "Database insert failed");
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            if (e.getMessage().contains("Duplicate entry")) {
+                throw new InvalidInputException("Account Already Exists", "Username or email already exists");
+            }
+            throw new InvalidInputException("Database Error", "Failed to create admin: " + e.getMessage());
+        } catch (AuthenticationException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public Customer loginCustomer(String username, String password) throws AuthenticationException {
-        return null;
+        Customer customer = new Customer();
+        try(Connection connection = DatabaseAccess.getConnection()){
+            String query = "SELECT * FROM customers where username = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setString(1, username);
+            ResultSet rs = statement.executeQuery();
+
+            if(rs.next()){
+                String hashedPassword = rs.getString("password");
+                if(PasswordManager.checkPassword(password, hashedPassword)){
+                    int customer_id = rs.getInt("customer_id");
+                    SessionManager.createCustomerSession(customer_id, rs.getString("username"));
+                    if (SessionManager.isCustomerLoggedIn(customer_id)) {
+                        logoutCustomer(customer_id);
+                        SessionManager.removeAdminSession(customer_id);
+                    }
+                    customer.customerId = rs.getInt("customer_id");
+                    customer.username = rs.getString("username");
+                    customer.email = rs.getString("email");
+                    customer.password = "";
+                    customer.fullName = rs.getString("full_name");
+                    customer.phoneNumber = rs.getString("phone_number");
+                    customer.createdAt = rs.getString("created_at");
+                    customer.updatedAt = rs.getString("updated_at");
+                } else {
+                    throw new AuthenticationException("Incorrect password");
+                }
+            } else {
+                throw new AuthenticationException("Account does not exist");
+            }
+        } catch (SQLException e){
+            e.printStackTrace();
+            throw new AuthenticationException("Database error:" + e.getMessage());
+        }
+        return customer;
     }
 
     @Override
@@ -193,5 +265,23 @@ public class MBClientServant extends ClientServicePOA {
     @Override
     public PaymentDetails[] getCustomerPaymentsWithDetails(int customerId) throws AuthenticationException {
         return new PaymentDetails[0];
+    }
+
+    // ===== HELPER METHODS (NOT IN THE IDL) =====
+    private int getLatestCustomerID() throws AuthenticationException {
+        try(Connection connection = DatabaseAccess.getConnection()){
+            String query = "SELECT MAX(customer_id) as max_id FROM customers";
+            PreparedStatement statement = connection.prepareStatement(query);
+            ResultSet resultSet = statement.executeQuery();
+
+            if(resultSet.next()){
+                int maxID = resultSet.getInt("max_id");
+                return resultSet.wasNull() ? 0 : maxID;  // Return 0 if table is empty
+            }
+        } catch (SQLException e){
+            e.printStackTrace();
+            throw new AuthenticationException("Database error: " + e.getMessage());
+        }
+        return 0;
     }
 }
