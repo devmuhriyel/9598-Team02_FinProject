@@ -1,13 +1,26 @@
 package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side;
 
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.AuthenticationMVCs.Login.AdminLoginController;
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.AuthenticationMVCs.Login.AdminLoginModel;
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.AuthenticationMVCs.Login.AdminLoginView;
+import javafx.application.Application;
+import javafx.scene.Scene;
+import javafx.scene.layout.StackPane;
+import javafx.stage.Stage;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.AuthenticationMVCs.AdminAuthenticationManager;
 
-public class MainAdminApp {
+public class MainAdminApp extends Application {
+
     public static void main(String[] args) {
-        AdminLoginView adminLoginView = new AdminLoginView();
-        AdminLoginModel adminLoginModel = new AdminLoginModel();
-        AdminLoginController adminLoginController = new AdminLoginController(adminLoginView, adminLoginModel);
+        launch(args);  // now valid
+    }
+
+    @Override
+    public void start(Stage primaryStage) {
+        StackPane root = new StackPane();
+
+        // Initialize your authentication manager
+        new AdminAuthenticationManager(root);
+
+        primaryStage.setScene(new Scene(root));
+        primaryStage.setTitle("Admin Login");
+        primaryStage.show();
     }
 }

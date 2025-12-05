@@ -6,6 +6,6 @@ import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject
 
 public class CustomerLoginModel extends CustomerParentModel {
     public Customer loginCustomer(String username, String password) throws AuthenticationException {
-        return clientServices.loginAdmin(username, password);
+        return null;
     }
 }

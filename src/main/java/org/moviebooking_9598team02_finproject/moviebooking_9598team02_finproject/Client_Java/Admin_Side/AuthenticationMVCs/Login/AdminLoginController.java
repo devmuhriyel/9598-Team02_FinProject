@@ -2,44 +2,48 @@ package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finprojec
 
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Admin;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.AuthenticationException;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.AuthenticationMVCs.AdminAuthenticationManager;
 
 public class AdminLoginController {
     private AdminLoginView view;
     private AdminLoginModel model;
+    private AdminAuthenticationManager authManager;
     private Admin admin;
 
-    public AdminLoginController(AdminLoginView loginView, AdminLoginModel loginModel) {
+    public AdminLoginController(AdminLoginView loginView, AdminLoginModel loginModel, AdminAuthenticationManager authManager) {
         this.view = loginView;
         this.model = loginModel;
+        this.authManager = authManager;
+        initializeButtons();
     }
 
-    private void intializeButtons() {
+    private void initializeButtons() {
         view.getLoginButton().setOnAction(event -> login());
         view.getCreateAccountLink().setOnAction(event -> switchToSignUp());
     }
 
     public void login() {
-        String username = view.getUsername();
+        String username = view.getUserName();
         String password = view.getPassword();
 
         if (username.isEmpty()) {
-            view.showError("Input your usename");
+            view.showError("Input your username");
             return;
         } else if (password.isEmpty()) {
             view.showError("Input your password");
             return;
         }
 
-        try{
-            admin = model.loginAdmin(username, password);
+        try {
+            admin = model.logInAdmin(username, password);
             view.clearFields();
             view.clearError();
         } catch (AuthenticationException e) {
             view.showError(e.getMessage());
         }
-
     }
-    public void switchToSignUp(){
 
+    public void switchToSignUp() {
+        authManager.showSignupView();
     }
 }
