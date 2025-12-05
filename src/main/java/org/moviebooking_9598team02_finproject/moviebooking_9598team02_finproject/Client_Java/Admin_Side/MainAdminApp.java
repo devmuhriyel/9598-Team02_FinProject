@@ -9,7 +9,9 @@ import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject
 public class MainAdminApp extends Application {
 
     public static void main(String[] args) {
-        launch(args);  // now valid
+        // Initialize CORBA connection BEFORE launching JavaFX
+        AdminParentModel.initializeCORBAConnection(args);
+        launch(args);
     }
 
     @Override

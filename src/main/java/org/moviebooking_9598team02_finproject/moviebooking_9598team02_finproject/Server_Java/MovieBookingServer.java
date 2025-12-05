@@ -7,11 +7,17 @@ import org.omg.CosNaming.NamingContextExtHelper;
 import org.omg.PortableServer.POA;
 import org.omg.PortableServer.POAHelper;
 
+import java.util.Properties;
+
 public class MovieBookingServer {
     public static void main(String[] args) {
         try{
+
+            Properties props = new java.util.Properties();
+            props.put("org.omg.CORBA.ORBInitialHost", "localhost");
+            props.put("org.omg.CORBA.ORBInitialPort", "1050");
             // Initialize ORB
-            ORB orb = ORB.init(args, null);
+            ORB orb = ORB.init(args, props);
 
             // Initialize POA
             POA rootPOA = POAHelper.narrow(orb.resolve_initial_references("RootPOA"));

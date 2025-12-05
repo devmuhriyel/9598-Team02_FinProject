@@ -11,6 +11,8 @@ import org.omg.CosNaming.NamingContextPackage.CannotProceed;
 import org.omg.CosNaming.NamingContextPackage.InvalidName;
 import org.omg.CosNaming.NamingContextPackage.NotFound;
 
+import java.util.Properties;
+
 
 public abstract class AdminParentModel {
     protected static AdminService adminServices;
@@ -18,7 +20,11 @@ public abstract class AdminParentModel {
 
     public static void initializeCORBAConnection(String[] args){
         try {
-            ORB orb = ORB.init(args, null);
+            Properties props = new java.util.Properties();
+            props.put("org.omg.CORBA.ORBInitialHost", "localhost");
+            props.put("org.omg.CORBA.ORBInitialPort", "1050");
+            // Initialize ORB
+            ORB orb = ORB.init(args, props);
 
             org.omg.CORBA.Object objectRef = orb.resolve_initial_references("NameService");
             NamingContextExt nameContextExt = NamingContextExtHelper.narrow(objectRef);

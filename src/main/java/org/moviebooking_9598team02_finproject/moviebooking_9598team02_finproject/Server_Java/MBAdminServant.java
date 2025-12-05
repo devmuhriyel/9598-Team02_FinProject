@@ -42,7 +42,7 @@ public class MBAdminServant extends AdminServicePOA {
                 if(PasswordManager.checkPassword(password, hashedPassword)){
                     int admin_id = rs.getInt("admin_id");
                     SessionManager.createAdminSession(admin_id, rs.getString("username"));
-                    if (SessionManager.isAdminLoggedIn(rs.getInt(admin_id))) {
+                    if (SessionManager.isAdminLoggedIn(admin_id)) {
                         logoutAdmin(admin_id);
                         SessionManager.removeAdminSession(admin_id);
                     }
@@ -77,24 +77,38 @@ public class MBAdminServant extends AdminServicePOA {
     @Override
     public int createAdmin(int creatorAdminId, String username, String email, String password, String fullName, String phoneNumber) throws AuthenticationException, InvalidInputException {
         try (Connection connection = DatabaseAccess.getConnection()){
-            int adminID = getLatestAdminID();
+            int nextAdminID = getLatestAdminID() + 1;
+            String hashedPassword = PasswordManager.hashPassword(password);
             LocalDateTime timeOfCreation = LocalDateTime.now();
-            timeOfCreation.toString();
-            String query = "INSERT INTO admin (adminID, username, email, password, fullName, phoneNumber, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+            String query = "INSERT INTO admins (admin_id, username, email, password, full_name, phone_number, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+
             PreparedStatement statement = connection.prepareStatement(query);
-            statement.setInt(1, adminID);
+            statement.setInt(1, nextAdminID);
             statement.setString(2, username);
             statement.setString(3, email);
-            statement.setString(4, password);
+            statement.setString(4, hashedPassword);  // Store hashed password
             statement.setString(5, fullName);
             statement.setString(6, phoneNumber);
             statement.setString(7, timeOfCreation.toString());
             statement.setString(8, timeOfCreation.toString());
-            ResultSet rs = statement.executeQuery();
+
+            // Use executeUpdate() for INSERT statements, not executeQuery()
+            int rowsAffected = statement.executeUpdate();
+
+            if (rowsAffected > 0) {
+                System.out.println("Successfully created admin: " + username + " with ID: " + nextAdminID);
+                return nextAdminID;
+            } else {
+                throw new InvalidInputException("Failed to create admin", "Database insert failed");
+            }
+
         } catch (SQLException e) {
-            throw new InvalidInputException("Account Already Exists", "Username already exists");
+            e.printStackTrace();
+            if (e.getMessage().contains("Duplicate entry")) {
+                throw new InvalidInputException("Account Already Exists", "Username or email already exists");
+            }
+            throw new InvalidInputException("Database Error", "Failed to create admin: " + e.getMessage());
         }
-        return 1;
     }
 
     @Override
@@ -451,16 +465,17 @@ public class MBAdminServant extends AdminServicePOA {
 
     private int getLatestAdminID() throws AuthenticationException {
         try(Connection connection = DatabaseAccess.getConnection()){
-            String query = "SELECT MAX(admin_id) as max_id from admins";
+            String query = "SELECT MAX(admin_id) as max_id FROM admins";
             PreparedStatement statement = connection.prepareStatement(query);
             ResultSet resultSet = statement.executeQuery();
 
             if(resultSet.next()){
                 int maxID = resultSet.getInt("max_id");
-                return resultSet.wasNull() ? 0 : maxID ;
+                return resultSet.wasNull() ? 0 : maxID;  // Return 0 if table is empty
             }
         } catch (SQLException e){
             e.printStackTrace();
+            throw new AuthenticationException("Database error: " + e.getMessage());
         }
         return 0;
     }
