@@ -266,7 +266,7 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     // ===== SEATS MANAGEMENT METHODS =====
-    @Override
+    @Override //do not use
     public int addSeat(int adminId, String seatRow, int seatNumber, String seatType, double seatPrice) throws AuthenticationException, InvalidInputException {
         return 0;
     }
@@ -281,7 +281,7 @@ public class MBAdminServant extends AdminServicePOA {
 
     }
 
-    @Override
+    @Override //do not use
     public void deleteSeat(int adminId, int seatId) throws AuthenticationException {
 
     }
