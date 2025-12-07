@@ -2,14 +2,15 @@ package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finprojec
 
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.AuthenticationException;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.InvalidInputException;
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.AdminNavigationManager;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.AuthenticationMVCs.AdminAuthNavManager;
+
 
 public class AdminSignupController {
     private AdminSignupView view;
     private AdminSignupModel model;
-    private AdminNavigationManager authManager;
+    private AdminAuthNavManager authManager;
 
-    public AdminSignupController(AdminSignupView signupView, AdminSignupModel signupModel, AdminNavigationManager authManager) {
+    public AdminSignupController(AdminSignupView signupView, AdminSignupModel signupModel, AdminAuthNavManager authManager) {
         this.view = signupView;
         this.model = signupModel;
         this.authManager = authManager;
@@ -31,19 +32,10 @@ public class AdminSignupController {
         }
 
         try {
-            model.signUpAdmin(
-                    view.getUserName(),
-                    view.getFullName(),
-                    view.getPhoneNumber(),
-                    view.getEmail(),
-                    view.getPassword(),
-                    view.getConfirmPassword()
-            );
-
+            model.signUpAdmin(view.getUserName(), view.getFullName(), view.getPhoneNumber(), view.getEmail(), view.getPassword(), view.getConfirmPassword());
             view.clearFields();
             view.clearError();
             authManager.showLoginView();
-
         } catch (InvalidInputException | AuthenticationException e) {
             view.showError(e.getMessage());
         } catch (IllegalArgumentException e) {
