@@ -19,16 +19,19 @@
                 </font>
             </Label>
             <Region HBox.hgrow="ALWAYS" />
-         <Label graphicTextGap="0.0" prefHeight="16.0" prefWidth="109.0" style="-fx-text-fill: #ffffff; -fx-font-weight: bold;" text="Welcome back,">
-            <font>
-               <Font name="SansSerif Bold" size="14.0" />
-            </font>
-         </Label>
-         <Label fx:id="adminName" graphicTextGap="0.0" prefHeight="15.0" prefWidth="106.0" style="-fx-text-fill: #ff2525; -fx-font-weight: bold;" text="Admin Name">
-            <font>
-               <Font name="SansSerif Bold" size="14.0" />
-            </font>
-         </Label>
+            <Label graphicTextGap="0.0" prefHeight="16.0" prefWidth="109.0" style="-fx-text-fill: #ffffff; -fx-font-weight: bold;" text="Welcome back,">
+                <font>
+                    <Font name="SansSerif Bold" size="14.0" />
+                </font>
+            </Label>
+            <Label fx:id="adminName" graphicTextGap="0.0" prefHeight="15.0" prefWidth="106.0" style="-fx-text-fill: #ff2525; -fx-font-weight: bold;" text="Admin Name">
+                <font>
+                    <Font name="SansSerif Bold" size="14.0" />
+                </font>
+                <HBox.margin>
+                    <Insets left="-22" />
+                </HBox.margin>
+            </Label>
             <Label fx:id="logOutButton" style="-fx-text-fill: #FFFFFF;" text="Logout">
                 <font>
                     <Font name="SansSerif Regular" size="14.0" />

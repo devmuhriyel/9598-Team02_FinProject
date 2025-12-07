@@ -1,6 +1,5 @@
 package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side;
 
-import javafx.scene.layout.StackPane;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Admin;
 
 public class AdminHomeController {
@@ -15,7 +14,8 @@ public class AdminHomeController {
         this.navManager = navManager;
         this.admin = adminAcct;
         view.setAdminName(admin.username);
-        switchToDashboard();
+        initializeButtons();
+//        switchToDashboard();
     }
 
     private void initializeButtons() {
@@ -33,18 +33,27 @@ public class AdminHomeController {
     }
 
     public void switchToDashboard() {
+        view.changePanes("navDashboard");
         navManager.showDashboardView();
     }
+
     public void switchToMovieMgmt() {
+        view.changePanes("navMovie");
         navManager.showMovieMgmtView();
     }
+
     public void switchToSeatMgmt() {
+        view.changePanes("navShowtime");
         navManager.showSeatMgmtView();
     }
+
     public void switchToBookingMgmt() {
+        view.changePanes("navBooking");
         navManager.showBookingMgmtView();
     }
+
     public void switchToCustomerMgmt() {
+        view.changePanes("navCustomer");
         navManager.showCustomerMgmtView();
     }
 }
