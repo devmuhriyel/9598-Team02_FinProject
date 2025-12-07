@@ -3,6 +3,7 @@ package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finprojec
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,6 +12,7 @@ public class SeatView {
 
     @FXML private GridPane seatGridPane;
     @FXML private Label statusMessageLabel;
+    @FXML private TextField priceInput;
 
     // Row A
     @FXML private Button btnA1; @FXML private Button btnA2; @FXML private Button btnA3;
@@ -88,7 +90,7 @@ public class SeatView {
 
     public GridPane getSeatGridPane() { return seatGridPane; }
     public Label getStatusMessageLabel() { return statusMessageLabel; }
-
+    public TextField getPriceInput() { return priceInput; }
 
     // ===== METHODS FOR CONTROLLER TO UPDATE THE UI =====
 

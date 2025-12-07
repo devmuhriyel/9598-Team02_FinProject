@@ -9,6 +9,9 @@ import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.AuthenticationMVCs.AdminAuthNavManager;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.BookingsMVCs.AdminBookingNavManager;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.MovieMVCs.AdminMMNavManager;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.SeatMgmtMVCs.AdminSMNavManager;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingAdmin.AdminService;
+
 
 import java.io.IOException;
 
@@ -31,12 +34,19 @@ public class AdminNavigationManager {
     // Sub-navigation managers
     private AdminBookingNavManager bookingNavManager;
     private AdminMMNavManager movieNavManager;
+    private AdminSMNavManager seatNavManager;
+
     // Add others as needed
+    private AdminService adminService;
 
     public AdminNavigationManager(Stage homeStage, AdminAuthNavManager authNavManager, Admin admin) {
         this.homeStage = homeStage;
         this.authNavManager = authNavManager;
         this.admin = admin;
+        this.adminService = adminService;
+
+        this.seatNavManager = new AdminSMNavManager(adminService, admin);
+
         initializeHomeView();
     }
 
@@ -95,16 +105,8 @@ public class AdminNavigationManager {
     }
 
     public void showSeatMgmtView() {
-        if (seatMgmtPane == null) {
-            try {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/AdminSeatMgmt.fxml"));
-                seatMgmtPane = loader.load();
-            } catch (IOException e) {
-                e.printStackTrace();
-                seatMgmtPane = createPlaceholder("Seat Management");
-            }
-        }
-        loadContentPane(seatMgmtPane);
+        Pane seatViewContent = seatNavManager.getSeatMgmtView();
+        loadContentPane(seatViewContent);
     }
 
     public void showBookingMgmtView() {

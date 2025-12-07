@@ -1,5 +1,6 @@
 package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.SeatMgmtMVCs;
 
+import javafx.event.ActionEvent;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.AuthenticationException;
@@ -20,13 +21,36 @@ public class SeatController implements Initializable {
 
     private Button currentlySelectedButton = null;
     private String selectedSeatName = null;
-    private int selectedSeatId = -1; // Use int for ID, matching the IDL mapping
+    private int selectedSeatId = -1;
 
     // --- Constructor (Dependency Injection) ---
     public SeatController(SeatModel model, SeatView view) {
         this.model = model;
         this.view = view;
     }
+
+    // --- Action Handlers from FXML ---
+
+    public void handlePriceUpdateClick(ActionEvent event) {
+        String priceText = view.getPriceInput().getText();
+
+        try {
+            double newPrice = Double.parseDouble(priceText);
+            updateSelectedSeatPrice(newPrice);
+            view.getPriceInput().clear();
+        } catch (NumberFormatException e) {
+            view.showStatusMessage("Invalid Price: Please enter a valid number.", true);
+        }
+    }
+
+    public void handleSetStandardType(ActionEvent event) {
+        updateSelectedSeatType("STANDARD");
+    }
+    public void handleSetVipType(ActionEvent event) {
+        updateSelectedSeatType("VIP");
+    }
+
+    // --- Initialization and Loading ---
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -39,7 +63,7 @@ public class SeatController implements Initializable {
 
     private void loadAllSeatData() {
         try {
-            Seat[] allSeats = (Seat[]) model.getAllSeats();
+            Seat[] allSeats = model.getAllSeats();
             if (allSeats == null || allSeats.length == 0) {
                 view.showStatusMessage("No seat data found on the server.", true);
                 return;
@@ -72,12 +96,13 @@ public class SeatController implements Initializable {
         }
     }
 
-    // === EVENT HANDLING === TO BE CHECKED ULIT
+    // === EVENT HANDLING ===
     private void handleSeatButtonClick(Button clickedButton) {
         view.clearStatusMessage();
 
+        // Remove highlight from previously selected button
         if (currentlySelectedButton != null && currentlySelectedButton != clickedButton) {
-            String prevStyle = seatStyleMap.getOrDefault(currentlySelectedButton.getId(), getStyleForSeatType("Standard"));
+            String prevStyle = seatStyleMap.getOrDefault(currentlySelectedButton.getId(), getStyleForSeatType("STANDARD"));
             view.updateSeatVisual(currentlySelectedButton, prevStyle);
         }
 
@@ -93,10 +118,16 @@ public class SeatController implements Initializable {
 
         selectedSeatId = selectedSeat.seatId;
 
-        view.updateSeatVisual(clickedButton, "-fx-background-color: #6699FF; -fx-text-fill: white;");
+        // Apply temporary highlight style for selection
+        view.updateSeatVisual(clickedButton, "-fx-background-color: #007ACC; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 10 15; -fx-min-width: 60;");
         view.showStatusMessage("Selected Seat: " + selectedSeatName + " | Type: " + selectedSeat.seatType + " | Price: P" + selectedSeat.seatPrice, false);
     }
 
+    // === Update Logic ===
+
+    /**
+     * Updates the price of the currently selected seat.
+     */
     public void updateSelectedSeatPrice(double newPrice) {
         if (selectedSeatId == -1 || currentlySelectedButton == null) {
             view.showStatusMessage("Please select a seat to update its price.", true);
@@ -118,6 +149,9 @@ public class SeatController implements Initializable {
         }
     }
 
+    /**
+     * Updates the type (STANDARD/VIP) of the currently selected seat.
+     */
     public void updateSelectedSeatType(String newType) {
         if (selectedSeatId == -1 || currentlySelectedButton == null) {
             view.showStatusMessage("Please select a seat to update its type.", true);
@@ -125,17 +159,18 @@ public class SeatController implements Initializable {
         }
 
         try {
-            model.updateSeatType(selectedSeatId, newType); // Call the Model (CORBA)
+            String finalType = newType.toUpperCase();
+            model.updateSeatType(selectedSeatId, finalType); // Call the Model (CORBA)
             Seat seat = seatDataMap.get(currentlySelectedButton.getId());
 
             if (seat != null) {
-                seat.seatType = newType;
-                String newStyle = getStyleForSeatType(newType);
+                seat.seatType = finalType;
+                String newStyle = getStyleForSeatType(finalType);
                 view.updateSeatVisual(currentlySelectedButton, newStyle);
                 seatStyleMap.put(currentlySelectedButton.getId(), newStyle);
             }
 
-            view.showStatusMessage("Type for " + selectedSeatName + " updated to " + newType, false);
+            view.showStatusMessage("Type for " + selectedSeatName + " updated to " + finalType, false);
 
         } catch (AuthenticationException e) {
             view.showStatusMessage("Update failed: Admin authentication required.", true);
@@ -143,20 +178,26 @@ public class SeatController implements Initializable {
             view.showStatusMessage("Error updating type: " + e.getMessage(), true);
         }
     }
+
+
     private String getStyleForSeatType(String seatType) {
-        String style;
+        String baseStyle = "-fx-text-fill: #000000; -fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 10 15; -fx-min-width: 60;";
+        String colorStyle;
 
         switch (seatType.toUpperCase()) {
             case "VIP":
-                style = "-fx-background-color: #FFD700; -fx-text-fill: black;";
+                // Gold color for VIP
+                colorStyle = "-fx-background-color: #FFD700;";
                 break;
-            case "PREMIUM":
-                style = "-fx-background-color: #4CAF50; -fx-text-fill: white;";
+            case "STANDARD":
+                // Green color for Standard (also used for Reserved in the FXML key)
+                colorStyle = "-fx-background-color: #00CC66;";
                 break;
             default:
-                style = "-fx-background-color: #555555; -fx-text-fill: white;";
+                // Fallback (White for Available/Default)
+                colorStyle = "-fx-background-color: #FFFFFF;";
                 break;
         }
-        return style;
+        return colorStyle + " " + baseStyle;
     }
 }
