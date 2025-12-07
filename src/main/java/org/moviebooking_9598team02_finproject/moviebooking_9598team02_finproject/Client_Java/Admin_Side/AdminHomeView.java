@@ -4,9 +4,8 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import java.util.HashMap;
+import java.util.Map;
 
 public class AdminHomeView {
 
@@ -28,17 +27,16 @@ public class AdminHomeView {
     @FXML
     private StackPane panesContainer;
 
-    List<Label> labels = new ArrayList<>();
+    private Map<String, Label> labelMap = new HashMap<>();
 
-
-    public AdminHomeView(){
-        labels.add(navDashboard);
-        labels.add(navMovie);
-        labels.add(navShowtime);
-        labels.add(navBooking);
-        labels.add(navCustomer);
+    @FXML
+    public void initialize() {
+        labelMap.put("navDashboard", navDashboard);
+        labelMap.put("navMovie", navMovie);
+        labelMap.put("navShowtime", navShowtime);
+        labelMap.put("navBooking", navBooking);
+        labelMap.put("navCustomer", navCustomer);
     }
-
 
     // ===== METHODS =====
     public void setAdminName(String adminName){
@@ -46,10 +44,13 @@ public class AdminHomeView {
     }
 
     public void changePanes(String labelName){
-        for (Label label : labels ){
-            if (label.getText().equals(labelName)){
-                label.setStyle("-fx-background-color: #ff2525");
-            }
+        for (Label label : labelMap.values()) {
+            label.setStyle("-fx-text-fill: #FFFFFF; -fx-padding: 8 10; -fx-cursor: hand;");
+        }
+
+        Label activeLabel = labelMap.get(labelName);
+        if (activeLabel != null) {
+            activeLabel.setStyle("-fx-text-fill: #FFFFFF; -fx-background-color: #ff2525; -fx-padding: 8 10; -fx-font-weight: bold; -fx-background-radius: 5; -fx-cursor: hand;");
         }
     }
 

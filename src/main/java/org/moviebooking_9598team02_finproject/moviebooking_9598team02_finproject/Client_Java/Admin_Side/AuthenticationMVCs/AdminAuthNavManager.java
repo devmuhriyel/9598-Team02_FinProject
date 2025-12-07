@@ -19,6 +19,7 @@ import java.io.IOException;
 public class AdminAuthNavManager {
     private Stage authStage;
     private StackPane authStackPane;
+    private Scene authScene;
     private Pane loginPane;
     private Pane signupPane;
 
@@ -28,6 +29,8 @@ public class AdminAuthNavManager {
     public AdminAuthNavManager(Stage authStage) {
         this.authStage = authStage;
         this.authStackPane = new StackPane();
+        this.authScene = new Scene(authStackPane, 600, 400);
+        authStage.setScene(authScene);
         initializeAuthViews();
     }
 
@@ -58,9 +61,6 @@ public class AdminAuthNavManager {
     public void showLoginView() {
         authStackPane.getChildren().clear();
         authStackPane.getChildren().add(loginPane);
-
-        Scene authScene = new Scene(authStackPane, 600, 400);
-        authStage.setScene(authScene);
         authStage.setTitle("Admin Login");
         authStage.show();
     }
@@ -68,9 +68,6 @@ public class AdminAuthNavManager {
     public void showSignupView() {
         authStackPane.getChildren().clear();
         authStackPane.getChildren().add(signupPane);
-
-        Scene authScene = new Scene(authStackPane, 600, 400);
-        authStage.setScene(authScene);
         authStage.setTitle("Admin Signup");
     }
 
@@ -82,6 +79,11 @@ public class AdminAuthNavManager {
     }
 
     public void reopenAuthStage() {
+        // Create fresh instances for returning to auth
+        authStage = new Stage();
+        authStackPane = new StackPane();
+        authScene = new Scene(authStackPane, 600, 400);
+        authStage.setScene(authScene);
         showLoginView();
     }
 }
