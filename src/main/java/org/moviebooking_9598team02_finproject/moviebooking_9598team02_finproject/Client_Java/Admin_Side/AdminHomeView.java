@@ -25,6 +25,8 @@ public class AdminHomeView {
     @FXML
     private Label navCustomer;
     @FXML
+    private Label navGenre;
+    @FXML
     private StackPane panesContainer;
 
     private Map<String, Label> labelMap = new HashMap<>();
@@ -36,6 +38,7 @@ public class AdminHomeView {
         labelMap.put("navShowtime", navShowtime);
         labelMap.put("navBooking", navBooking);
         labelMap.put("navCustomer", navCustomer);
+        labelMap.put("navGenre", navGenre);
     }
 
     // ===== METHODS =====
@@ -75,6 +78,9 @@ public class AdminHomeView {
     }
     public Label getNavCustomer() {
         return navCustomer;
+    }
+    public Label getNavGenre(){
+        return navGenre;
     }
     public StackPane getPanesContainer() {
         return panesContainer;
