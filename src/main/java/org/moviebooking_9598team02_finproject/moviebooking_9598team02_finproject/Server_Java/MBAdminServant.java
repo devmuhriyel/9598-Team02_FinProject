@@ -266,124 +266,29 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     // ===== SEATS MANAGEMENT METHODS =====
-    @Override //do not use
+    @Override
     public int addSeat(int adminId, String seatRow, int seatNumber, String seatType, double seatPrice) throws AuthenticationException, InvalidInputException {
         return 0;
     }
 
     @Override
     public void updateSeatPrice(int adminId, int seatId, double newPrice) throws AuthenticationException {
-        // 1. Check Authentication
-        if (!SessionManager.isAdminLoggedIn(adminId)) {
-            throw new AuthenticationException("Unauthorized access: Admin must be logged in.");
-        }
 
-        // 2. Database Update Logic
-        try (Connection connection = DatabaseAccess.getConnection()) {
-            String query = "UPDATE seats SET seat_price = ?, updated_at = NOW() WHERE seat_id = ?";
-            PreparedStatement statement = connection.prepareStatement(query);
-
-            statement.setDouble(1, newPrice);
-            statement.setInt(2, seatId);
-
-            int rowsAffected = statement.executeUpdate();
-
-            if (rowsAffected == 0) {
-                System.out.println("Warning: Seat ID " + seatId + " not found or price was unchanged.");
-            } else {
-                System.out.println("Seat ID " + seatId + " price updated successfully by Admin " + adminId);
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new AuthenticationException("Database error during price update: " + e.getMessage());
-        }
     }
 
     @Override
     public void updateSeatType(int adminId, int seatId, String newType) throws AuthenticationException {
-        // 1. Check Authentication
-        if (!SessionManager.isAdminLoggedIn(adminId)) {
-            throw new AuthenticationException("Unauthorized access: Admin must be logged in.");
-        }
 
-        // Normalize type input
-        String normalizedType = newType.toUpperCase();
-
-        // 2. Database Update Logic
-        try (Connection connection = DatabaseAccess.getConnection()) {
-            String query = "UPDATE seats SET seat_type = ?, updated_at = NOW() WHERE seat_id = ?";
-            PreparedStatement statement = connection.prepareStatement(query);
-
-            statement.setString(1, normalizedType);
-            statement.setInt(2, seatId);
-
-            int rowsAffected = statement.executeUpdate();
-
-            if (rowsAffected == 0) {
-                System.out.println("Warning: Seat ID " + seatId + " not found or type was unchanged.");
-            } else {
-                System.out.println("Seat ID " + seatId + " type updated to " + normalizedType + " successfully by Admin " + adminId);
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new AuthenticationException("Database error during type update: " + e.getMessage());
-        }
     }
 
-    @Override //do not use
+    @Override
     public void deleteSeat(int adminId, int seatId) throws AuthenticationException {
 
     }
 
     @Override
     public Seat[] getAllSeats(int adminId) throws AuthenticationException {
-        // 1. Check Authentication
-        if (!SessionManager.isAdminLoggedIn(adminId)) {
-            throw new AuthenticationException("Unauthorized access: Admin must be logged in.");
-        }
-
-        // 2. Database Fetch Logic
-        try (Connection connection = DatabaseAccess.getConnection()) {
-            String query = "SELECT seat_id, seat_row, seat_number, seat_type, seat_price FROM seats ORDER BY seat_row, seat_number";
-            PreparedStatement statement = connection.prepareStatement(query,
-                    ResultSet.TYPE_SCROLL_INSENSITIVE,
-                    ResultSet.CONCUR_READ_ONLY);
-            ResultSet rs = statement.executeQuery();
-
-            // Count rows for array size
-            int rowCount = 0;
-            if (rs.last()) {
-                rowCount = rs.getRow();
-                rs.beforeFirst(); // Reset cursor
-            }
-
-            if (rowCount == 0) {
-                return new Seat[0];
-            }
-
-            Seat[] allSeats = new Seat[rowCount];
-            int index = 0;
-
-            while (rs.next()) {
-                Seat seat = new Seat();
-                seat.seatId = rs.getInt("seat_id");
-                // Assuming seat_row is stored as a String (e.g., "A", "B", "C")
-                seat.seatRow = rs.getString("seat_row");
-                seat.seatNumber = rs.getInt("seat_number");
-                seat.seatType = rs.getString("seat_type");
-                seat.seatPrice = rs.getDouble("seat_price");
-
-                allSeats[index++] = seat;
-            }
-
-            return allSeats;
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new AuthenticationException("Database error during seat retrieval: " + e.getMessage());
-        }
+        return new Seat[0];
     }
 
     // ===== SEAT SCHEDULE METHODS =====

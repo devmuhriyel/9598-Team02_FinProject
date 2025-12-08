@@ -12,13 +12,13 @@ import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.SeatMgmtMVCs.AdminSMNavManager;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingAdmin.AdminService;
 
-
 import java.io.IOException;
 
 public class AdminNavigationManager {
     private Stage homeStage;
     private AdminAuthNavManager authNavManager;
     private Admin admin;
+    private AdminService adminService;
 
     private Pane homePane;
     private AdminHomeController homeController;
@@ -37,16 +37,15 @@ public class AdminNavigationManager {
     private AdminMMNavManager movieNavManager;
     private AdminSMNavManager seatNavManager;
 
-    // Add others as needed
-    private AdminService adminService;
-
-    public AdminNavigationManager(Stage homeStage, AdminAuthNavManager authNavManager, Admin admin) {
+    public AdminNavigationManager(Stage homeStage, AdminAuthNavManager authNavManager, Admin admin, AdminService adminService) {
         this.homeStage = homeStage;
         this.authNavManager = authNavManager;
         this.admin = admin;
         this.adminService = adminService;
 
+        // Initialize sub-navigation managers
         this.seatNavManager = new AdminSMNavManager(adminService, admin);
+        this.movieNavManager = new AdminMMNavManager(adminService, admin);
 
         initializeHomeView();
     }
@@ -85,24 +84,8 @@ public class AdminNavigationManager {
     }
 
     public void showMovieMgmtView() {
-        if (movieMgmtPane == null) {
-            try {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/AdminMovieMgmt.fxml"));
-                movieMgmtPane = loader.load();
-
-                // Initialize movie nav manager if this section has sub-views
-                StackPane movieContainer = (StackPane) movieMgmtPane.lookup("#movieSubContainer");
-                if (movieContainer != null) {
-                    //Put stack pane of Movie Mgmt MVCs here
-//                    movieNavManager = new AdminMMNavManager(movieContainer);
-                }
-
-            } catch (IOException e) {
-                e.printStackTrace();
-                movieMgmtPane = createPlaceholder("Movie Management");
-            }
-        }
-        loadContentPane(movieMgmtPane);
+        Pane movieViewContent = movieNavManager.getMovieMgmtView();
+        loadContentPane(movieViewContent);
     }
 
     public void showSeatMgmtView() {
