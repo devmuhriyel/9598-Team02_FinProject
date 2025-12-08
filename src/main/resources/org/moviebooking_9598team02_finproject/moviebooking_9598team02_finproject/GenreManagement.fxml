@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<BorderPane prefHeight="640.0" prefWidth="1000.0" style="-fx-background-color: #121212;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.GenreMgmtMVCs.GenreMgmtView">
+
+    <!-- Header -->
+    <top>
+        <VBox spacing="10.0" style="-fx-padding: 20; -fx-background-color: #1b1b1b; -fx-border-color: #2a2a2a; -fx-border-width: 0 0 1 0;">
+            <children>
+                <Text fill="#ffffff" text="Genre Management">
+                    <font><Font name="SansSerif Bold" size="24.0" /></font>
+                </Text>
+                <Text fx:id="messageText" fill="WHITE" visible="false" wrappingWidth="940.0">
+                    <font><Font name="SansSerif Regular" size="12.0" /></font>
+                </Text>
+            </children>
+        </VBox>
+    </top>
+
+    <!-- Content -->
+    <center>
+        <SplitPane dividerPositions="0.5677655677655677" orientation="VERTICAL" BorderPane.alignment="CENTER">
+            <items>
+                <!-- Genre Table -->
+                <VBox spacing="10.0" style="-fx-padding: 20; -fx-background-color: #121212;">
+                    <children>
+                        <Text fill="#ffffff" text="Genres List">
+                            <font><Font name="SansSerif Bold" size="16.0" /></font>
+                        </Text>
+                        <TableView fx:id="genreTable" prefHeight="260.0" prefWidth="940.0" style="-fx-background-color: #1e1e1e; -fx-control-inner-background: #1e1e1e; -fx-table-cell-border-color: #1e1e1e; -fx-table-header-border-color: #2a2a2a;">
+                            <columns>
+                                <TableColumn fx:id="idColumn" prefWidth="100.0" text="ID" />
+                                <TableColumn fx:id="nameColumn" prefWidth="250.0" text="Genre Name" />
+                                <TableColumn fx:id="descriptionColumn" prefWidth="590.0" text="Description" />
+                            </columns>
+                        </TableView>
+                    </children>
+                </VBox>
+
+                <!-- Form Section -->
+                <VBox spacing="15.0" style="-fx-padding: 20; -fx-background-color: #121212;">
+                    <children>
+                        <Text fill="#ffffff" text="Genre Details">
+                            <font><Font name="SansSerif Bold" size="16.0" /></font>
+                        </Text>
+
+                        <VBox spacing="8.0">
+                            <children>
+                                <Label style="-fx-text-fill: #e0e0e0;" text="Genre Name:">
+                                    <font><Font name="SansSerif Regular" size="12.0" /></font>
+                                </Label>
+                                <TextField fx:id="genreNameField" promptText="Enter genre name" style="-fx-background-color: #1e1e1e; -fx-text-fill: #ffffff; -fx-prompt-text-fill: #6d6d6d; -fx-border-color: #2a2a2a;" />
+
+                                <Label style="-fx-text-fill: #e0e0e0;" text="Description:">
+                                    <font><Font name="SansSerif Regular" size="12.0" /></font>
+                                </Label>
+                                <TextArea fx:id="genreDescriptionField" prefHeight="120.0" prefWidth="940.0" promptText="Enter genre description" style="-fx-control-inner-background: #1e1e1e; -fx-background-color: #1e1e1e; -fx-text-fill: #ffffff; -fx-prompt-text-fill: #6d6d6d; -fx-border-color: #2a2a2a; -fx-text-box-border: transparent;" wrapText="true" />
+                            </children>
+                        </VBox>
+
+                        <HBox spacing="10.0">
+                            <children>
+                                <Button fx:id="addButton" prefHeight="25.0" prefWidth="145.0" style="-fx-background-color: #43a047; -fx-font-size: 12px;" text="Add Genre" textFill="#ffffff" />
+                                <Button fx:id="updateButton" prefHeight="25.0" prefWidth="145.0" style="-fx-background-color: #1e88e5; -fx-font-size: 12px;" text="Update Genre" textFill="#ffffff" />
+                                <Button fx:id="deleteButton" prefHeight="25.0" prefWidth="145.0" style="-fx-background-color: #e53935; -fx-font-size: 12px;" text="Delete Genre" textFill="#ffffff" />
+                                <Button fx:id="clearButton" prefHeight="25.0" prefWidth="80.0" style="-fx-background-color: #424242; -fx-text-fill: #ffffff; -fx-font-size: 12px;" text="Clear" />
+                                <Button fx:id="refreshButton" prefHeight="25.0" prefWidth="80.0" style="-fx-background-color: #424242; -fx-text-fill: #ffffff; -fx-font-size: 12px;" text="Refresh" />
+                            </children>
+                        </HBox>
+                    </children>
+                </VBox>
+            </items>
+        </SplitPane>
+    </center>
+</BorderPane>
