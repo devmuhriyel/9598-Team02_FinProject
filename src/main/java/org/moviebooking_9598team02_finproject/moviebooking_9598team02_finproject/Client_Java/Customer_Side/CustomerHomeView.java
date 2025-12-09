@@ -7,25 +7,38 @@ import javafx.scene.layout.StackPane;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * CustomerHomeView - View component for customer home screen
+ * FIXED VERSION - Matches CustomerHome.fxml fx:id names
+ */
 public class CustomerHomeView {
 
-    // ===== VARIABLES =====
+    // ===== FXML VARIABLES =====
     @FXML
     private Label customerName;
+
     @FXML
     private Label logOutButton;
+
+    // Navigation labels - FIXED to match FXML
     @FXML
-    private Label navDashboard;
+    private Label navBrowse;  // Was: navDashboard/navMovie
+
     @FXML
-    private Label navMovie;
+    private Label navBookings;  // Was: navBooking
+
     @FXML
-    private Label navShowtime;
+    private Label navHistory;  // NEW
+
     @FXML
-    private Label navBooking;
+    private Label navProfile;  // Was: navCustomer
+
     @FXML
-    private Label navCustomer;
+    private Label navSettings;  // NEW
+
     @FXML
-    private Label navGenre;
+    private Label currentDateTime;  // NEW - for date/time display
+
     @FXML
     private StackPane panesContainer;
 
@@ -33,55 +46,83 @@ public class CustomerHomeView {
 
     @FXML
     public void initialize() {
-        labelMap.put("navDashboard", navDashboard);
-        labelMap.put("navMovie", navMovie);
-        labelMap.put("navShowtime", navShowtime);
-        labelMap.put("navBooking", navBooking);
-        labelMap.put("navCustomer", navCustomer);
-        labelMap.put("navGenre", navGenre);
+        // Map navigation labels for easy access
+        labelMap.put("navBrowse", navBrowse);
+        labelMap.put("navBookings", navBookings);
+        labelMap.put("navHistory", navHistory);
+        labelMap.put("navProfile", navProfile);
+        labelMap.put("navSettings", navSettings);
     }
 
     // ===== METHODS =====
-    public void setCustomerName(String customerName){
+
+    /**
+     * Set the customer name displayed in the sidebar
+     */
+    public void setCustomerName(String customerName) {
         this.customerName.setText(customerName);
     }
 
-    public void changePanes(String labelName){
+    /**
+     * Update the date/time display
+     */
+    public void updateDateTime(String dateTime) {
+        if (currentDateTime != null) {
+            currentDateTime.setText(dateTime);
+        }
+    }
+
+    /**
+     * Highlight the active navigation item
+     * @param labelName The name of the label to highlight (e.g., "navBrowse")
+     */
+    public void changePanes(String labelName) {
+        // Reset all navigation labels to default style
         for (Label label : labelMap.values()) {
             label.setStyle("-fx-text-fill: #FFFFFF; -fx-padding: 8 10; -fx-cursor: hand;");
         }
 
+        // Highlight the active label
         Label activeLabel = labelMap.get(labelName);
         if (activeLabel != null) {
-            activeLabel.setStyle("-fx-text-fill: #FFFFFF; -fx-background-color: #ff2525; -fx-padding: 8 10; -fx-font-weight: bold; -fx-background-radius: 5; -fx-cursor: hand;");
+            activeLabel.setStyle("-fx-text-fill: #FFFFFF; -fx-background-color: #FF6B6B; -fx-padding: 8 10; -fx-font-weight: bold; -fx-background-radius: 5; -fx-cursor: hand;");
         }
     }
 
     // ===== GETTERS =====
+
     public Label getCustomerName() {
         return customerName;
     }
+
     public Label getLogOutButton() {
         return logOutButton;
     }
-    public Label getNavDashboard() {
-        return navDashboard;
+
+    public Label getNavBrowse() {
+        return navBrowse;
     }
-    public Label getNavMovie() {
-        return navMovie;
+
+    public Label getNavBookings() {
+        return navBookings;
     }
-    public Label getNavShowtime() {
-        return navShowtime;
+
+    public Label getNavHistory() {
+        return navHistory;
     }
-    public Label getNavBooking() {
-        return navBooking;
+
+    public Label getNavProfile() {
+        return navProfile;
     }
-    public Label getNavCustomer() {
-        return navCustomer;
+
+    public Label getNavSettings() {
+        return navSettings;
     }
-    public Label getNavGenre(){
-        return navGenre;
+
+    public Label getCurrentDateTime() {
+        return currentDateTime;
     }
+
     public StackPane getPanesContainer() {
         return panesContainer;
     }

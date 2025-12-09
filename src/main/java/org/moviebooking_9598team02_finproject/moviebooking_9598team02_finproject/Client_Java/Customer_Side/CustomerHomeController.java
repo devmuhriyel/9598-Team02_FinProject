@@ -1,65 +1,142 @@
 package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Customer_Side;
 
+import javafx.animation.Animation;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.util.Duration;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Customer;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+/**
+ * CustomerHomeController - Controller for customer home screen
+ * FIXED VERSION - Matches CustomerHome.fxml structure
+ */
 public class CustomerHomeController {
     private CustomerHomeView view;
     private CustomerHomeModel model;
     private CustomerNavigationManager navManager;
     private Customer customer;
+    private Timeline dateTimeUpdater;
 
-    public CustomerHomeController(CustomerHomeView homeView, CustomerHomeModel homeModel, CustomerNavigationManager navManager, Customer customerAcct) {
+    public CustomerHomeController(CustomerHomeView homeView, CustomerHomeModel homeModel,
+                                  CustomerNavigationManager navManager, Customer customerAcct) {
         this.view = homeView;
         this.model = homeModel;
         this.navManager = navManager;
         this.customer = customerAcct;
+
         view.setCustomerName(customer.username);
         initializeButtons();
-//        switchToDashboard();
+        startDateTimeUpdater();
+
+        // Optionally show Browse Movies by default
+        // switchToBrowse();
     }
 
+    // ===== BUTTON INITIALIZATION =====
+
+    /**
+     * Wire all navigation buttons to their respective handlers
+     */
     private void initializeButtons() {
         view.getLogOutButton().setOnMouseClicked(event -> logOut());
-        view.getNavDashboard().setOnMouseClicked(event -> switchToDashboard());
-        view.getNavMovie().setOnMouseClicked(event -> switchToMovieMgmt());
-        view.getNavShowtime().setOnMouseClicked(event -> switchToSeatMgmt());
-        view.getNavBooking().setOnMouseClicked(event -> switchToBookingMgmt());
-        view.getNavCustomer().setOnMouseClicked(event -> switchToCustomerMgmt());
-        view.getNavGenre().setOnMouseClicked(event -> switchToGenreMgmt());
+        view.getNavBrowse().setOnMouseClicked(event -> switchToBrowse());
+        view.getNavBookings().setOnMouseClicked(event -> switchToMyBookings());
+        view.getNavHistory().setOnMouseClicked(event -> switchToBookingHistory());
+        view.getNavProfile().setOnMouseClicked(event -> switchToMyProfile());
+        view.getNavSettings().setOnMouseClicked(event -> switchToSettings());
     }
 
+    // ===== DATE/TIME UPDATER =====
+
+    /**
+     * Start automatic date/time updates every 60 seconds
+     */
+    private void startDateTimeUpdater() {
+        updateDateTime(); // Update immediately
+
+        dateTimeUpdater = new Timeline(new KeyFrame(Duration.seconds(60), event -> {
+            updateDateTime();
+        }));
+        dateTimeUpdater.setCycleCount(Animation.INDEFINITE);
+        dateTimeUpdater.play();
+    }
+
+    /**
+     * Stop the date/time updater (called on logout)
+     */
+    private void stopDateTimeUpdater() {
+        if (dateTimeUpdater != null) {
+            dateTimeUpdater.stop();
+        }
+    }
+
+    /**
+     * Update the date/time display
+     */
+    private void updateDateTime() {
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, MMM dd, yyyy  |  h:mm a");
+        String formattedDateTime = now.format(formatter);
+        view.updateDateTime(formattedDateTime);
+    }
+
+    // ===== NAVIGATION METHODS =====
+
+    /**
+     * Logout current customer and return to auth screen
+     */
     public void logOut() {
+        stopDateTimeUpdater();
         customer = null;
         navManager.logoutAndReturnToAuth();
     }
 
-    public void switchToDashboard() {
-        view.changePanes("navDashboard");
-        navManager.showDashboardView();
+    /**
+     * Switch to Browse Movies view
+     */
+    public void switchToBrowse() {
+        view.changePanes("navBrowse");
+        navManager.showBrowseMoviesView();
     }
 
-    public void switchToMovieMgmt() {
-        view.changePanes("navMovie");
-        navManager.showMovieMgmtView();
+    /**
+     * Switch to My Bookings view
+     */
+    public void switchToMyBookings() {
+        view.changePanes("navBookings");
+        navManager.showMyBookingsView();
     }
 
-    public void switchToSeatMgmt() {
-        view.changePanes("navShowtime");
-        navManager.showSeatMgmtView();
+    /**
+     * Switch to Booking History view
+     */
+    public void switchToBookingHistory() {
+        view.changePanes("navHistory");
+        navManager.showBookingHistoryView();
     }
 
-    public void switchToBookingMgmt() {
-        view.changePanes("navBooking");
-        navManager.showBookingMgmtView();
+    /**
+     * Switch to My Profile view
+     */
+    public void switchToMyProfile() {
+        view.changePanes("navProfile");
+        navManager.showMyProfileView();
     }
 
-    public void switchToCustomerMgmt() {
-        view.changePanes("navCustomer");
-        navManager.showCustomerMgmtView();
+    /**
+     * Switch to Settings view
+     */
+    public void switchToSettings() {
+        view.changePanes("navSettings");
+        navManager.showSettingsView();
     }
 
-    public void switchToGenreMgmt(){
-        view.changePanes("navGenre");
-//        navManager.showGenreMgmtView();
+    // ===== GETTERS =====
+
+    public Customer getCustomer() {
+        return customer;
     }
 }

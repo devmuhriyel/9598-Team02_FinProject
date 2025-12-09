@@ -147,7 +147,7 @@ public class AdminNavigationManager {
                 System.err.println("ERROR: Customer Management returned null pane!");
                 customerMgmtPane = createPlaceholder("Customer Management - Error Loading");
             } else {
-                System.out.println("✅ Customer Management loaded successfully with MVC wiring");
+                System.out.println("Customer Management loaded successfully with MVC wiring");
             }
         }
         loadContentPane(customerMgmtPane);
