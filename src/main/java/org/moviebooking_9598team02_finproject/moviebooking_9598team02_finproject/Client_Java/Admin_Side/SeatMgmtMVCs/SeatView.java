@@ -6,33 +6,50 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class SeatView {
 
     @FXML private GridPane seatGridPane;
     @FXML private Label statusMessageLabel;
     @FXML private TextField priceInput;
+    @FXML private Label currentSeatDetailsLabel;
 
-    // Row A
     @FXML private Button btnA1; @FXML private Button btnA2; @FXML private Button btnA3;
     @FXML private Button btnA4; @FXML private Button btnA5; @FXML private Button btnA6;
     @FXML private Button btnA7; @FXML private Button btnA8; @FXML private Button btnA9;
     @FXML private Button btnA10; @FXML private Button btnA11;
 
-    // Row B
     @FXML private Button btnB1; @FXML private Button btnB2; @FXML private Button btnB3;
     @FXML private Button btnB4; @FXML private Button btnB5; @FXML private Button btnB6;
     @FXML private Button btnB7; @FXML private Button btnB8; @FXML private Button btnB9;
     @FXML private Button btnB10; @FXML private Button btnB11;
 
-    // Row C
     @FXML private Button btnC1; @FXML private Button btnC2; @FXML private Button btnC3;
     @FXML private Button btnC4; @FXML private Button btnC5; @FXML private Button btnC6;
     @FXML private Button btnC7; @FXML private Button btnC8; @FXML private Button btnC9;
     @FXML private Button btnC10; @FXML private Button btnC11;
 
-    // ===== GETTERS =====
+    @FXML private Button updateButton;
+    @FXML private Button btnSetStandard;
+    @FXML private Button btnSetVIP;
+    @FXML private Button btnClearSelection;
+
+    private final List<Button> selectedButtons = new ArrayList<>();
+    private static final String SELECTED_STYLE = "-fx-border-color: #007ACC; -fx-border-width: 3; -fx-border-radius: 6; -fx-effect: dropshadow(three-pass-box, #007ACC, 10, 0.5, 0, 0);";
+    private final Map<String, Button> seatButtonMap = new HashMap<>();
+
+    @FXML
+    public void initialize() {
+        // Populate the seat button map after FXML loads
+        for (Button button : getAllSeatButtons()) {
+            if (button != null) {
+                seatButtonMap.put(button.getText(), button);
+            }
+        }
+    }
 
     public List<Button> getAllSeatButtons() {
         List<Button> buttons = new ArrayList<>();
@@ -49,7 +66,6 @@ public class SeatView {
         return buttons;
     }
 
-    //Row A
     public Button getBtnA1() { return btnA1; }
     public Button getBtnA2() { return btnA2; }
     public Button getBtnA3() { return btnA3; }
@@ -62,7 +78,6 @@ public class SeatView {
     public Button getBtnA10() { return btnA10; }
     public Button getBtnA11() { return btnA11; }
 
-    //Row B
     public Button getBtnB1() { return btnB1; }
     public Button getBtnB2() { return btnB2; }
     public Button getBtnB3() { return btnB3; }
@@ -75,7 +90,6 @@ public class SeatView {
     public Button getBtnB10() { return btnB10; }
     public Button getBtnB11() { return btnB11; }
 
-    //Row C
     public Button getBtnC1() { return btnC1; }
     public Button getBtnC2() { return btnC2; }
     public Button getBtnC3() { return btnC3; }
@@ -90,28 +104,47 @@ public class SeatView {
 
     public GridPane getSeatGridPane() { return seatGridPane; }
     public Label getStatusMessageLabel() { return statusMessageLabel; }
+    public Label getCurrentSeatDetailsLabel() { return currentSeatDetailsLabel; }
     public TextField getPriceInput() { return priceInput; }
+    public Button getUpdateButton() { return updateButton; }
+    public Button getBtnSetStandard() { return btnSetStandard; }
+    public Button getBtnSetVIP() { return btnSetVIP; }
+    public Button getClearSelectionButton() { return btnClearSelection; }
 
-    // ===== METHODS FOR CONTROLLER TO UPDATE THE UI =====
-
-    public void updateSeatVisual(Button button, String styleString) {
-        if (button != null) {
-            button.setStyle(styleString);
+    public void updateSeatStyle(String seatName, String seatType) {
+        Button button = seatButtonMap.get(seatName);
+        if (button == null) return;
+        String baseStyle = "-fx-text-fill: #000000; -fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 10 15; -fx-min-width: 60;";
+        String colorStyle;
+        if ("vip".equalsIgnoreCase(seatType)) {
+            colorStyle = "-fx-background-color: #FFD700;";
+        } else {
+            colorStyle = "-fx-background-color: WHITE;";
         }
+        button.setStyle(baseStyle + colorStyle);
     }
 
-    public void showStatusMessage(String message, boolean isError) {
-        if (statusMessageLabel != null) {
-            statusMessageLabel.setText(message);
-            statusMessageLabel.setStyle(isError ? "-fx-text-fill: #ff2525; -fx-font-weight: bold;" : "-fx-text-fill: #00CC66;");
-            statusMessageLabel.setVisible(true);
-        }
+    public void setSeatSelected(Button button) {
+        button.setStyle(button.getStyle() + " " + SELECTED_STYLE);
+        selectedButtons.add(button);
     }
 
-    public void clearStatusMessage() {
-        if (statusMessageLabel != null) {
-            statusMessageLabel.setText("");
-            statusMessageLabel.setVisible(false);
+    public void deselectSeat(Button button) {
+        String existingStyle = button.getStyle();
+        String newStyle = existingStyle.replace(SELECTED_STYLE, "");
+        button.setStyle(newStyle.trim());
+        selectedButtons.remove(button);
+    }
+
+    public void handleClearSelection() {
+        for (Button button : new ArrayList<>(selectedButtons)) {
+            String existingStyle = button.getStyle();
+            String newStyle = existingStyle.replace(SELECTED_STYLE, "");
+            button.setStyle(newStyle.trim());
         }
+        selectedButtons.clear();
+        statusMessageLabel.setText("Click seats to select them.");
+        currentSeatDetailsLabel.setText("");
+        priceInput.setText("");
     }
 }
