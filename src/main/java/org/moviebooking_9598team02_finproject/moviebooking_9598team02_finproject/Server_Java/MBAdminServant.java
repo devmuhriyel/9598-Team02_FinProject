@@ -9,6 +9,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MBAdminServant extends AdminServicePOA {
 
@@ -1000,32 +1002,109 @@ public class MBAdminServant extends AdminServicePOA {
     // ===== PAYMENT PROCESSING METHODS =====
     @Override
     public Payment[] getAllPayments(int adminId) throws AuthenticationException {
-        return new Payment[0];
+        System.out.println("Admin " + adminId + " requested all payments.");
+        List<Payment> paymentList = new ArrayList<>();
+
+        String sql = "SELECT * FROM payments ORDER BY payment_date DESC";
+
+        try (Connection conn = DatabaseAccess.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+                paymentList.add(mapResultSetToPayment(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return paymentList.toArray(new Payment[0]);
     }
 
     @Override
     public Payment getPaymentById(int adminId, int paymentId) throws AuthenticationException, PaymentNotFoundException {
-        return null;
+        String sql = "SELECT * FROM payments WHERE payment_id = ?";
+
+        try (Connection conn = DatabaseAccess.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, paymentId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return mapResultSetToPayment(rs);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        throw new PaymentNotFoundException();
     }
 
     @Override
     public Payment[] getPaymentsByStatus(int adminId, String status) throws AuthenticationException {
-        return new Payment[0];
+        List<Payment> paymentList = new ArrayList<>();
+        String sql = "SELECT * FROM payments WHERE payment_status = ? ORDER BY payment_date DESC";
+
+        try (Connection conn = DatabaseAccess.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, status);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    paymentList.add(mapResultSetToPayment(rs));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return paymentList.toArray(new Payment[0]);
     }
 
     @Override
     public Payment[] getBookingPayments(int adminId, int bookingId) throws AuthenticationException {
-        return new Payment[0];
+        List<Payment> paymentList = new ArrayList<>();
+        String sql = "SELECT * FROM payments WHERE booking_id = ?";
+
+        try (Connection conn = DatabaseAccess.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, bookingId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    paymentList.add(mapResultSetToPayment(rs));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return paymentList.toArray(new Payment[0]);
     }
 
     @Override
     public void updatePaymentStatus(int adminId, int paymentId, String status) throws AuthenticationException, PaymentNotFoundException {
+        String sql = "UPDATE payments SET payment_status = ?, updated_at = NOW() WHERE payment_id = ?";
 
+        try (Connection conn = DatabaseAccess.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, status);
+            stmt.setInt(2, paymentId);
+
+            int rowsUpdated = stmt.executeUpdate();
+            if (rowsUpdated == 0) {
+                throw new PaymentNotFoundException();
+            }
+            System.out.println("Admin " + adminId + " updated payment " + paymentId + " to " + status);
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Database error: " + e.getMessage());
+        }
     }
 
     @Override
     public void refundPayment(int adminId, int paymentId, String reason) throws AuthenticationException, PaymentNotFoundException, PaymentException {
-
+        // not sure here pa pero working on
     }
 
     // ===== ADDITIONAL METHODS =====
@@ -1071,5 +1150,43 @@ public class MBAdminServant extends AdminServicePOA {
             throw new AuthenticationException("Database error: " + e.getMessage());
         }
         return 0;
+    }
+
+    // Helper para sa payment
+
+    private Payment mapResultSetToPayment(ResultSet rs) throws SQLException {
+        Payment p = new Payment();
+
+        p.paymentId = rs.getInt("payment_id");
+        p.bookingId = rs.getInt("booking_id");
+        p.amount = rs.getDouble("amount");
+
+        String method = rs.getString("payment_method");
+        p.paymentMethod = (method != null) ? method : "Unknown";
+
+        String status = rs.getString("payment_status");
+        p.paymentStatus = (status != null) ? status : "Pending";
+
+        String txn = rs.getString("transaction_id");
+        p.transactionId = (txn != null) ? txn : "N/A";
+
+        String pDate = rs.getString("payment_date");
+        if (pDate == null || pDate.isEmpty()) {
+            try {
+                pDate = rs.getString("created_at");
+            } catch (SQLException e) {
+                pDate = "N/A";
+            }
+        }
+        p.paymentDate = (pDate != null) ? pDate : "N/A";
+
+        try {
+            String reason = rs.getString("refund_reason");
+            p.refundReason = (reason != null) ? reason : "";
+        } catch (SQLException e) {
+            p.refundReason = "";
+        }
+
+        return p;
     }
 }
