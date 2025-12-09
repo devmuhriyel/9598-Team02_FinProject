@@ -1,5 +1,6 @@
 package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side;
 
+import javafx.scene.layout.Pane;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Admin;
 
 public class AdminHomeController {
@@ -26,6 +27,7 @@ public class AdminHomeController {
         view.getNavBooking().setOnMouseClicked(event -> switchToBookingMgmt());
         view.getNavCustomer().setOnMouseClicked(event -> switchToCustomerMgmt());
         view.getNavGenre().setOnMouseClicked(event -> switchToGenreMgmt());
+        view.getNavPayment().setOnMouseClicked(event -> switchToPaymentMgmt());
     }
 
     public void logOut() {
@@ -60,5 +62,10 @@ public class AdminHomeController {
     public void switchToGenreMgmt(){
         view.changePanes("navGenre");
 //        navManager.showGenreMgmtView();
+    }
+
+    public void switchToPaymentMgmt() {
+        view.changePanes("navPayment");
+        navManager.showPaymentMgmtView();
     }
 }
