@@ -2,11 +2,13 @@ package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finprojec
 
 import javafx.scene.layout.Pane;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Admin;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.CustomerMgmtMVCs.AccountNavigationManager;
 
 public class AdminHomeController {
     private AdminHomeView view;
     private AdminHomeModel model;
     private AdminNavigationManager navManager;
+    private AccountNavigationManager showAdminMgmtViewl;
     private Admin admin;
 
     public AdminHomeController(AdminHomeView homeView, AdminHomeModel homeModel, AdminNavigationManager navManager, Admin adminAcct) {

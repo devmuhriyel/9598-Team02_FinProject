@@ -8,6 +8,7 @@ import javafx.stage.Stage;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Admin;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.AuthenticationMVCs.AdminAuthNavManager;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.BookingsMVCs.AdminBookingNavManager;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.CustomerMgmtMVCs.AccountNavigationManager;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.MovieMVCs.AdminMMNavManager;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.SeatMgmtMVCs.AdminSMNavManager;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingAdmin.AdminService;
@@ -31,12 +32,14 @@ public class AdminNavigationManager {
     private Pane seatMgmtPane;
     private Pane bookingMgmtPane;
     private Pane customerMgmtPane;
+    private Pane adminMgmtPane;
     private Pane paymentMgmtPane;
 
     // Sub-navigation managers
     private AdminBookingNavManager bookingNavManager;
     private AdminMMNavManager movieNavManager;
     private AdminSMNavManager seatNavManager;
+    private AccountNavigationManager accNavManager;
     private AdminPaymentNavManager paymentNavManager;
 
     // Add others as needed
@@ -145,17 +148,36 @@ public class AdminNavigationManager {
 
     public void showCustomerMgmtView() {
         if (customerMgmtPane == null) {
-            try {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/AdminCustomerMgmt.fxml"));
-                customerMgmtPane = loader.load();
-            } catch (IOException e) {
-                e.printStackTrace();
-                customerMgmtPane = createPlaceholder("Customer Management");
+            // Use AccountNavigationManager to properly initialize Customer Management MVC
+            AccountNavigationManager customerNavManager = new AccountNavigationManager(admin.adminId, false);
+            customerMgmtPane = customerNavManager.getCustomerPane();
+
+            if (customerMgmtPane == null) {
+                System.err.println("ERROR: Customer Management returned null pane!");
+                customerMgmtPane = createPlaceholder("Customer Management - Error Loading");
+            } else {
+                System.out.println("✅ Customer Management loaded successfully with MVC wiring");
             }
         }
         loadContentPane(customerMgmtPane);
     }
 
+    //
+    public void showAdminMgmtView(){
+        if (adminMgmtPane == null) {
+
+            accNavManager = new AccountNavigationManager(admin.adminId);
+            adminMgmtPane = accNavManager.getAdminPane();
+
+            if (adminMgmtPane == null) {
+                System.err.println("ERROR: AdminAccountManager returned null pane!");
+                adminMgmtPane = createPlaceholder("Admin Management - Error Loading");
+            } else {
+                System.out.println("✅ Admin Management loaded successfully with MVC wiring");
+            }
+        }
+        loadContentPane(adminMgmtPane);
+    }
     public void showPaymentMgmtView() {
         Pane paymentViewContent = paymentNavManager.getPaymentMgmtView();
         loadContentPane(paymentViewContent);
