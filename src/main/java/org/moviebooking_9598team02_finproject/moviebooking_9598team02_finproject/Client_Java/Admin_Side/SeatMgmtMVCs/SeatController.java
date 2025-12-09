@@ -1,203 +1,209 @@
 package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.SeatMgmtMVCs;
 
-import javafx.event.ActionEvent;
-import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.AuthenticationException;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Seat;
 
-import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.ResourceBundle;
 
-public class SeatController implements Initializable {
+public class SeatController {
 
     private final SeatModel model;
     private final SeatView view;
+    private final AdminSMNavManager navManager;
 
     private final Map<String, Seat> seatDataMap = new HashMap<>();
-    private final Map<String, String> seatStyleMap = new HashMap<>();
 
-    private Button currentlySelectedButton = null;
-    private String selectedSeatName = null;
-    private int selectedSeatId = -1;
+    private final List<String> selectedSeatNames = new ArrayList<>();
+    private final List<Integer> selectedSeatIds = new ArrayList<>();
 
-    // --- Constructor (Dependency Injection) ---
-    public SeatController(SeatModel model, SeatView view) {
+    public SeatController(SeatModel model, SeatView view, AdminSMNavManager navigationManager) {
         this.model = model;
         this.view = view;
-    }
-
-    // --- Action Handlers from FXML ---
-
-    public void handlePriceUpdateClick(ActionEvent event) {
-        String priceText = view.getPriceInput().getText();
-
-        try {
-            double newPrice = Double.parseDouble(priceText);
-            updateSelectedSeatPrice(newPrice);
-            view.getPriceInput().clear();
-        } catch (NumberFormatException e) {
-            view.showStatusMessage("Invalid Price: Please enter a valid number.", true);
-        }
-    }
-
-    public void handleSetStandardType(ActionEvent event) {
-        updateSelectedSeatType("STANDARD");
-    }
-    public void handleSetVipType(ActionEvent event) {
-        updateSelectedSeatType("VIP");
-    }
-
-    // --- Initialization and Loading ---
-
-    @Override
-    public void initialize(URL url, ResourceBundle resourceBundle) {
-        for (Button button : view.getAllSeatButtons()) {
-            // TO BE CHECKED
-            button.setOnAction(event -> handleSeatButtonClick((Button) event.getSource()));
-        }
+        this.navManager = navigationManager;
         loadAllSeatData();
+        initializeButtons();
+    }
+
+    private void initializeButtons(){
+        for(Button button: view.getAllSeatButtons()){
+            final Button seatButton = button;
+            final String seatName = button.getText();
+
+            Seat seat = seatDataMap.get(seatName);
+            if (seat != null) {
+                view.updateSeatStyle(seatName, seat.seatType);
+            }
+            button.setOnAction(event -> handleSeatClick(seatButton, seatName));
+        }
+        view.getUpdateButton().setOnAction(event -> handlePriceUpdate());
+        view.getBtnSetVIP().setOnAction(event -> handleSetSeatType("vip"));
+        view.getBtnSetStandard().setOnAction(event -> handleSetSeatType("regular"));
+        view.getClearSelectionButton().setOnAction(event -> handleClearSelection());
     }
 
     private void loadAllSeatData() {
         try {
             Seat[] allSeats = model.getAllSeats();
-            if (allSeats == null || allSeats.length == 0) {
-                view.showStatusMessage("No seat data found on the server.", true);
+            seatDataMap.clear();
+            for (Seat seat : allSeats) {
+                String seatName = getSeatName(seat);
+                seatDataMap.put(seatName, seat);
+            }
+            view.getStatusMessageLabel().setText("Seat data loaded successfully.");
+        } catch (AuthenticationException e) {
+            view.getStatusMessageLabel().setText("Error loading seats: Authentication failed.");
+        } catch (NullPointerException e) {
+            view.getStatusMessageLabel().setText("Service Error: Cannot connect to Admin Service to load seat data. Check CORBA/Service initialization.");
+        } catch (Exception e) {
+            view.getStatusMessageLabel().setText("Error loading seats from server: " + e.getMessage());
+        }
+    }
+
+    private String getSeatName(Seat seat) {
+        return seat.seatRow + seat.seatNumber;
+    }
+
+    private void handleSeatClick(Button clickedButton, String seatName) {
+        // Toggle selection
+        if (selectedSeatNames.contains(seatName)) {
+            // Deselect
+            selectedSeatNames.remove(seatName);
+            Seat seat = seatDataMap.get(seatName);
+            if (seat != null) {
+                selectedSeatIds.remove(Integer.valueOf(seat.seatId));
+            }
+            view.deselectSeat(clickedButton);
+        } else {
+            // Select
+            selectedSeatNames.add(seatName);
+            Seat seat = seatDataMap.get(seatName);
+            if (seat != null) {
+                selectedSeatIds.add(seat.seatId);
+            }
+            view.setSeatSelected(clickedButton);
+        }
+
+        updateSelectionDisplay();
+    }
+
+    private void updateSelectionDisplay() {
+        if (selectedSeatNames.isEmpty()) {
+            view.getStatusMessageLabel().setText("Click seats to select them.");
+            view.getCurrentSeatDetailsLabel().setText("");
+            view.getPriceInput().setText("");
+        } else {
+            view.getStatusMessageLabel().setText("Selected: " + String.join(", ", selectedSeatNames));
+            // Show details of last selected seat
+            String lastSelected = selectedSeatNames.get(selectedSeatNames.size() - 1);
+            loadSeatDetails(lastSelected);
+        }
+    }
+
+    private void handleClearSelection() {
+        selectedSeatNames.clear();
+        selectedSeatIds.clear();
+        view.handleClearSelection();
+        updateSelectionDisplay();
+    }
+
+    private void loadSeatDetails(String seatName) {
+        Seat seat = seatDataMap.get(seatName);
+        if (seat != null) {
+            view.getCurrentSeatDetailsLabel().setText(
+                    String.format("Seat: %s | Type: %s | Price: $%.2f",
+                            seatName,
+                            seat.seatType.toUpperCase(),
+                            seat.seatPrice
+                    )
+            );
+            view.getPriceInput().setText(String.valueOf(seat.seatPrice));
+        } else {
+            view.getCurrentSeatDetailsLabel().setText("Seat: " + seatName + " | Data load error. Select another seat.");
+            view.getPriceInput().setText("");
+        }
+    }
+
+    public void handlePriceUpdate() {
+        if (selectedSeatNames.isEmpty() || selectedSeatIds.isEmpty()) {
+            view.getStatusMessageLabel().setText("Error: Please select at least one seat before updating the price.");
+            return;
+        }
+        String priceText = view.getPriceInput().getText();
+        double newPrice;
+        try {
+            newPrice = Double.parseDouble(priceText);
+            if (newPrice < 0) {
+                view.getStatusMessageLabel().setText("Error: Price must be a non-negative number.");
                 return;
             }
+        } catch (NumberFormatException e) {
+            view.getStatusMessageLabel().setText("Error: Invalid price format. Please enter a number.");
+            return;
+        }
 
-            // TO BE CHECKED
-            Map<String, Button> buttonMap = new HashMap<>();
-            for (Button btn : view.getAllSeatButtons()) {
-                buttonMap.put(btn.getId(), btn);
+        try {
+            // Update all selected seats
+            for (int seatId : selectedSeatIds) {
+                model.updateSeatPrice(seatId, newPrice);
             }
 
-            for (Seat seat : allSeats) {
-                String buttonId = "btn" + seat.seatRow + seat.seatNumber;
-
-                if (buttonMap.containsKey(buttonId)) {
-                    Button button = buttonMap.get(buttonId);
-                    seatDataMap.put(button.getId(), seat);
-                    String style = getStyleForSeatType(seat.seatType);
-                    view.updateSeatVisual(button, style);
-                    seatStyleMap.put(button.getId(), style);
+            // Update local data
+            for (String seatName : selectedSeatNames) {
+                Seat seat = seatDataMap.get(seatName);
+                if (seat != null) {
+                    seat.seatPrice = newPrice;
                 }
             }
-            view.showStatusMessage("Seat data loaded successfully.", false);
 
+            view.getStatusMessageLabel().setText(String.format("Success: Price for %d seat(s) updated to $%.2f.", selectedSeatIds.size(), newPrice));
+
+            // Refresh details for last selected seat
+            if (!selectedSeatNames.isEmpty()) {
+                String lastSelected = selectedSeatNames.get(selectedSeatNames.size() - 1);
+                loadSeatDetails(lastSelected);
+            }
         } catch (AuthenticationException e) {
-            view.showStatusMessage("Error: Authentication failed. Please log in again.", true);
+            view.getStatusMessageLabel().setText("Failed to update price: Authentication failed.");
         } catch (Exception e) {
-            view.showStatusMessage("An unexpected error occurred: " + e.getMessage(), true);
-            e.printStackTrace();
+            view.getStatusMessageLabel().setText("Failed to update price on server: " + e.getMessage());
         }
     }
 
-    // === EVENT HANDLING ===
-    private void handleSeatButtonClick(Button clickedButton) {
-        view.clearStatusMessage();
-
-        // Remove highlight from previously selected button
-        if (currentlySelectedButton != null && currentlySelectedButton != clickedButton) {
-            String prevStyle = seatStyleMap.getOrDefault(currentlySelectedButton.getId(), getStyleForSeatType("STANDARD"));
-            view.updateSeatVisual(currentlySelectedButton, prevStyle);
-        }
-
-        currentlySelectedButton = clickedButton;
-        selectedSeatName = clickedButton.getText();
-
-        Seat selectedSeat = seatDataMap.get(clickedButton.getId());
-        if (selectedSeat == null) {
-            view.showStatusMessage("Error: Seat data not found for this button.", true);
-            selectedSeatId = -1;
-            return;
-        }
-
-        selectedSeatId = selectedSeat.seatId;
-
-        // Apply temporary highlight style for selection
-        view.updateSeatVisual(clickedButton, "-fx-background-color: #007ACC; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 10 15; -fx-min-width: 60;");
-        view.showStatusMessage("Selected Seat: " + selectedSeatName + " | Type: " + selectedSeat.seatType + " | Price: P" + selectedSeat.seatPrice, false);
-    }
-
-    // === Update Logic ===
-
-    /**
-     * Updates the price of the currently selected seat.
-     */
-    public void updateSelectedSeatPrice(double newPrice) {
-        if (selectedSeatId == -1 || currentlySelectedButton == null) {
-            view.showStatusMessage("Please select a seat to update its price.", true);
+    public void handleSetSeatType(String type) {
+        if (selectedSeatNames.isEmpty() || selectedSeatIds.isEmpty()) {
+            view.getStatusMessageLabel().setText("Error: Please select at least one seat before changing the type.");
             return;
         }
 
         try {
-            model.updateSeatPrice(selectedSeatId, newPrice); // Call the Model (CORBA)
-            Seat seat = seatDataMap.get(currentlySelectedButton.getId());
-            if (seat != null) {
-                seat.seatPrice = newPrice;
-            }
-            view.showStatusMessage("Price for " + selectedSeatName + " updated to P" + newPrice, false);
-
-        } catch (AuthenticationException e) {
-            view.showStatusMessage("Update failed: Admin authentication required.", true);
-        } catch (Exception e) {
-            view.showStatusMessage("Error updating price: " + e.getMessage(), true);
-        }
-    }
-
-    /**
-     * Updates the type (STANDARD/VIP) of the currently selected seat.
-     */
-    public void updateSelectedSeatType(String newType) {
-        if (selectedSeatId == -1 || currentlySelectedButton == null) {
-            view.showStatusMessage("Please select a seat to update its type.", true);
-            return;
-        }
-
-        try {
-            String finalType = newType.toUpperCase();
-            model.updateSeatType(selectedSeatId, finalType); // Call the Model (CORBA)
-            Seat seat = seatDataMap.get(currentlySelectedButton.getId());
-
-            if (seat != null) {
-                seat.seatType = finalType;
-                String newStyle = getStyleForSeatType(finalType);
-                view.updateSeatVisual(currentlySelectedButton, newStyle);
-                seatStyleMap.put(currentlySelectedButton.getId(), newStyle);
+            // Update all selected seats
+            for (int seatId : selectedSeatIds) {
+                model.updateSeatType(seatId, type);
             }
 
-            view.showStatusMessage("Type for " + selectedSeatName + " updated to " + finalType, false);
+            // Update local data
+            for (String seatName : selectedSeatNames) {
+                Seat seat = seatDataMap.get(seatName);
+                if (seat != null) {
+                    seat.seatType = type;
+                }
+            }
 
+            view.getStatusMessageLabel().setText(String.format("Success: %d seat(s) set to %s type.", selectedSeatIds.size(), type.toUpperCase()));
+
+            // Refresh details for last selected seat
+            if (!selectedSeatNames.isEmpty()) {
+                String lastSelected = selectedSeatNames.get(selectedSeatNames.size() - 1);
+                loadSeatDetails(lastSelected);
+            }
         } catch (AuthenticationException e) {
-            view.showStatusMessage("Update failed: Admin authentication required.", true);
+            view.getStatusMessageLabel().setText("Failed to update seat type: Authentication failed.");
         } catch (Exception e) {
-            view.showStatusMessage("Error updating type: " + e.getMessage(), true);
+            view.getStatusMessageLabel().setText("Failed to update seat type on server: " + e.getMessage());
         }
-    }
-
-
-    private String getStyleForSeatType(String seatType) {
-        String baseStyle = "-fx-text-fill: #000000; -fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 10 15; -fx-min-width: 60;";
-        String colorStyle;
-
-        switch (seatType.toUpperCase()) {
-            case "VIP":
-                // Gold color for VIP
-                colorStyle = "-fx-background-color: #FFD700;";
-                break;
-            case "STANDARD":
-                // Green color for Standard (also used for Reserved in the FXML key)
-                colorStyle = "-fx-background-color: #00CC66;";
-                break;
-            default:
-                // Fallback (White for Available/Default)
-                colorStyle = "-fx-background-color: #FFFFFF;";
-                break;
-        }
-        return colorStyle + " " + baseStyle;
     }
 }
