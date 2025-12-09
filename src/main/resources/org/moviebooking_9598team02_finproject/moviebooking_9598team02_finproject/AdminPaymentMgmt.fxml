@@ -10,17 +10,32 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
+<?import javafx.scene.control.TextField?>
 <BorderPane prefHeight="720.0" prefWidth="1080.0" style="-fx-background-color: #292929;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.PaymentMVCs.AdminPaymentView">
 
     <top>
-        <HBox alignment="CENTER_LEFT" prefHeight="80.0" spacing="20.0" style="-fx-padding: 20;">
-            <Label text="Payment Verification" textFill="WHITE">
-                <font><Font name="SansSerif Bold" size="24.0" /></font>
-            </Label>
-            <Label fx:id="lblStatus" text="Ready" textFill="#bbbbbb">
-                <font><Font name="SansSerif Italic" size="14.0" /></font>
-            </Label>
-        </HBox>
+        <VBox spacing="15.0" style="-fx-background-color: #292929; -fx-padding: 20;">
+            <HBox alignment="CENTER_LEFT" spacing="20.0">
+                <Label text="Payment Verification" textFill="WHITE">
+                    <font><Font name="SansSerif Bold" size="24.0" /></font>
+                </Label>
+                <Label fx:id="lblStatus" text="Ready" textFill="#bbbbbb">
+                    <font><Font name="SansSerif Italic" size="14.0" /></font>
+                </Label>
+            </HBox>
+
+            <HBox spacing="10.0" alignment="CENTER_LEFT">
+                <TextField fx:id="searchField" promptText="Search by Transaction ID or Booking ID..."
+                           prefWidth="400.0"
+                           style="-fx-background-color: #404040; -fx-text-fill: white; -fx-prompt-text-fill: #888888;" />
+
+                <Button fx:id="btnSearch" text="Search"
+                        style="-fx-background-color: #007ACC; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;" />
+
+                <Button fx:id="btnClearSearch" text="Clear"
+                        style="-fx-background-color: #444444; -fx-text-fill: white; -fx-cursor: hand;" />
+            </HBox>
+        </VBox>
     </top>
 
     <center>

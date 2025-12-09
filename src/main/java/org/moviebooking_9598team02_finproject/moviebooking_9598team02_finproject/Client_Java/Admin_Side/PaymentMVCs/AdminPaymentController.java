@@ -4,7 +4,7 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.collections.transformation.FilteredList;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Payment;
 
 public class AdminPaymentController {
@@ -12,6 +12,7 @@ public class AdminPaymentController {
     private AdminPaymentView view;
     private AdminPaymentModel model;
     private int currentAdminId;
+    private FilteredList<Payment> filteredData;
 
     private ObservableList<Payment> paymentList = FXCollections.observableArrayList();
 
@@ -41,12 +42,21 @@ public class AdminPaymentController {
         view.getColStatus().setCellValueFactory(cellData ->
                 new SimpleStringProperty(cellData.getValue().paymentStatus));
         view.setPaymentList(paymentList);
+        filteredData = new FilteredList<>(paymentList, p -> true);
+        view.getPaymentTable().setItems(filteredData);
     }
 
     private void initializeButtons() {
         view.getBtnRefresh().setOnAction(e -> loadData());
         view.getBtnMarkReceived().setOnAction(e -> handleUpdateStatus("completed"));
         view.getBtnMarkFailed().setOnAction(e -> handleUpdateStatus("failed"));
+
+        view.getBtnSearch().setOnAction(e -> handleSearch());
+        view.getBtnClearSearch().setOnAction(e -> clearSearch());
+
+        view.getSearchField().textProperty().addListener((observable, oldValue, newValue) -> {
+            handleSearch();
+        });
     }
 
     private void loadData() {
@@ -77,5 +87,34 @@ public class AdminPaymentController {
         } catch (Exception e) {
             view.setStatus("Update failed: " + e.getMessage(), true);
         }
+    }
+
+    private void handleSearch() {
+        String filter = view.getSearchField().getText().toLowerCase().trim();
+
+        filteredData.setPredicate(payment -> {
+            if (filter == null || filter.isEmpty()) {
+                return true;
+            }
+
+            if (String.valueOf(payment.bookingId).contains(filter)) {
+                return true;
+            }
+
+            if (payment.transactionId != null && payment.transactionId.toLowerCase().contains(filter)) {
+                return true;
+            }
+
+            if (payment.paymentMethod != null && payment.paymentMethod.toLowerCase().contains(filter)) {
+                return true;
+            }
+
+            return false;
+        });
+    }
+
+    private void clearSearch() {
+        view.getSearchField().setText("");
+        handleSearch();
     }
 }

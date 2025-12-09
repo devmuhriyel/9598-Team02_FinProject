@@ -2,10 +2,7 @@ package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finprojec
 
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.control.*;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Payment;
 
 public class AdminPaymentView {
@@ -19,6 +16,10 @@ public class AdminPaymentView {
     @FXML private Button btnMarkFailed;
     @FXML private Button btnRefresh;
     @FXML private Label lblStatus;
+
+    @FXML private TextField searchField;
+    @FXML private Button btnSearch;
+    @FXML private Button btnClearSearch;
 
     public void setPaymentList(ObservableList<Payment> list) {
         paymentTable.setItems(list);
@@ -46,4 +47,7 @@ public class AdminPaymentView {
     public TableColumn<Payment, String> getColTxnId() { return colTxnId; }
     public TableColumn<Payment, String> getColDate() { return colDate; }
     public TableColumn<Payment, String> getColStatus() { return colStatus; }
+    public TextField getSearchField() { return searchField; }
+    public Button getBtnSearch() { return btnSearch; }
+    public Button getBtnClearSearch() { return btnClearSearch; }
 }
