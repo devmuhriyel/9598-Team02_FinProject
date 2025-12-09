@@ -17,13 +17,15 @@ import java.util.Properties;
 public abstract class AdminParentModel {
     protected static AdminService adminServices;
     protected static CommonService commonServices;
+    private static String hostIP;
+    private static int hostPort;
 
     public static void initializeCORBAConnection(String[] args){
         try {
             Properties props = new java.util.Properties();
-            props.put("org.omg.CORBA.ORBInitialHost", "localhost");
-            props.put("org.omg.CORBA.ORBInitialPort", "1050");
-            // Initialize ORB
+            props.put("org.omg.CORBA.ORBInitialHost", hostIP);
+            props.put("org.omg.CORBA.ORBInitialPort", String.valueOf(hostPort)); // CONVERT TO STRING!
+
             ORB orb = ORB.init(args, props);
 
             org.omg.CORBA.Object objectRef = orb.resolve_initial_references("NameService");
@@ -34,18 +36,22 @@ public abstract class AdminParentModel {
 
             String commonName = "CommonService";
             commonServices = CommonServiceHelper.narrow(nameContextExt.resolve_str(commonName));
-        } catch (org.omg.CORBA.ORBPackage.InvalidName e) {
-
-        } catch (InvalidName e) {
-
-        } catch (CannotProceed e) {
-
-        } catch (NotFound e) {
-
+        } catch (Exception e) {
+            e.printStackTrace();
+            adminServices = null;
+            commonServices = null;
         }
     }
 
     public boolean isConnected(){
         return adminServices != null && commonServices != null;
+    }
+
+    public void setHostIP(String ip){
+        hostIP = ip;
+    }
+
+    public void setHostPort(int port){
+        hostPort = port;
     }
 }
