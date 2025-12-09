@@ -15,7 +15,7 @@ import java.util.Properties;
 
 
 public abstract class AdminParentModel {
-    protected static AdminService adminServices;
+    public static AdminService adminServices;
     protected static CommonService commonServices;
 
     public static void initializeCORBAConnection(String[] args){
@@ -44,7 +44,6 @@ public abstract class AdminParentModel {
 
         }
     }
-
     public boolean isConnected(){
         return adminServices != null && commonServices != null;
     }

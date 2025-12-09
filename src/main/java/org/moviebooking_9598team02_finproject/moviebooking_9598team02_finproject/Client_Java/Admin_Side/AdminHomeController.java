@@ -25,6 +25,7 @@ public class AdminHomeController {
         view.getNavShowtime().setOnMouseClicked(event -> switchToSeatMgmt());
         view.getNavBooking().setOnMouseClicked(event -> switchToBookingMgmt());
         view.getNavCustomer().setOnMouseClicked(event -> switchToCustomerMgmt());
+        view.getNavAdmin().setOnMouseClicked(event -> switchToAdminMgmt());
         view.getNavGenre().setOnMouseClicked(event -> switchToGenreMgmt());
     }
 
@@ -57,6 +58,12 @@ public class AdminHomeController {
         view.changePanes("navCustomer");
         navManager.showCustomerMgmtView();
     }
+
+    private void switchToAdminMgmt() {
+        view.changePanes("navAdmin");
+        navManager.showAdminMgmtView();
+    }
+
     public void switchToGenreMgmt(){
         view.changePanes("navGenre");
         navManager.showGenreMgmtView();

@@ -54,6 +54,8 @@
 
             <Label fx:id="navCustomer" prefWidth="1.7976931348623157E308" style="-fx-text-fill: #FFFFFF; -fx-padding: 8 10; -fx-cursor: hand;" text="CUSTOMER MANAGEMENT" textFill="WHITE" />
 
+            <Label fx:id="navAdmin" contentDisplay="CENTER" prefWidth="1.7976931348623157E308" style="-fx-padding: 8 10; -fx-cursor: hand;" text="ADMIN MANAGEMENT" textFill="WHITE" />
+
         </VBox>
     </left>
 

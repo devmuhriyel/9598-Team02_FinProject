@@ -25,6 +25,8 @@ public class AdminHomeView {
     @FXML
     private Label navCustomer;
     @FXML
+    private Label navAdmin;
+    @FXML
     private Label navGenre;
     @FXML
     private StackPane panesContainer;
@@ -38,6 +40,7 @@ public class AdminHomeView {
         labelMap.put("navShowtime", navShowtime);
         labelMap.put("navBooking", navBooking);
         labelMap.put("navCustomer", navCustomer);
+        labelMap.put("navAdmin", navAdmin);
         labelMap.put("navGenre", navGenre);
     }
 
@@ -78,6 +81,9 @@ public class AdminHomeView {
     }
     public Label getNavCustomer() {
         return navCustomer;
+    }
+    public Label getNavAdmin() {
+        return navAdmin;
     }
     public Label getNavGenre(){
         return navGenre;

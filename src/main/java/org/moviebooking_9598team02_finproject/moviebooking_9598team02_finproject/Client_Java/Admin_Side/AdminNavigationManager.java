@@ -8,6 +8,7 @@ import javafx.stage.Stage;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Admin;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.AuthenticationMVCs.AdminAuthNavManager;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.BookingsMVCs.AdminBookingNavManager;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.CustomerMgmtMVCs.AccountNavigationManager;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.MovieMVCs.AdminMMNavManager;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.SeatMgmtMVCs.AdminSMNavManager;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingAdmin.AdminService;
@@ -30,22 +31,19 @@ public class AdminNavigationManager {
     private Pane seatMgmtPane;
     private Pane bookingMgmtPane;
     private Pane customerMgmtPane;
+    private Pane adminMgmtPane;
     private Pane genreMgmtPane;
 
     // Sub-navigation managers
     private AdminBookingNavManager bookingNavManager;
     private AdminMMNavManager movieNavManager;
     private AdminSMNavManager seatNavManager;
+    private AccountNavigationManager accNavManager;  // ✅ This exists but wasn't being used!
 
-    public AdminNavigationManager(Stage homeStage, AdminAuthNavManager authNavManager, Admin admin, AdminService adminService) {
+    public AdminNavigationManager(Stage homeStage, AdminAuthNavManager authNavManager, Admin admin) {
         this.homeStage = homeStage;
         this.authNavManager = authNavManager;
         this.admin = admin;
-        this.adminService = adminService;
-
-        // Initialize sub-navigation managers
-        this.seatNavManager = new AdminSMNavManager(adminService, admin);
-        this.movieNavManager = new AdminMMNavManager(adminService, admin);
 
         initializeHomeView();
     }
@@ -125,6 +123,23 @@ public class AdminNavigationManager {
             }
         }
         loadContentPane(customerMgmtPane);
+    }
+
+    //
+    public void showAdminMgmtView(){
+        if (adminMgmtPane == null) {
+
+            accNavManager = new AccountNavigationManager(admin.adminId);
+            adminMgmtPane = accNavManager.getAdminPane();
+
+            if (adminMgmtPane == null) {
+                System.err.println("ERROR: AdminAccountManager returned null pane!");
+                adminMgmtPane = createPlaceholder("Admin Management - Error Loading");
+            } else {
+                System.out.println("✅ Admin Management loaded successfully with MVC wiring");
+            }
+        }
+        loadContentPane(adminMgmtPane);
     }
 
     public void showGenreMgmtView(){
