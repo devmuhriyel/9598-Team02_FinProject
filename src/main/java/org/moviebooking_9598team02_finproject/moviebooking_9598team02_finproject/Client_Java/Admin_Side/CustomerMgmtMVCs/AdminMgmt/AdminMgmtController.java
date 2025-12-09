@@ -141,7 +141,7 @@ public class AdminMgmtController {
             }
 
             if (password == null || password.trim().isEmpty()) {
-                view.showDetailMessage("⚠ This admin's password is required to change their email");
+                view.showDetailMessage("This admin's password is required to change their email");
                 return;
             }
 
@@ -155,7 +155,7 @@ public class AdminMgmtController {
             view.getNewEmailField().clear();
             view.getEmailPasswordField().clear();
 
-            view.showDetailMessage("✓ Email updated successfully!");
+            view.showDetailMessage("Email updated successfully!");
 
             try {
                 loadAllAdmins();
@@ -164,18 +164,18 @@ public class AdminMgmtController {
             }
 
         } catch (NumberFormatException e) {
-            view.showDetailMessage("❌ Error: Invalid admin ID");
+            view.showDetailMessage("Error: Invalid admin ID");
         } catch (AuthenticationException e) {
             if (e.getMessage().contains("Incorrect password")) {
-                view.showDetailMessage("❌ Incorrect password for this admin account");
+                view.showDetailMessage("Incorrect password for this admin account");
             } else {
-                view.showDetailMessage("❌ Error: " + e.getMessage());
+                view.showDetailMessage("Error: " + e.getMessage());
             }
         } catch (InvalidInputException e) {
             if (e.getMessage().contains("Email already exists")) {
-                view.showDetailMessage("❌ This email is already in use");
+                view.showDetailMessage("This email is already in use");
             } else {
-                view.showDetailMessage("❌ Error: " + e.getMessage());
+                view.showDetailMessage("Error: " + e.getMessage());
             }
         }
     }
@@ -306,15 +306,7 @@ public class AdminMgmtController {
 
     // ===== DATA LOADING =====
     public void loadAllAdmins() throws AuthenticationException {
-        System.out.println("=== Loading Admins ===");
         adminArrays = model.loadAllAdmins();
-        System.out.println("Got " + adminArrays.length + " admins from model");
-
-        for (Admin admin : adminArrays) {
-            System.out.println("Admin: " + admin.adminId + " - " + admin.username + " - " + admin.email);
-        }
-
         view.displayAdminList(adminArrays);
-        System.out.println("Data passed to view");
     }
 }
