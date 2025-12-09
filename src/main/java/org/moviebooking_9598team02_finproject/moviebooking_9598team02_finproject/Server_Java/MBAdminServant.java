@@ -973,42 +973,7 @@ public class MBAdminServant extends AdminServicePOA {
 
     @Override
     public void deactivateCustomer(int adminId, int customerId, String reason) throws AuthenticationException {
-        // 1. Check Authentication
-        if (!SessionManager.isAdminLoggedIn(adminId)) {
-            throw new AuthenticationException("Unauthorized access: Admin must be logged in.");
-        }
 
-        // 2. For now, we'll add a note to the database
-        // You may want to add a 'status' column to customers table
-        // Or log the deactivation in a separate audit table
-
-        try (Connection connection = DatabaseAccess.getConnection()) {
-            // Option 1: If you have a status column
-            // String query = "UPDATE customers SET status = 'suspended', updated_at = NOW() WHERE customer_id = ?";
-
-            // Option 2: Create an audit log table (recommended)
-            String auditQuery = "INSERT INTO customer_audit_log (customer_id, admin_id, action, reason, created_at) " +
-                    "VALUES (?, ?, 'DEACTIVATED', ?, NOW())";
-            PreparedStatement auditStmt = connection.prepareStatement(auditQuery);
-            auditStmt.setInt(1, customerId);
-            auditStmt.setInt(2, adminId);
-            auditStmt.setString(3, reason);
-
-            int rowsAffected = auditStmt.executeUpdate();
-
-            if (rowsAffected > 0) {
-                System.out.println("Admin " + adminId + " deactivated customer " + customerId + ". Reason: " + reason);
-            }
-
-            // You might also want to:
-            // - Cancel all active bookings
-            // - Invalidate sessions
-            // - Send notification email
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new AuthenticationException("Database error: " + e.getMessage());
-        }
     }
 
     // ===== HELPER METHOD: Get Customer Booking Count =====

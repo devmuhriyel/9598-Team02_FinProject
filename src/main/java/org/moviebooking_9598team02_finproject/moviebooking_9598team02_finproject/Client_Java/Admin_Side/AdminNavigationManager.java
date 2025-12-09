@@ -114,12 +114,15 @@ public class AdminNavigationManager {
 
     public void showCustomerMgmtView() {
         if (customerMgmtPane == null) {
-            try {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/AdminCustomerMgmt.fxml"));
-                customerMgmtPane = loader.load();
-            } catch (IOException e) {
-                e.printStackTrace();
-                customerMgmtPane = createPlaceholder("Customer Management");
+            // Use AccountNavigationManager to properly initialize Customer Management MVC
+            AccountNavigationManager customerNavManager = new AccountNavigationManager(admin.adminId, false);
+            customerMgmtPane = customerNavManager.getCustomerPane();
+
+            if (customerMgmtPane == null) {
+                System.err.println("ERROR: Customer Management returned null pane!");
+                customerMgmtPane = createPlaceholder("Customer Management - Error Loading");
+            } else {
+                System.out.println("✅ Customer Management loaded successfully with MVC wiring");
             }
         }
         loadContentPane(customerMgmtPane);
