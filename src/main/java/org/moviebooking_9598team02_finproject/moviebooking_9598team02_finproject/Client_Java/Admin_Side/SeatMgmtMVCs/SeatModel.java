@@ -2,31 +2,29 @@ package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finprojec
 
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.AuthenticationException;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.AdminParentModel;
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingAdmin.AdminService;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Seat;
 
 public class SeatModel extends AdminParentModel {
 
-    private final AdminService adminService;
     private int currentAdminId;
 
-    public SeatModel(AdminService adminService, int adminId) {
-        this.adminService = adminService;
+    public SeatModel(int adminId) {
         this.currentAdminId = adminId;
     }
 
     // === SEAT MANAGEMENT METHODS ===
 
     public void updateSeatPrice(int seatId, double newPrice) throws AuthenticationException {
-        adminService.updateSeatPrice(currentAdminId, seatId, newPrice);
+        adminServices.updateSeatPrice(currentAdminId, seatId, newPrice);
     }
 
     public void updateSeatType(int seatId, String newType) throws AuthenticationException {
-        adminService.updateSeatType(currentAdminId, seatId, newType);
+        adminServices.updateSeatType(currentAdminId, seatId, newType);
     }
 
     public Seat[] getAllSeats() throws AuthenticationException {
-        return adminService.getAllSeats(currentAdminId);
+        System.out.println(currentAdminId);
+        return adminServices.getAllSeats(currentAdminId);
     }
 
     // === FOR ADMIN ID ===
