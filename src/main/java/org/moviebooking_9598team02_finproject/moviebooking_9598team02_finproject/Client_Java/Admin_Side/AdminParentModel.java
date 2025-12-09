@@ -15,7 +15,7 @@ import java.util.Properties;
 
 
 public abstract class AdminParentModel {
-    protected static AdminService adminServices;
+    public static AdminService adminServices;
     protected static CommonService commonServices;
     private static String hostIP;
     private static int hostPort;
@@ -42,7 +42,6 @@ public abstract class AdminParentModel {
             commonServices = null;
         }
     }
-
     public boolean isConnected(){
         return adminServices != null && commonServices != null;
     }

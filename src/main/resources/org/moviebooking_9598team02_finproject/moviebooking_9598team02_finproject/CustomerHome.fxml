@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<BorderPane prefHeight="720.0" prefWidth="1280.0" style="-fx-background-color: #1A1A1A;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Customer_Side.CustomerHomeView">
+
+    <!-- LEFT SIDEBAR NAVIGATION -->
+    <left>
+        <VBox prefWidth="220.0" style="-fx-background-color: #252525;">
+            <padding>
+                <Insets bottom="20" left="0" right="0" top="20" />
+            </padding>
+
+            <!-- LOGO / APP NAME -->
+            <VBox alignment="CENTER" spacing="5">
+                <padding>
+                    <Insets bottom="30" />
+                </padding>
+                <Label style="-fx-font-weight: bold; -fx-font-size: 28px;" text="FILMBOOK" textFill="#FF6B6B" />
+                <Label style="-fx-font-size: 11px;" text="Movie Booking" textFill="#CCCCCC" />
+            </VBox>
+
+            <!-- USER INFO -->
+            <VBox alignment="CENTER" spacing="8" style="-fx-background-color: #2D2D2D; -fx-background-radius: 8;">
+                <padding>
+                    <Insets bottom="15" left="15" right="15" top="15" />
+                </padding>
+                <Label style="-fx-font-size: 11px;" text="Welcome" textFill="#999999" />
+                <Label fx:id="customerName" style="-fx-font-weight: bold; -fx-font-size: 15px;" text="Customer Name" textFill="#FFFFFF" />
+                <VBox.margin>
+                    <Insets bottom="15" left="10" right="10" />
+                </VBox.margin>
+            </VBox>
+
+            <!-- NAVIGATION MENU -->
+            <VBox spacing="8" VBox.vgrow="ALWAYS">
+                <padding>
+                    <Insets left="10" right="10" top="25" />
+                </padding>
+
+                <!-- Home / Browse Movies -->
+                <Label fx:id="navBrowse" style="-fx-padding: 8 10; -fx-cursor: hand; -fx-font-size: 13px;" text="🎬  Browse Movies" textFill="#FFFFFF">
+                    <font>
+                        <Font name="System Bold" size="13.0" />
+                    </font>
+                </Label>
+
+                <!-- My Bookings -->
+                <Label fx:id="navBookings" style="-fx-padding: 8 10; -fx-cursor: hand; -fx-font-size: 13px;" text="🎟️  My Bookings" textFill="#FFFFFF">
+                    <font>
+                        <Font name="System Bold" size="13.0" />
+                    </font>
+                </Label>
+
+                <!-- Booking History -->
+                <Label fx:id="navHistory" style="-fx-padding: 8 10; -fx-cursor: hand; -fx-font-size: 13px;" text="📋  Booking History" textFill="#FFFFFF">
+                    <font>
+                        <Font name="System Bold" size="13.0" />
+                    </font>
+                </Label>
+
+                <!-- My Profile -->
+                <Label fx:id="navProfile" style="-fx-padding: 8 10; -fx-cursor: hand; -fx-font-size: 13px;" text="👤  My Profile" textFill="#FFFFFF">
+                    <font>
+                        <Font name="System Bold" size="13.0" />
+                    </font>
+                </Label>
+
+                <!-- Spacer -->
+                <Region VBox.vgrow="ALWAYS" />
+
+                <!-- Settings (Optional) -->
+                <Label fx:id="navSettings" style="-fx-padding: 8 10; -fx-cursor: hand; -fx-font-size: 13px;" text="⚙️  Settings" textFill="#FFFFFF">
+                    <font>
+                        <Font name="System Bold" size="13.0" />
+                    </font>
+                </Label>
+
+                <!-- Logout Button -->
+                <Label fx:id="logOutButton" style="-fx-padding: 8 10; -fx-cursor: hand; -fx-font-weight: bold; -fx-font-size: 13px;" text="🚪  Logout" textFill="#FF6B6B">
+                    <font>
+                        <Font name="System Bold" size="13.0" />
+                    </font>
+                </Label>
+            </VBox>
+        </VBox>
+    </left>
+
+    <!-- CENTER - MAIN CONTENT AREA -->
+    <center>
+        <BorderPane style="-fx-background-color: #1A1A1A;">
+            <!-- TOP BAR -->
+            <top>
+                <HBox alignment="CENTER_LEFT" spacing="15" style="-fx-background-color: #252525; -fx-padding: 15 25;">
+                    <Label style="-fx-font-size: 18px; -fx-font-weight: bold;" text="FilmBook Customer Portal" textFill="#FFFFFF" />
+                    <Region HBox.hgrow="ALWAYS" />
+                    <Label fx:id="currentDateTime" style="-fx-font-size: 12px;" text="Monday, Dec 09, 2025  |  8:30 PM" textFill="#999999" />
+                </HBox>
+            </top>
+
+            <!-- MAIN CONTENT CONTAINER -->
+            <center>
+                <ScrollPane fitToHeight="true" fitToWidth="true" style="-fx-background: #1A1A1A; -fx-background-color: transparent;">
+                    <content>
+                        <StackPane fx:id="panesContainer" style="-fx-background-color: #1A1A1A;">
+                            <padding>
+                                <Insets bottom="20" left="25" right="25" top="20" />
+                            </padding>
+
+                            <!-- DEFAULT WELCOME VIEW -->
+                            <VBox alignment="CENTER" spacing="20">
+                                <Label style="-fx-font-size: 32px; -fx-font-weight: bold;" text="Welcome to FilmBook!" textFill="#FFFFFF" />
+                                <Label alignment="CENTER" maxWidth="500" style="-fx-font-size: 14px;" text="Browse movies, make bookings, and manage your cinema experience" textFill="#CCCCCC" wrapText="true" />
+
+                                <!-- Quick Action Cards -->
+                                <HBox alignment="CENTER" spacing="20">
+                                    <VBox alignment="CENTER" spacing="10" style="-fx-background-color: #2D2D2D; -fx-background-radius: 10; -fx-padding: 30 40;">
+                                        <Label style="-fx-font-size: 48px;" text="🎬" />
+                                        <Label style="-fx-font-weight: bold; -fx-font-size: 16px;" text="Browse Movies" textFill="#FFFFFF" />
+                                        <Label style="-fx-font-size: 12px;" text="Explore available films" textFill="#999999" />
+                                    </VBox>
+
+                                    <VBox alignment="CENTER" spacing="10" style="-fx-background-color: #2D2D2D; -fx-background-radius: 10; -fx-padding: 30 40;">
+                                        <Label style="-fx-font-size: 48px;" text="🎟️" />
+                                        <Label style="-fx-font-weight: bold; -fx-font-size: 16px;" text="My Bookings" textFill="#FFFFFF" />
+                                        <Label style="-fx-font-size: 12px;" text="View your tickets" textFill="#999999" />
+                                    </VBox>
+
+                                    <VBox alignment="CENTER" spacing="10" style="-fx-background-color: #2D2D2D; -fx-background-radius: 10; -fx-padding: 30 40;">
+                                        <Label style="-fx-font-size: 48px;" text="👤" />
+                                        <Label style="-fx-font-weight: bold; -fx-font-size: 16px;" text="My Profile" textFill="#FFFFFF" />
+                                        <Label style="-fx-font-size: 12px;" text="Manage your account" textFill="#999999" />
+                                    </VBox>
+                                </HBox>
+                            </VBox>
+                        </StackPane>
+                    </content>
+                </ScrollPane>
+            </center>
+        </BorderPane>
+    </center>
+</BorderPane>
