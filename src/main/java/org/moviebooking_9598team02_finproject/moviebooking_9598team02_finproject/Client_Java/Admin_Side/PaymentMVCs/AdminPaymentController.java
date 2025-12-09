@@ -1,5 +1,7 @@
 package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.PaymentMVCs;
 
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -24,15 +26,20 @@ public class AdminPaymentController {
     }
 
     private void initializeTable() {
-        view.getColId().setCellValueFactory(new PropertyValueFactory<>("paymentId"));
-        view.getColBookingId().setCellValueFactory(new PropertyValueFactory<>("bookingId"));
-        view.getColAmount().setCellValueFactory(new PropertyValueFactory<>("amount"));
-        view.getColMethod().setCellValueFactory(new PropertyValueFactory<>("paymentMethod"));
-        view.getColTxnId().setCellValueFactory(new PropertyValueFactory<>("transactionId"));
-        view.getColDate().setCellValueFactory(new PropertyValueFactory<>("paymentDate"));
-        view.getColStatus().setCellValueFactory(new PropertyValueFactory<>("status"));
-
-        // Bind list to table
+        view.getColId().setCellValueFactory(cellData ->
+                new SimpleObjectProperty<>(cellData.getValue().paymentId));
+        view.getColBookingId().setCellValueFactory(cellData ->
+                new SimpleObjectProperty<>(cellData.getValue().bookingId));
+        view.getColAmount().setCellValueFactory(cellData ->
+                new SimpleObjectProperty<>(cellData.getValue().amount));
+        view.getColMethod().setCellValueFactory(cellData ->
+                new SimpleStringProperty(cellData.getValue().paymentMethod));
+        view.getColTxnId().setCellValueFactory(cellData ->
+                new SimpleStringProperty(cellData.getValue().transactionId));
+        view.getColDate().setCellValueFactory(cellData ->
+                new SimpleStringProperty(cellData.getValue().paymentDate));
+        view.getColStatus().setCellValueFactory(cellData ->
+                new SimpleStringProperty(cellData.getValue().paymentStatus));
         view.setPaymentList(paymentList);
     }
 
