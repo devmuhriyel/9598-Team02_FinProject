@@ -11,6 +11,7 @@ import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.MovieMVCs.AdminMMNavManager;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.SeatMgmtMVCs.AdminSMNavManager;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingAdmin.AdminService;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.PaymentMVCs.AdminPaymentNavManager;
 
 
 import java.io.IOException;
@@ -30,11 +31,13 @@ public class AdminNavigationManager {
     private Pane seatMgmtPane;
     private Pane bookingMgmtPane;
     private Pane customerMgmtPane;
+    private Pane paymentMgmtPane;
 
     // Sub-navigation managers
     private AdminBookingNavManager bookingNavManager;
     private AdminMMNavManager movieNavManager;
     private AdminSMNavManager seatNavManager;
+    private AdminPaymentNavManager paymentNavManager;
 
     // Add others as needed
 
@@ -45,6 +48,7 @@ public class AdminNavigationManager {
         AdminParentModel.initializeCORBAConnection(new String[]{});
 
         this.seatNavManager = new AdminSMNavManager(admin);
+        this.paymentNavManager = new AdminPaymentNavManager(admin);
 
         initializeHomeView();
     }
@@ -150,6 +154,11 @@ public class AdminNavigationManager {
             }
         }
         loadContentPane(customerMgmtPane);
+    }
+
+    public void showPaymentMgmtView() {
+        Pane paymentViewContent = paymentNavManager.getPaymentMgmtView();
+        loadContentPane(paymentViewContent);
     }
 
     private void loadContentPane(Pane pane) {
