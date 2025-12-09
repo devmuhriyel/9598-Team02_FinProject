@@ -4,135 +4,84 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * CustomerHomeView - JavaFX controller for customer home screen with CSS styling
- */
 public class CustomerHomeView {
 
-    // ===== USER INFO =====
+    // ===== VARIABLES =====
     @FXML
     private Label customerName;
     @FXML
-    private Label currentDateTime;
-
-    // ===== NAVIGATION LABELS =====
-    @FXML
-    private Label navBrowse;
-    @FXML
-    private Label navBookings;
-    @FXML
-    private Label navHistory;
-    @FXML
-    private Label navProfile;
-    @FXML
-    private Label navSettings;
-    @FXML
     private Label logOutButton;
-
-    // ===== CONTENT CONTAINER =====
+    @FXML
+    private Label navDashboard;
+    @FXML
+    private Label navMovie;
+    @FXML
+    private Label navShowtime;
+    @FXML
+    private Label navBooking;
+    @FXML
+    private Label navCustomer;
+    @FXML
+    private Label navGenre;
     @FXML
     private StackPane panesContainer;
 
-    // ===== INTERNAL STATE =====
     private Map<String, Label> labelMap = new HashMap<>();
 
-    // ===== INITIALIZATION =====
     @FXML
     public void initialize() {
-        // Map navigation labels for easy style management
-        labelMap.put("navBrowse", navBrowse);
-        labelMap.put("navBookings", navBookings);
-        labelMap.put("navHistory", navHistory);
-        labelMap.put("navProfile", navProfile);
-        labelMap.put("navSettings", navSettings);
-
-        // Update current date/time
-        updateDateTime();
+        labelMap.put("navDashboard", navDashboard);
+        labelMap.put("navMovie", navMovie);
+        labelMap.put("navShowtime", navShowtime);
+        labelMap.put("navBooking", navBooking);
+        labelMap.put("navCustomer", navCustomer);
+        labelMap.put("navGenre", navGenre);
     }
 
-    // ===== PUBLIC METHODS =====
-
-    /**
-     * Set the customer name displayed in the sidebar
-     */
-    public void setCustomerName(String name) {
-        if (customerName != null) {
-            customerName.setText(name);
-        }
+    // ===== METHODS =====
+    public void setCustomerName(String customerName){
+        this.customerName.setText(customerName);
     }
 
-    /**
-     * Update the current date/time display
-     */
-    public void updateDateTime() {
-        if (currentDateTime != null) {
-            LocalDateTime now = LocalDateTime.now();
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, MMM dd, yyyy  |  h:mm a");
-            currentDateTime.setText(now.format(formatter));
-        }
-    }
-
-    /**
-     * Change active navigation pane using CSS classes
-     * @param labelName The name of the navigation label to highlight
-     */
-    public void changePanes(String labelName) {
-        // Reset all navigation labels to default CSS class
+    public void changePanes(String labelName){
         for (Label label : labelMap.values()) {
-            label.getStyleClass().removeAll("nav-label-active");
-            if (!label.getStyleClass().contains("nav-label")) {
-                label.getStyleClass().add("nav-label");
-            }
+            label.setStyle("-fx-text-fill: #FFFFFF; -fx-padding: 8 10; -fx-cursor: hand;");
         }
 
-        // Add active CSS class to selected label
         Label activeLabel = labelMap.get(labelName);
         if (activeLabel != null) {
-            activeLabel.getStyleClass().remove("nav-label");
-            activeLabel.getStyleClass().add("nav-label-active");
+            activeLabel.setStyle("-fx-text-fill: #FFFFFF; -fx-background-color: #ff2525; -fx-padding: 8 10; -fx-font-weight: bold; -fx-background-radius: 5; -fx-cursor: hand;");
         }
     }
 
-    // ===== GETTERS - User Info =====
+    // ===== GETTERS =====
     public Label getCustomerName() {
         return customerName;
     }
-
-    public Label getCurrentDateTime() {
-        return currentDateTime;
-    }
-
-    // ===== GETTERS - Navigation =====
-    public Label getNavBrowse() {
-        return navBrowse;
-    }
-
-    public Label getNavBookings() {
-        return navBookings;
-    }
-
-    public Label getNavHistory() {
-        return navHistory;
-    }
-
-    public Label getNavProfile() {
-        return navProfile;
-    }
-
-    public Label getNavSettings() {
-        return navSettings;
-    }
-
     public Label getLogOutButton() {
         return logOutButton;
     }
-
-    // ===== GETTERS - Content Container =====
+    public Label getNavDashboard() {
+        return navDashboard;
+    }
+    public Label getNavMovie() {
+        return navMovie;
+    }
+    public Label getNavShowtime() {
+        return navShowtime;
+    }
+    public Label getNavBooking() {
+        return navBooking;
+    }
+    public Label getNavCustomer() {
+        return navCustomer;
+    }
+    public Label getNavGenre(){
+        return navGenre;
+    }
     public StackPane getPanesContainer() {
         return panesContainer;
     }

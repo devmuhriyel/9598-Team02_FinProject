@@ -2,15 +2,15 @@ package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finprojec
 
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.AuthenticationException;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Customer;
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Customer_Side.CustomerNavigationManager;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Customer_Side.AuthenticationMVCs.CustomerAuthNavManager;
 
 public class CustomerLoginController {
     private CustomerLoginView view;
     private CustomerLoginModel model;
-    private CustomerNavigationManager authManager;
+    private CustomerAuthNavManager authManager;
     private Customer customer;
 
-    public CustomerLoginController(CustomerLoginView loginView, CustomerLoginModel loginModel, CustomerNavigationManager authManager) {
+    public CustomerLoginController(CustomerLoginView loginView, CustomerLoginModel loginModel, CustomerAuthNavManager authManager) {
         this.view = loginView;
         this.model = loginModel;
         this.authManager = authManager;
@@ -38,6 +38,7 @@ public class CustomerLoginController {
             customer = model.logInCustomer(username, password);
             view.clearFields();
             view.clearError();
+            authManager.openCustomerHome(customer);
         } catch (AuthenticationException e) {
             view.showError(e.getMessage());
         }
