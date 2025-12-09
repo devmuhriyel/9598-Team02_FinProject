@@ -41,11 +41,18 @@ public class MBAdminServant extends AdminServicePOA {
                 String hashedPassword = rs.getString("password");
                 if(PasswordManager.checkPassword(password, hashedPassword)){
                     int admin_id = rs.getInt("admin_id");
-                    SessionManager.createAdminSession(admin_id, rs.getString("username"));
+
+                    // ✅ CORRECT ORDER: Check if already logged in FIRST
                     if (SessionManager.isAdminLoggedIn(admin_id)) {
-                        logoutAdmin(admin_id);
+                        System.out.println("Admin " + admin_id + " already has active session. Removing old session.");
                         SessionManager.removeAdminSession(admin_id);
                     }
+
+                    // ✅ NOW create new session
+                    SessionManager.createAdminSession(admin_id, rs.getString("username"));
+                    System.out.println("✅ Admin " + admin_id + " logged in successfully");
+
+                    // Populate admin object
                     admin.adminId = rs.getInt("admin_id");
                     admin.username = rs.getString("username");
                     admin.email = rs.getString("email");
@@ -141,45 +148,345 @@ public class MBAdminServant extends AdminServicePOA {
         return 0;
     }
 
-    // ===== ADMIN MANAGEMENT METHODS =====
+    // ===== ADMIN MANAGEMENT METHODS IMPLEMENTATION =====
+
     @Override
     public Admin getAdminById(int adminId, int requestingAdminId) throws AuthenticationException {
-        return null;
+        // 1. Check Authentication
+        if (!SessionManager.isAdminLoggedIn(requestingAdminId)) {
+            throw new AuthenticationException("Unauthorized access: Admin must be logged in.");
+        }
+
+        // 2. Database Query
+        try (Connection connection = DatabaseAccess.getConnection()) {
+            String query = "SELECT admin_id, username, email, full_name, phone_number, created_at, updated_at " +
+                    "FROM admins WHERE admin_id = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1, adminId);
+            ResultSet rs = statement.executeQuery();
+
+            if (rs.next()) {
+                Admin admin = new Admin();
+                admin.adminId = rs.getInt("admin_id");
+                admin.username = rs.getString("username");
+                admin.email = rs.getString("email");
+                admin.password = ""; // Never return password
+                admin.fullName = rs.getString("full_name");
+                admin.phoneNumber = rs.getString("phone_number");
+                admin.createdAt = rs.getString("created_at");
+                admin.updatedAt = rs.getString("updated_at");
+
+                return admin;
+            } else {
+                throw new AuthenticationException("Admin not found with ID: " + adminId);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new AuthenticationException("Database error: " + e.getMessage());
+        }
     }
 
     @Override
     public Admin[] getAllAdmins(int adminId) throws AuthenticationException {
-        return new Admin[0];
+        System.out.println("IS RUNNING");
+        // 1. Check Authentication
+        if (!SessionManager.isAdminLoggedIn(adminId)) {
+            throw new AuthenticationException("Unauthorized access: Admin must be logged in.");
+        }
+
+        // 2. Database Query
+        try (Connection connection = DatabaseAccess.getConnection()) {
+            String query = "SELECT admin_id, username, email, full_name, phone_number, created_at, updated_at " +
+                    "FROM admins ORDER BY created_at DESC";
+            PreparedStatement statement = connection.prepareStatement(query,
+                    ResultSet.TYPE_SCROLL_INSENSITIVE,
+                    ResultSet.CONCUR_READ_ONLY);
+            ResultSet rs = statement.executeQuery();
+
+            // Count rows
+            int rowCount = 0;
+            if (rs.last()) {
+                rowCount = rs.getRow();
+                rs.beforeFirst();
+            }
+
+            if (rowCount == 0) {
+                return new Admin[0];
+            }
+
+            Admin[] admins = new Admin[rowCount];
+            int index = 0;
+
+            while (rs.next()) {
+                Admin admin = new Admin();
+                admin.adminId = rs.getInt("admin_id");
+                admin.username = rs.getString("username");
+                admin.email = rs.getString("email");
+                admin.password = "";
+                admin.fullName = rs.getString("full_name");
+                admin.phoneNumber = rs.getString("phone_number");
+                admin.createdAt = rs.getString("created_at");
+                admin.updatedAt = rs.getString("updated_at");
+
+                admins[index++] = admin;
+            }
+
+            System.out.println("Admin " + adminId + " retrieved " + rowCount + " admins");
+            return admins;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new AuthenticationException("Database error: " + e.getMessage());
+        }
     }
 
     @Override
     public Admin[] searchAdmins(int adminId, String searchString) throws AuthenticationException {
-        return new Admin[0];
+        // 1. Check Authentication
+        if (!SessionManager.isAdminLoggedIn(adminId)) {
+            throw new AuthenticationException("Unauthorized access: Admin must be logged in.");
+        }
+
+        // 2. Database Query
+        try (Connection connection = DatabaseAccess.getConnection()) {
+            String query = "SELECT admin_id, username, email, full_name, phone_number, created_at, updated_at " +
+                    "FROM admins " +
+                    "WHERE username LIKE ? OR email LIKE ? OR full_name LIKE ? OR CAST(admin_id AS CHAR) LIKE ? " +
+                    "ORDER BY full_name";
+            PreparedStatement statement = connection.prepareStatement(query,
+                    ResultSet.TYPE_SCROLL_INSENSITIVE,
+                    ResultSet.CONCUR_READ_ONLY);
+
+            String searchPattern = "%" + searchString + "%";
+            statement.setString(1, searchPattern);
+            statement.setString(2, searchPattern);
+            statement.setString(3, searchPattern);
+            statement.setString(4, searchPattern);
+
+            ResultSet rs = statement.executeQuery();
+
+            // Count rows
+            int rowCount = 0;
+            if (rs.last()) {
+                rowCount = rs.getRow();
+                rs.beforeFirst();
+            }
+
+            if (rowCount == 0) {
+                return new Admin[0];
+            }
+
+            Admin[] admins = new Admin[rowCount];
+            int index = 0;
+
+            while (rs.next()) {
+                Admin admin = new Admin();
+                admin.adminId = rs.getInt("admin_id");
+                admin.username = rs.getString("username");
+                admin.email = rs.getString("email");
+                admin.password = "";
+                admin.fullName = rs.getString("full_name");
+                admin.phoneNumber = rs.getString("phone_number");
+                admin.createdAt = rs.getString("created_at");
+                admin.updatedAt = rs.getString("updated_at");
+
+                admins[index++] = admin;
+            }
+
+            return admins;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new AuthenticationException("Database error: " + e.getMessage());
+        }
     }
 
     @Override
     public void updateAdminProfile(int adminId, String fullName, String phoneNumber) throws AuthenticationException {
+        // NOTE: adminId here is the admin BEING UPDATED, not necessarily the requester
+        // In a production system, you'd want to verify the requester has permission
 
+        // For now, we just check if the target admin exists by trying to update
+        try (Connection connection = DatabaseAccess.getConnection()) {
+            String query = "UPDATE admins SET full_name = ?, phone_number = ?, updated_at = NOW() " +
+                    "WHERE admin_id = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setString(1, fullName);
+            statement.setString(2, phoneNumber);
+            statement.setInt(3, adminId);
+
+            int rowsAffected = statement.executeUpdate();
+
+            if (rowsAffected == 0) {
+                throw new AuthenticationException("Admin not found with ID: " + adminId);
+            }
+
+            System.out.println("Admin " + adminId + " profile updated successfully");
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new AuthenticationException("Database error: " + e.getMessage());
+        }
+    }
+
+
+    @Override
+    public void updateAdminEmail(int adminId, String newEmail, String password)
+            throws AuthenticationException, InvalidInputException {
+        // adminId is the admin BEING UPDATED
+
+        // 1. Verify password first
+        try (Connection connection = DatabaseAccess.getConnection()) {
+            // Get current password hash
+            String checkQuery = "SELECT password FROM admins WHERE admin_id = ?";
+            PreparedStatement checkStmt = connection.prepareStatement(checkQuery);
+            checkStmt.setInt(1, adminId);
+            ResultSet rs = checkStmt.executeQuery();
+
+            if (rs.next()) {
+                String hashedPassword = rs.getString("password");
+                if (!PasswordManager.checkPassword(password, hashedPassword)) {
+                    throw new AuthenticationException("Incorrect password");
+                }
+            } else {
+                throw new AuthenticationException("Admin not found with ID: " + adminId);
+            }
+
+            // 2. Update email
+            String updateQuery = "UPDATE admins SET email = ?, updated_at = NOW() WHERE admin_id = ?";
+            PreparedStatement updateStmt = connection.prepareStatement(updateQuery);
+            updateStmt.setString(1, newEmail);
+            updateStmt.setInt(2, adminId);
+
+            int rowsAffected = updateStmt.executeUpdate();
+
+            if (rowsAffected > 0) {
+                System.out.println("Admin " + adminId + " updated email to: " + newEmail);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            if (e.getMessage().contains("Duplicate entry")) {
+                throw new InvalidInputException("Email already exists", "email");
+            }
+            throw new AuthenticationException("Database error: " + e.getMessage());
+        }
     }
 
     @Override
-    public void updateAdminEmail(int adminId, String newEmail, String password) throws AuthenticationException, InvalidInputException {
+    public void changeAdminPassword(int adminId, String oldPassword, String newPassword)
+            throws AuthenticationException {
+        // adminId is the admin BEING UPDATED
 
+        // 1. Verify old password
+        try (Connection connection = DatabaseAccess.getConnection()) {
+            String checkQuery = "SELECT password FROM admins WHERE admin_id = ?";
+            PreparedStatement checkStmt = connection.prepareStatement(checkQuery);
+            checkStmt.setInt(1, adminId);
+            ResultSet rs = checkStmt.executeQuery();
+
+            if (rs.next()) {
+                String currentHashedPassword = rs.getString("password");
+                if (!PasswordManager.checkPassword(oldPassword, currentHashedPassword)) {
+                    throw new AuthenticationException("Incorrect old password");
+                }
+            } else {
+                throw new AuthenticationException("Admin not found with ID: " + adminId);
+            }
+
+            // 2. Update password
+            String newHashedPassword = PasswordManager.hashPassword(newPassword);
+            String updateQuery = "UPDATE admins SET password = ?, updated_at = NOW() WHERE admin_id = ?";
+            PreparedStatement updateStmt = connection.prepareStatement(updateQuery);
+            updateStmt.setString(1, newHashedPassword);
+            updateStmt.setInt(2, adminId);
+
+            int rowsAffected = updateStmt.executeUpdate();
+
+            if (rowsAffected > 0) {
+                System.out.println("Admin " + adminId + " changed password successfully");
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new AuthenticationException("Database error: " + e.getMessage());
+        }
     }
 
     @Override
-    public void changeAdminPassword(int adminId, String oldPassword, String newPassword) throws AuthenticationException {
+    public void deactivateAdmin(int superAdminId, int targetAdminId, String reason)
+            throws AuthenticationException {
+        // 1. Check Authentication
+        if (!SessionManager.isAdminLoggedIn(superAdminId)) {
+            throw new AuthenticationException("Unauthorized access: Super admin must be logged in.");
+        }
 
-    }
+        // 2. Prevent self-deactivation
+        if (superAdminId == targetAdminId) {
+            throw new AuthenticationException("Cannot deactivate your own account");
+        }
 
-    @Override
-    public void deactivateAdmin(int superAdminId, int targetAdminId, String reason) throws AuthenticationException {
+        // 3. Log the deactivation
+        try (Connection connection = DatabaseAccess.getConnection()) {
+            // Create audit log
+            String auditQuery = "INSERT INTO admin_audit_log (admin_id, performed_by_admin_id, action, reason, created_at) " +
+                    "VALUES (?, ?, 'DEACTIVATED', ?, NOW())";
+            PreparedStatement auditStmt = connection.prepareStatement(auditQuery);
+            auditStmt.setInt(1, targetAdminId);
+            auditStmt.setInt(2, superAdminId);
+            auditStmt.setString(3, reason);
 
+            auditStmt.executeUpdate();
+
+            // Remove active session
+            SessionManager.removeAdminSession(targetAdminId);
+
+            System.out.println("Super Admin " + superAdminId + " deactivated Admin " + targetAdminId);
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new AuthenticationException("Database error: " + e.getMessage());
+        }
     }
 
     @Override
     public void deleteAdmin(int superAdminId, int targetAdminId) throws AuthenticationException {
+        // 1. Check Authentication
+        if (!SessionManager.isAdminLoggedIn(superAdminId)) {
+            throw new AuthenticationException("Unauthorized access: Super admin must be logged in.");
+        }
 
+        // 2. Prevent self-deletion
+        if (superAdminId == targetAdminId) {
+            throw new AuthenticationException("Cannot delete your own account");
+        }
+
+        // 3. Soft delete (recommended) or hard delete
+        try (Connection connection = DatabaseAccess.getConnection()) {
+            // Option 1: Soft delete (recommended) - add 'deleted_at' column
+            // String query = "UPDATE admins SET deleted_at = NOW() WHERE admin_id = ?";
+
+            // Option 2: Hard delete (use with caution)
+            String query = "DELETE FROM admins WHERE admin_id = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1, targetAdminId);
+
+            int rowsAffected = statement.executeUpdate();
+
+            if (rowsAffected == 0) {
+                throw new AuthenticationException("Admin not found");
+            }
+
+            // Remove active session
+            SessionManager.removeAdminSession(targetAdminId);
+
+            System.out.println("Super Admin " + superAdminId + " deleted Admin " + targetAdminId);
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new AuthenticationException("Database error: " + e.getMessage());
+        }
     }
 
     // ===== MOVIE METHODS =====
@@ -266,7 +573,7 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     // ===== SEATS MANAGEMENT METHODS =====
-    @Override
+    @Override //do not use
     public int addSeat(int adminId, String seatRow, int seatNumber, String seatType, double seatPrice) throws AuthenticationException, InvalidInputException {
         return 0;
     }
@@ -348,7 +655,7 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
 
-    @Override
+    @Override //do not use
     public void deleteSeat(int adminId, int seatId) throws AuthenticationException {
 
     }
@@ -475,30 +782,219 @@ public class MBAdminServant extends AdminServicePOA {
         return new PaymentDetails[0];
     }
 
-    // ===== CUSTOMER MANAGEMENT METHODS =====
+    // ===== CUSTOMER MANAGEMENT METHODS IMPLEMENTATION =====
+
     @Override
     public Customer[] getAllCustomers(int adminId) throws AuthenticationException {
-        return new Customer[0];
+        // 1. Check Authentication
+        if (!SessionManager.isAdminLoggedIn(adminId)) {
+            throw new AuthenticationException("Unauthorized access: Admin must be logged in.");
+        }
+
+        // 2. Database Query
+        try (Connection connection = DatabaseAccess.getConnection()) {
+            String query = "SELECT customer_id, username, email, phone_number, full_name, created_at, updated_at " +
+                    "FROM customers ORDER BY created_at DESC";
+            PreparedStatement statement = connection.prepareStatement(query,
+                    ResultSet.TYPE_SCROLL_INSENSITIVE,
+                    ResultSet.CONCUR_READ_ONLY);
+            ResultSet rs = statement.executeQuery();
+
+            // Count rows
+            int rowCount = 0;
+            if (rs.last()) {
+                rowCount = rs.getRow();
+                rs.beforeFirst();
+            }
+
+            if (rowCount == 0) {
+                return new Customer[0];
+            }
+
+            Customer[] customers = new Customer[rowCount];
+            int index = 0;
+
+            while (rs.next()) {
+                Customer customer = new Customer();
+                customer.customerId = rs.getInt("customer_id");
+                customer.username = rs.getString("username");
+                customer.email = rs.getString("email");
+                customer.password = ""; // Never return password
+                customer.phoneNumber = rs.getString("phone_number");
+                customer.fullName = rs.getString("full_name");
+                customer.createdAt = rs.getString("created_at");
+                customer.updatedAt = rs.getString("updated_at");
+
+                customers[index++] = customer;
+            }
+
+            System.out.println("Admin " + adminId + " retrieved " + rowCount + " customers");
+            return customers;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new AuthenticationException("Database error: " + e.getMessage());
+        }
     }
 
     @Override
     public Customer[] searchCustomers(int adminId, String searchString) throws AuthenticationException {
-        return new Customer[0];
+        // 1. Check Authentication
+        if (!SessionManager.isAdminLoggedIn(adminId)) {
+            throw new AuthenticationException("Unauthorized access: Admin must be logged in.");
+        }
+
+        // 2. Database Query with LIKE search
+        try (Connection connection = DatabaseAccess.getConnection()) {
+            String query = "SELECT customer_id, username, email, phone_number, full_name, created_at, updated_at " +
+                    "FROM customers " +
+                    "WHERE username LIKE ? OR email LIKE ? OR full_name LIKE ? OR CAST(customer_id AS CHAR) LIKE ? " +
+                    "ORDER BY full_name";
+            PreparedStatement statement = connection.prepareStatement(query,
+                    ResultSet.TYPE_SCROLL_INSENSITIVE,
+                    ResultSet.CONCUR_READ_ONLY);
+
+            String searchPattern = "%" + searchString + "%";
+            statement.setString(1, searchPattern);
+            statement.setString(2, searchPattern);
+            statement.setString(3, searchPattern);
+            statement.setString(4, searchPattern);
+
+            ResultSet rs = statement.executeQuery();
+
+            // Count rows
+            int rowCount = 0;
+            if (rs.last()) {
+                rowCount = rs.getRow();
+                rs.beforeFirst();
+            }
+
+            if (rowCount == 0) {
+                return new Customer[0];
+            }
+
+            Customer[] customers = new Customer[rowCount];
+            int index = 0;
+
+            while (rs.next()) {
+                Customer customer = new Customer();
+                customer.customerId = rs.getInt("customer_id");
+                customer.username = rs.getString("username");
+                customer.email = rs.getString("email");
+                customer.password = "";
+                customer.phoneNumber = rs.getString("phone_number");
+                customer.fullName = rs.getString("full_name");
+                customer.createdAt = rs.getString("created_at");
+                customer.updatedAt = rs.getString("updated_at");
+
+                customers[index++] = customer;
+            }
+
+            System.out.println("Admin " + adminId + " searched customers with '" + searchString + "', found " + rowCount);
+            return customers;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new AuthenticationException("Database error: " + e.getMessage());
+        }
     }
 
-    @Override
+
     public Customer getCustomerDetails(int adminId, int customerId) throws AuthenticationException {
-        return null;
+        // 1. Check Authentication
+        if (!SessionManager.isAdminLoggedIn(adminId)) {
+            throw new AuthenticationException("Unauthorized access: Admin must be logged in.");
+        }
+
+        // 2. Database Query
+        try (Connection connection = DatabaseAccess.getConnection()) {
+            String query = "SELECT customer_id, username, email, phone_number, full_name, created_at, updated_at " +
+                    "FROM customers WHERE customer_id = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1, customerId);
+            ResultSet rs = statement.executeQuery();
+
+            if (rs.next()) {
+                Customer customer = new Customer();
+                customer.customerId = rs.getInt("customer_id");
+                customer.username = rs.getString("username");
+                customer.email = rs.getString("email");
+                customer.password = "";
+                customer.phoneNumber = rs.getString("phone_number");
+                customer.fullName = rs.getString("full_name");
+                customer.createdAt = rs.getString("created_at");
+                customer.updatedAt = rs.getString("updated_at");
+
+                System.out.println("Admin " + adminId + " retrieved details for customer " + customerId);
+                return customer;
+            } else {
+                throw new AuthenticationException("Customer not found with ID: " + customerId);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new AuthenticationException("Database error: " + e.getMessage());
+        }
     }
 
-    @Override
-    public void updateCustomerInfo(int adminId, int customerId, String email, String phoneNumber, String fullName) throws AuthenticationException {
 
+    @Override
+    public void updateCustomerInfo(int adminId, int customerId, String email, String phoneNumber, String fullName)
+            throws AuthenticationException {
+        // 1. Check Authentication
+        if (!SessionManager.isAdminLoggedIn(adminId)) {
+            throw new AuthenticationException("Unauthorized access: Admin must be logged in.");
+        }
+
+        // 2. Database Update
+        try (Connection connection = DatabaseAccess.getConnection()) {
+            String query = "UPDATE customers SET email = ?, phone_number = ?, full_name = ?, updated_at = NOW() " +
+                    "WHERE customer_id = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setString(1, email);
+            statement.setString(2, phoneNumber);
+            statement.setString(3, fullName);
+            statement.setInt(4, customerId);
+
+            int rowsAffected = statement.executeUpdate();
+
+            if (rowsAffected == 0) {
+                throw new AuthenticationException("Customer not found with ID: " + customerId);
+            }
+
+            System.out.println("Admin " + adminId + " updated customer " + customerId + " info");
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            if (e.getMessage().contains("Duplicate entry")) {
+                throw new AuthenticationException("Email already exists");
+            }
+            throw new AuthenticationException("Database error: " + e.getMessage());
+        }
     }
 
     @Override
     public void deactivateCustomer(int adminId, int customerId, String reason) throws AuthenticationException {
 
+    }
+
+    // ===== HELPER METHOD: Get Customer Booking Count =====
+    public int getCustomerBookingCount(int customerId) throws SQLException {
+        try (Connection connection = DatabaseAccess.getConnection()) {
+            String query = "SELECT COUNT(*) as booking_count FROM bookings WHERE customer_id = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1, customerId);
+            ResultSet rs = statement.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt("booking_count");
+            }
+            return 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     // ===== PAYMENT PROCESSING METHODS =====

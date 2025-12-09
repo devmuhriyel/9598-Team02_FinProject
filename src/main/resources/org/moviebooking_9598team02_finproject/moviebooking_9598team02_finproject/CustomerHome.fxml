@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Customer_Side.CustomerHomeView"
+            styleClass="border-pane"
+            stylesheets="@style.css">
+
+    <!-- LEFT SIDEBAR NAVIGATION -->
+    <left>
+        <VBox prefWidth="220.0" styleClass="sidebar">
+            <padding>
+                <Insets top="20" right="0" bottom="20" left="0"/>
+            </padding>
+
+            <!-- LOGO / APP NAME -->
+            <VBox alignment="CENTER" spacing="5" styleClass="logo-section">
+                <padding>
+                    <Insets bottom="30"/>
+                </padding>
+                <Label text="FILMBOOK" styleClass="logo-title"/>
+                <Label text="Movie Booking" styleClass="logo-subtitle"/>
+            </VBox>
+
+            <!-- USER INFO -->
+            <VBox alignment="CENTER" spacing="8" styleClass="user-info-card">
+                <padding>
+                    <Insets top="15" right="15" bottom="15" left="15"/>
+                </padding>
+                <Label text="Welcome back," styleClass="user-welcome-text"/>
+                <Label fx:id="customerName" text="Customer Name" styleClass="user-name-text"/>
+                <VBox.margin>
+                    <Insets left="10" right="10" bottom="15"/>
+                </VBox.margin>
+            </VBox>
+
+            <!-- NAVIGATION MENU -->
+            <VBox spacing="8" VBox.vgrow="ALWAYS">
+                <padding>
+                    <Insets top="25" left="10" right="10"/>
+                </padding>
+
+                <!-- Home / Browse Movies -->
+                <Label fx:id="navBrowse" text="🎬  Browse Movies" styleClass="nav-label">
+                    <font>
+                        <Font name="System Bold" size="13.0"/>
+                    </font>
+                </Label>
+
+                <!-- My Bookings -->
+                <Label fx:id="navBookings" text="🎟️  My Bookings" styleClass="nav-label">
+                    <font>
+                        <Font name="System Bold" size="13.0"/>
+                    </font>
+                </Label>
+
+                <!-- Booking History -->
+                <Label fx:id="navHistory" text="📋  Booking History" styleClass="nav-label">
+                    <font>
+                        <Font name="System Bold" size="13.0"/>
+                    </font>
+                </Label>
+
+                <!-- My Profile -->
+                <Label fx:id="navProfile" text="👤  My Profile" styleClass="nav-label">
+                    <font>
+                        <Font name="System Bold" size="13.0"/>
+                    </font>
+                </Label>
+
+                <!-- Spacer -->
+                <Region VBox.vgrow="ALWAYS"/>
+
+                <!-- Settings (Optional) -->
+                <Label fx:id="navSettings" text="⚙️  Settings" styleClass="nav-label">
+                    <font>
+                        <Font name="System Bold" size="13.0"/>
+                    </font>
+                </Label>
+
+                <!-- Logout Button -->
+                <Label fx:id="logOutButton" text="🚪  Logout" styleClass="logout-button">
+                    <font>
+                        <Font name="System Bold" size="13.0"/>
+                    </font>
+                </Label>
+            </VBox>
+        </VBox>
+    </left>
+
+    <!-- CENTER - MAIN CONTENT AREA -->
+    <center>
+        <BorderPane styleClass="content-container">
+            <!-- TOP BAR -->
+            <top>
+                <HBox alignment="CENTER_LEFT" spacing="15" styleClass="top-bar">
+                    <Label text="FilmBook Customer Portal" styleClass="top-bar-title"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="currentDateTime" text="Monday, Dec 09, 2025  |  8:30 PM" styleClass="date-time-label"/>
+                </HBox>
+            </top>
+
+            <!-- MAIN CONTENT CONTAINER -->
+            <center>
+                <ScrollPane fitToWidth="true" fitToHeight="true" styleClass="scroll-pane">
+                    <content>
+                        <StackPane fx:id="panesContainer">
+                            <padding>
+                                <Insets top="20" right="25" bottom="20" left="25"/>
+                            </padding>
+
+                            <!-- DEFAULT WELCOME VIEW -->
+                            <VBox alignment="CENTER" spacing="20">
+                                <Label text="Welcome to FilmBook!" styleClass="welcome-title"/>
+                                <Label text="Browse movies, make bookings, and manage your cinema experience"
+                                       styleClass="welcome-subtitle" wrapText="true" maxWidth="500" alignment="CENTER"/>
+
+                                <!-- Quick Action Cards -->
+                                <HBox spacing="20" alignment="CENTER">
+                                    <!-- Browse Movies Card -->
+                                    <VBox alignment="CENTER" spacing="10" styleClass="quick-action-card">
+                                        <Label text="🎬" styleClass="quick-action-icon"/>
+                                        <Label text="Browse Movies" styleClass="quick-action-title"/>
+                                        <Label text="Explore available films" styleClass="quick-action-description"/>
+                                    </VBox>
+
+                                    <!-- My Bookings Card -->
+                                    <VBox alignment="CENTER" spacing="10" styleClass="quick-action-card">
+                                        <Label text="🎟️" styleClass="quick-action-icon"/>
+                                        <Label text="My Bookings" styleClass="quick-action-title"/>
+                                        <Label text="View your tickets" styleClass="quick-action-description"/>
+                                    </VBox>
+
+                                    <!-- My Profile Card -->
+                                    <VBox alignment="CENTER" spacing="10" styleClass="quick-action-card">
+                                        <Label text="👤" styleClass="quick-action-icon"/>
+                                        <Label text="My Profile" styleClass="quick-action-title"/>
+                                        <Label text="Manage your account" styleClass="quick-action-description"/>
+                                    </VBox>
+                                </HBox>
+                            </VBox>
+                        </StackPane>
+                    </content>
+                </ScrollPane>
+            </center>
+        </BorderPane>
+    </center>
+</BorderPane>

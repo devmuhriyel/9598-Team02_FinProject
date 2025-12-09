@@ -189,7 +189,6 @@ module MovieBookingAdmin {
         PaymentDetailsList getAllPaymentsWithDetails(in long adminId) raises (MovieBookingCommon::AuthenticationException);
 
         // ===== CUSTOMER MANAGEMENT =====
-
         // View all customers
         CustomerList getAllCustomers(in long adminId) raises (MovieBookingCommon::AuthenticationException);
 
@@ -206,7 +205,6 @@ module MovieBookingAdmin {
         void deactivateCustomer(in long adminId, in long customerId, in string reason) raises (MovieBookingCommon::AuthenticationException);
 
         // ===== REPORTS & ANALYTICS =====
-
         // Generate sales report for a date range
         string generateSalesReport(in long adminId, in string startDate, in string endDate) raises (MovieBookingCommon::AuthenticationException);
 
