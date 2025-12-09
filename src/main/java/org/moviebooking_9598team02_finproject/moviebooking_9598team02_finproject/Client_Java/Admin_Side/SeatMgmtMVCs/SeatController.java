@@ -25,24 +25,23 @@ public class SeatController {
         this.view = view;
         this.navManager = navigationManager;
         loadAllSeatData();
-        initializeButtons();
     }
 
-    private void initializeButtons(){
-        for(Button button: view.getAllSeatButtons()){
+    public void initializeSeatButtons() {
+        for (Button button : view.getAllSeatButtons()) {
             final Button seatButton = button;
             final String seatName = button.getText();
-
             Seat seat = seatDataMap.get(seatName);
             if (seat != null) {
                 view.updateSeatStyle(seatName, seat.seatType);
             }
             button.setOnAction(event -> handleSeatClick(seatButton, seatName));
         }
-        view.getUpdateButton().setOnAction(event -> handlePriceUpdate());
-        view.getBtnSetVIP().setOnAction(event -> handleSetSeatType("vip"));
-        view.getBtnSetStandard().setOnAction(event -> handleSetSeatType("regular"));
-        view.getClearSelectionButton().setOnAction(event -> handleClearSelection());
+        view.setStandardType(() -> handleSetSeatType("regular"));
+        view.setVipType(() -> handleSetSeatType("vip"));
+        view.setMaintenance(() -> handleSetSeatType("maintenance"));
+        view.setClearSelection(() -> handleClearSelection());
+        view.setPriceUpdateClick(event -> handlePriceUpdate());
     }
 
     private void loadAllSeatData() {
@@ -68,9 +67,7 @@ public class SeatController {
     }
 
     private void handleSeatClick(Button clickedButton, String seatName) {
-        // Toggle selection
         if (selectedSeatNames.contains(seatName)) {
-            // Deselect
             selectedSeatNames.remove(seatName);
             Seat seat = seatDataMap.get(seatName);
             if (seat != null) {
@@ -78,7 +75,6 @@ public class SeatController {
             }
             view.deselectSeat(clickedButton);
         } else {
-            // Select
             selectedSeatNames.add(seatName);
             Seat seat = seatDataMap.get(seatName);
             if (seat != null) {
@@ -97,24 +93,16 @@ public class SeatController {
             view.getPriceInput().setText("");
         } else {
             view.getStatusMessageLabel().setText("Selected: " + String.join(", ", selectedSeatNames));
-            // Show details of last selected seat
             String lastSelected = selectedSeatNames.get(selectedSeatNames.size() - 1);
             loadSeatDetails(lastSelected);
         }
-    }
-
-    private void handleClearSelection() {
-        selectedSeatNames.clear();
-        selectedSeatIds.clear();
-        view.handleClearSelection();
-        updateSelectionDisplay();
     }
 
     private void loadSeatDetails(String seatName) {
         Seat seat = seatDataMap.get(seatName);
         if (seat != null) {
             view.getCurrentSeatDetailsLabel().setText(
-                    String.format("Seat: %s | Type: %s | Price: $%.2f",
+                    String.format("Seat: %s | Type: %s | Price: P%.2f",
                             seatName,
                             seat.seatType.toUpperCase(),
                             seat.seatPrice
@@ -125,6 +113,20 @@ public class SeatController {
             view.getCurrentSeatDetailsLabel().setText("Seat: " + seatName + " | Data load error. Select another seat.");
             view.getPriceInput().setText("");
         }
+    }
+
+    public void handleClearSelection(){
+        List<String> seatsToDeselect = new ArrayList<>(selectedSeatNames);
+
+        selectedSeatNames.clear();
+        selectedSeatIds.clear();
+
+        for (String seatName : seatsToDeselect) {
+            Button button = view.getSeatButton(seatName);
+            if (button != null) view.deselectSeat(button);
+        }
+
+        updateSelectionDisplay();
     }
 
     public void handlePriceUpdate() {
@@ -144,24 +146,17 @@ public class SeatController {
             view.getStatusMessageLabel().setText("Error: Invalid price format. Please enter a number.");
             return;
         }
-
         try {
-            // Update all selected seats
             for (int seatId : selectedSeatIds) {
                 model.updateSeatPrice(seatId, newPrice);
             }
-
-            // Update local data
             for (String seatName : selectedSeatNames) {
                 Seat seat = seatDataMap.get(seatName);
                 if (seat != null) {
                     seat.seatPrice = newPrice;
                 }
             }
-
-            view.getStatusMessageLabel().setText(String.format("Success: Price for %d seat(s) updated to $%.2f.", selectedSeatIds.size(), newPrice));
-
-            // Refresh details for last selected seat
+            view.getStatusMessageLabel().setText(String.format("Success: Price for %d seat(s) updated to P%.2f.", selectedSeatIds.size(), newPrice));
             if (!selectedSeatNames.isEmpty()) {
                 String lastSelected = selectedSeatNames.get(selectedSeatNames.size() - 1);
                 loadSeatDetails(lastSelected);
@@ -178,24 +173,20 @@ public class SeatController {
             view.getStatusMessageLabel().setText("Error: Please select at least one seat before changing the type.");
             return;
         }
-
         try {
-            // Update all selected seats
             for (int seatId : selectedSeatIds) {
                 model.updateSeatType(seatId, type);
             }
-
-            // Update local data
             for (String seatName : selectedSeatNames) {
                 Seat seat = seatDataMap.get(seatName);
                 if (seat != null) {
                     seat.seatType = type;
                 }
             }
-
             view.getStatusMessageLabel().setText(String.format("Success: %d seat(s) set to %s type.", selectedSeatIds.size(), type.toUpperCase()));
-
-            // Refresh details for last selected seat
+            for (String seatName : selectedSeatNames) {
+                view.updateSeatStyle(seatName, type);
+            }
             if (!selectedSeatNames.isEmpty()) {
                 String lastSelected = selectedSeatNames.get(selectedSeatNames.size() - 1);
                 loadSeatDetails(lastSelected);
