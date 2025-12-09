@@ -580,64 +580,80 @@ public class MBAdminServant extends AdminServicePOA {
 
     @Override
     public void updateSeatPrice(int adminId, int seatId, double newPrice) throws AuthenticationException {
-        // 1. Check Authentication
-        if (!SessionManager.isAdminLoggedIn(adminId)) {
-            throw new AuthenticationException("Unauthorized access: Admin must be logged in.");
-        }
-
-        // 2. Database Update Logic
         try (Connection connection = DatabaseAccess.getConnection()) {
-            String query = "UPDATE seats SET seat_price = ?, updated_at = NOW() WHERE seat_id = ?";
-            PreparedStatement statement = connection.prepareStatement(query);
+            // Check if seat exists
+            String checkQuery = "SELECT seat_id FROM seats WHERE seat_id = ?";
+            PreparedStatement checkStatement = connection.prepareStatement(checkQuery);
+            checkStatement.setInt(1, seatId);
+            ResultSet checkRs = checkStatement.executeQuery();
 
-            statement.setDouble(1, newPrice);
-            statement.setInt(2, seatId);
+            if (!checkRs.next()) {
+                throw new AuthenticationException("Seat not found with ID: " + seatId);
+            }
 
-            int rowsAffected = statement.executeUpdate();
+            // Update seat price
+            LocalDateTime now = LocalDateTime.now();
+            String updateQuery = "UPDATE seats SET seat_price = ?, updated_at = ? WHERE seat_id = ?";
+            PreparedStatement updateStatement = connection.prepareStatement(updateQuery);
+            updateStatement.setDouble(1, newPrice);
+            updateStatement.setString(2, now.toString());
+            updateStatement.setInt(3, seatId);
 
-            if (rowsAffected == 0) {
-                System.out.println("Warning: Seat ID " + seatId + " not found or price was unchanged.");
+            int rowsAffected = updateStatement.executeUpdate();
+
+            if (rowsAffected > 0) {
+                System.out.println("Successfully updated price for seat ID: " + seatId + " to: " + newPrice);
             } else {
-                System.out.println("Seat ID " + seatId + " price updated successfully by Admin " + adminId);
+                throw new AuthenticationException("Failed to update seat price");
             }
 
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new AuthenticationException("Database error during price update: " + e.getMessage());
+            throw new AuthenticationException("Database error: " + e.getMessage());
         }
     }
 
     @Override
     public void updateSeatType(int adminId, int seatId, String newType) throws AuthenticationException {
-        // 1. Check Authentication
-        if (!SessionManager.isAdminLoggedIn(adminId)) {
-            throw new AuthenticationException("Unauthorized access: Admin must be logged in.");
+        // Validate seat type (only allow: regular, vip, maintenance)
+        if (!newType.equalsIgnoreCase("regular") &&
+                !newType.equalsIgnoreCase("vip") &&
+                !newType.equalsIgnoreCase("maintenance")) {
+            throw new AuthenticationException("Invalid seat type. Allowed types: regular, vip, maintence");
         }
-
-        // Normalize type input
-        String normalizedType = newType.toUpperCase();
-
-        // 2. Database Update Logic
         try (Connection connection = DatabaseAccess.getConnection()) {
-            String query = "UPDATE seats SET seat_type = ?, updated_at = NOW() WHERE seat_id = ?";
-            PreparedStatement statement = connection.prepareStatement(query);
+            // Check if seat exists
+            String checkQuery = "SELECT seat_id FROM seats WHERE seat_id = ?";
+            PreparedStatement checkStatement = connection.prepareStatement(checkQuery);
+            checkStatement.setInt(1, seatId);
+            ResultSet checkRs = checkStatement.executeQuery();
 
-            statement.setString(1, normalizedType);
-            statement.setInt(2, seatId);
+            if (!checkRs.next()) {
+                throw new AuthenticationException("Seat not found with ID: " + seatId);
+            }
 
-            int rowsAffected = statement.executeUpdate();
+            // Update seat type
+            LocalDateTime now = LocalDateTime.now();
+            String updateQuery = "UPDATE seats SET seat_type = ?, updated_at = ? WHERE seat_id = ?";
+            PreparedStatement updateStatement = connection.prepareStatement(updateQuery);
+            updateStatement.setString(1, newType);
+            updateStatement.setString(2, now.toString());
+            updateStatement.setInt(3, seatId);
 
-            if (rowsAffected == 0) {
-                System.out.println("Warning: Seat ID " + seatId + " not found or type was unchanged.");
+            int rowsAffected = updateStatement.executeUpdate();
+
+            if (rowsAffected > 0) {
+                System.out.println("Successfully updated type for seat ID: " + seatId + " to: " + newType);
             } else {
-                System.out.println("Seat ID " + seatId + " type updated to " + normalizedType + " successfully by Admin " + adminId);
+                throw new AuthenticationException("Failed to update seat type");
             }
 
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new AuthenticationException("Database error during type update: " + e.getMessage());
+            throw new AuthenticationException("Database error: " + e.getMessage());
         }
     }
+
 
     @Override //do not use
     public void deleteSeat(int adminId, int seatId) throws AuthenticationException {
@@ -646,50 +662,36 @@ public class MBAdminServant extends AdminServicePOA {
 
     @Override
     public Seat[] getAllSeats(int adminId) throws AuthenticationException {
-        // 1. Check Authentication
-        if (!SessionManager.isAdminLoggedIn(adminId)) {
-            throw new AuthenticationException("Unauthorized access: Admin must be logged in.");
-        }
-
-        // 2. Database Fetch Logic
         try (Connection connection = DatabaseAccess.getConnection()) {
-            String query = "SELECT seat_id, seat_row, seat_number, seat_type, seat_price FROM seats ORDER BY seat_row, seat_number";
-            PreparedStatement statement = connection.prepareStatement(query,
-                    ResultSet.TYPE_SCROLL_INSENSITIVE,
-                    ResultSet.CONCUR_READ_ONLY);
+            // Query to get all seats ordered by row and number
+            String query = "SELECT * FROM seats ORDER BY seat_row ASC, seat_number ASC";
+            PreparedStatement statement = connection.prepareStatement(query);
             ResultSet rs = statement.executeQuery();
 
-            // Count rows for array size
-            int rowCount = 0;
-            if (rs.last()) {
-                rowCount = rs.getRow();
-                rs.beforeFirst(); // Reset cursor
-            }
-
-            if (rowCount == 0) {
-                return new Seat[0];
-            }
-
-            Seat[] allSeats = new Seat[rowCount];
-            int index = 0;
+            // Count total seats
+            java.util.List<Seat> seatList = new java.util.ArrayList<>();
 
             while (rs.next()) {
                 Seat seat = new Seat();
                 seat.seatId = rs.getInt("seat_id");
-                // Assuming seat_row is stored as a String (e.g., "A", "B", "C")
                 seat.seatRow = rs.getString("seat_row");
                 seat.seatNumber = rs.getInt("seat_number");
                 seat.seatType = rs.getString("seat_type");
                 seat.seatPrice = rs.getDouble("seat_price");
+                seat.createdAt = rs.getString("created_at");
+                seat.updatedAt = rs.getString("updated_at");
 
-                allSeats[index++] = seat;
+                seatList.add(seat);
             }
 
-            return allSeats;
+            System.out.println("Retrieved " + seatList.size() + " seats from database");
+
+            // Convert ArrayList to Array
+            return seatList.toArray(new Seat[0]);
 
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new AuthenticationException("Database error during seat retrieval: " + e.getMessage());
+            throw new AuthenticationException("Database error: " + e.getMessage());
         }
     }
 

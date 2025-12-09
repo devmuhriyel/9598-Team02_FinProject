@@ -29,7 +29,7 @@ public class AdminNavigationManager {
     // Cache for main section panes
     private Pane dashboardPane;
     private Pane movieMgmtPane;
-    private Pane seatMgmtPane;
+    // Removed seatMgmtPane - using seatNavManager instead
     private Pane bookingMgmtPane;
     private Pane customerMgmtPane;
     private Pane adminMgmtPane;
@@ -111,18 +111,9 @@ public class AdminNavigationManager {
     }
 
     public void showSeatMgmtView() {
+        // Use the dedicated seat navigation manager - it handles all initialization
         Pane pane = seatNavManager.getSeatMgmtView();
         loadContentPane(pane);
-        if (seatMgmtPane == null) {
-            try {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/AdminSeatMgmt.fxml"));
-                seatMgmtPane = loader.load();
-            } catch (IOException e) {
-                e.printStackTrace();
-                seatMgmtPane = createPlaceholder("Seat Management");
-            }
-        }
-        loadContentPane(seatMgmtPane);
     }
 
     public void showBookingMgmtView() {

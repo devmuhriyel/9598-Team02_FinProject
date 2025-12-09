@@ -8,8 +8,7 @@ import java.io.IOException;
 
 public class AdminSMNavManager {
     private final int currentAdminId;
-    private Pane seatMgmtPane; // The root pane of the loaded FXML
-    private AdminSMNavManager adminSMNavManager;
+    private Pane seatMgmtPane;
 
     private SeatController seatController;
     private SeatModel seatModel;
@@ -21,13 +20,13 @@ public class AdminSMNavManager {
 
     private void initializeSeatMgmtView() throws IOException {
         seatModel = new SeatModel(currentAdminId);
-        seatView = new SeatView();
-        seatController = new SeatController(seatModel, seatView, this );
         FXMLLoader loader = new FXMLLoader(
                 getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/AdminSeatMgmt.fxml")
         );
-        loader.setControllerFactory(c -> seatController);
         seatMgmtPane = loader.load();
+        seatView = loader.getController();
+        seatController = new SeatController(seatModel, seatView, this);
+        seatController.initializeSeatButtons();
     }
 
     public Pane getSeatMgmtView() {
@@ -36,7 +35,7 @@ public class AdminSMNavManager {
                 initializeSeatMgmtView();
             } catch (IOException e) {
                 e.printStackTrace();
-                seatMgmtPane = new Pane(new javafx.scene.control.Label("Error loading Seat Management View."));
+                seatMgmtPane = new Pane(new javafx.scene.control.Label("Error loading Seat Management View: " + e.getMessage()));
             }
         }
         return seatMgmtPane;
