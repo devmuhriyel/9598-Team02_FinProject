@@ -56,6 +56,7 @@ public class AdminNavigationManager {
 
         this.seatNavManager = new AdminSMNavManager(admin);
         this.paymentNavManager = new AdminPaymentNavManager(admin);
+        this.bookingNavManager = new AdminBookingNavManager(admin);
 
         initializeHomeView();
     }
@@ -123,24 +124,8 @@ public class AdminNavigationManager {
     }
 
     public void showBookingMgmtView() {
-        if (bookingMgmtPane == null) {
-            try {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/AdminBookingMgmt.fxml"));
-                bookingMgmtPane = loader.load();
-
-                // Initialize booking nav manager if this section has sub-views
-                StackPane bookingContainer = (StackPane) bookingMgmtPane.lookup("#bookingSubContainer");
-                if (bookingContainer != null) {
-                    //Put stack pane of Booking MVCs here
-//                    bookingNavManager = new AdminBookingNavManager(bookingContainer);
-                }
-
-            } catch (IOException e) {
-                e.printStackTrace();
-                bookingMgmtPane = createPlaceholder("Booking Management");
-            }
-        }
-        loadContentPane(bookingMgmtPane);
+        Pane bookingViewContent = bookingNavManager.getBookingMgmtView();
+        loadContentPane(bookingViewContent);
     }
 
     public void showCustomerMgmtView() {
