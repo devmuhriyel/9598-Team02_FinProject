@@ -35,12 +35,14 @@ public class AdminNavigationManager {
     private Pane adminMgmtPane;
     private Pane paymentMgmtPane;
 
+
     // Sub-navigation managers
     private AdminBookingNavManager bookingNavManager;
     private AdminMMNavManager movieNavManager;
     private AdminSMNavManager seatNavManager;
     private AccountNavigationManager accNavManager;
     private AdminPaymentNavManager paymentNavManager;
+
 
     // Add others as needed
 
@@ -151,6 +153,20 @@ public class AdminNavigationManager {
             }
         }
         loadContentPane(customerMgmtPane);
+    }
+
+    public void showGenreMgmtView(){
+        if (dashboardPane == null) {
+            try {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/GenreManagement.fxml"));
+                dashboardPane = loader.load();
+                // Initialize controller if needed
+            } catch (IOException e) {
+                e.printStackTrace();
+                dashboardPane = createPlaceholder("Dashboard");
+            }
+        }
+        loadContentPane(dashboardPane);
     }
 
     //

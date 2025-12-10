@@ -70,7 +70,7 @@ public class AdminHomeController {
 
     public void switchToGenreMgmt(){
         view.changePanes("navGenre");
-//        navManager.showGenreMgmtView();
+        navManager.showGenreMgmtView();
     }
 
     public void switchToPaymentMgmt() {
