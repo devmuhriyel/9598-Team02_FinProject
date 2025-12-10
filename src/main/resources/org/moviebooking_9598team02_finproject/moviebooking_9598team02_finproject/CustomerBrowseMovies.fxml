@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.TilePane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<VBox maxHeight="-Infinity" maxWidth="-Infinity" prefHeight="700.0" prefWidth="1060.0" style="-fx-background-color: #1A1A1A;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1">
+    <padding>
+        <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
+    </padding>
+    <children>
+        <Label style="-fx-font-weight: bold; -fx-font-size: 28px;" text="🎬 Browse Movies" textFill="WHITE">
+            <VBox.margin>
+                <Insets bottom="20.0" />
+            </VBox.margin>
+        </Label>
+        <HBox alignment="CENTER_LEFT" spacing="20.0">
+            <children>
+                <TextField fx:id="searchField" prefHeight="40.0" prefWidth="300.0" promptText="Search movie title..." style="-fx-background-color: #2D2D2D; -fx-text-fill: white; -fx-prompt-text-fill: #999999; -fx-background-radius: 5;" />
+            </children>
+            <VBox.margin>
+                <Insets bottom="20.0" />
+            </VBox.margin>
+        </HBox>
+        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" style="-fx-background-color: #1A1A1A; -fx-border-color: transparent;">
+            <content>
+                <TilePane fx:id="movieTilePane" hgap="25.0" prefWidth="1000.0" style="-fx-background-color: #1A1A1A;" vgap="25.0">
+                    <children>
+                        <VBox alignment="TOP_CENTER" prefHeight="250.0" prefWidth="180.0" style="-fx-background-color: #2D2D2D; -fx-background-radius: 8;">
+                            <children>
+                                <Label alignment="CENTER" prefHeight="180.0" prefWidth="180.0" style="-fx-background-color: #444444; -fx-background-radius: 8 8 0 0;" text="POSTER" textFill="WHITE">
+                                    <font>
+                                        <Font size="18.0" />
+                                    </font>
+                                </Label>
+                                <VBox alignment="CENTER_LEFT" prefHeight="70.0" prefWidth="180.0" spacing="3.0">
+                                    <padding>
+                                        <Insets left="10.0" right="10.0" top="5.0" />
+                                    </padding>
+                                    <children>
+                                        <Label text="Movie Title" textFill="WHITE">
+                                            <font>
+                                                <Font name="System Bold" size="14.0" />
+                                            </font>
+                                        </Label>
+                                        <Label text="Genre | Duration" textFill="#999999" />
+                                    </children>
+                                </VBox>
+                            </children>
+                        </VBox>
+                        <VBox alignment="TOP_CENTER" prefHeight="250.0" prefWidth="180.0" style="-fx-background-color: #2D2D2D; -fx-background-radius: 8;">
+                            <children>
+                                <Label alignment="CENTER" prefHeight="180.0" prefWidth="180.0" style="-fx-background-color: #444444; -fx-background-radius: 8 8 0 0;" text="POSTER" textFill="WHITE">
+                                    <font>
+                                        <Font size="18.0" />
+                                    </font>
+                                </Label>
+                                <VBox alignment="CENTER_LEFT" prefHeight="70.0" prefWidth="180.0" spacing="3.0">
+                                    <padding>
+                                        <Insets left="10.0" right="10.0" top="5.0" />
+                                    </padding>
+                                    <children>
+                                        <Label text="Movie Title 2" textFill="WHITE">
+                                            <font>
+                                                <Font name="System Bold" size="14.0" />
+                                            </font>
+                                        </Label>
+                                        <Label text="Genre | Duration" textFill="#999999" />
+                                    </children>
+                                </VBox>
+                            </children>
+                        </VBox>
+                    </children>
+                </TilePane>
+            </content>
+        </ScrollPane>
+    </children>
+</VBox>

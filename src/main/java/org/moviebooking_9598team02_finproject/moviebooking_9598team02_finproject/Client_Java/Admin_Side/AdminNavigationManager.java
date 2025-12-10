@@ -96,23 +96,25 @@ public class AdminNavigationManager {
     public void showMovieMgmtView() {
         if (movieMgmtPane == null) {
             try {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/AdminMovieMgmt.fxml"));
-                movieMgmtPane = loader.load();
+                // Initialize movie nav manager with AdminService and Admin
+                movieNavManager = new AdminMMNavManager(AdminParentModel.adminServices, admin);
+                movieMgmtPane = movieNavManager.getMovieMgmtView();
 
-                // Initialize movie nav manager if this section has sub-views
-                StackPane movieContainer = (StackPane) movieMgmtPane.lookup("#movieSubContainer");
-                if (movieContainer != null) {
-                    //Put stack pane of Movie Mgmt MVCs here
-//                    movieNavManager = new AdminMMNavManager(movieContainer);
+                if (movieMgmtPane == null) {
+                    System.err.println("ERROR: Movie Management returned null pane!");
+                    movieMgmtPane = createPlaceholder("Movie Management - Error Loading");
+                } else {
+                    System.out.println("✅ Movie Management loaded successfully with MVC wiring");
                 }
-
-            } catch (IOException e) {
+            } catch (Exception e) {
+                System.err.println("❌ ERROR initializing Movie Management:");
                 e.printStackTrace();
-                movieMgmtPane = createPlaceholder("Movie Management");
+                movieMgmtPane = createPlaceholder("Movie Management - Error Loading");
             }
         }
         loadContentPane(movieMgmtPane);
     }
+
 
     public void showSeatMgmtView() {
         // Use the dedicated seat navigation manager - it handles all initialization

@@ -1,146 +1,329 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.TextField?>
-<?import javafx.scene.control.TextArea?>
-<?import javafx.scene.control.ComboBox?>
-<?import javafx.scene.control.TableView?>
-<?import javafx.scene.control.TableColumn?>
-<?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.Region?>
-<?import javafx.scene.layout.StackPane?>
-<?import javafx.scene.layout.VBox?>
-<?import javafx.scene.text.Font?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
 
-<!-- fx:controller points to MovieView (not MovieController) -->
-<BorderPane prefHeight="720.0" prefWidth="1280.0" style="-fx-background-color: #292929;"
-            xmlns="http://javafx.com/javafx/24.0.1"
-            xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.MovieMVCs.MovieView">
+<BorderPane prefHeight="720.0" prefWidth="1280.0" style="-fx-background-color: #292929;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.MovieMVCs.MovieView">
     <center>
-        <StackPane fx:id="rootContentStack" prefHeight="583.0" prefWidth="1089.0">
-            <VBox fx:id="movieView" prefHeight="157.0" prefWidth="1060.0" spacing="20.0" style="-fx-background-color: #292929;">
+        <StackPane fx:id="rootContentStack">
+
+            <!-- MAIN GRID VIEW -->
+            <VBox fx:id="movieView" spacing="20.0" style="-fx-background-color: #292929;">
                 <padding>
-                    <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+                    <Insets bottom="25.0" left="25.0" right="25.0" top="25.0" />
                 </padding>
 
-                <Label style="-fx-text-fill: #FFFFFF; -fx-font-weight: bold;" text="Movie Management">
-                    <font><Font name="SansSerif Bold" size="22.0" /></font>
-                </Label>
-                <Label style="-fx-text-fill: #AAAAAA;" text="Add, edit, delete, or search movies in the system.">
-                    <font><Font name="SansSerif Regular" size="14.0" /></font>
-                </Label>
+                <!-- Header Section -->
+                <VBox spacing="15.0" style="-fx-background-color: #1A1A1A; -fx-padding: 20; -fx-background-radius: 5;">
+                    <Label style="-fx-text-fill: #FFFFFF; -fx-font-size: 16px; -fx-font-weight: bold;" text="FILMBOOK MOVIES">
+                        <font>
+                            <Font name="SansSerif Bold" size="16.0" />
+                        </font>
+                    </Label>
 
-                <!-- Search Section -->
-                <HBox alignment="CENTER_LEFT" spacing="15.0" style="-fx-padding: 15; -fx-background-color: #1A1A1A; -fx-background-radius: 8;">
-                    <Label style="-fx-text-fill: #FFFFFF; -fx-font-weight: bold;" text="Search:" />
-                    <TextField fx:id="searchField" prefWidth="300.0" promptText="Enter movie title or ID..." style="-fx-background-color: #333333; -fx-text-fill: #FFFFFF; -fx-prompt-text-fill: #888888;" />
-                    <Button onAction="#handleSearchClick" style="-fx-background-color: #007ACC; -fx-text-fill: WHITE; -fx-font-weight: bold; -fx-padding: 8 20;" text="Search" />
-                    <Button onAction="#handleClearSearchClick" style="-fx-background-color: #555555; -fx-text-fill: WHITE; -fx-font-weight: bold; -fx-padding: 8 20;" text="Clear" />
-                    <Region HBox.hgrow="ALWAYS" />
-                    <Button onAction="#handleAddNewMovieClick" style="-fx-background-color: #00CC66; -fx-text-fill: #000000; -fx-font-weight: bold; -fx-padding: 8 20;" text="+ Add New Movie" />
-                </HBox>
-
-                <Label fx:id="statusMessageLabel" alignment="CENTER" maxWidth="1.7976931348623157E308" style="-fx-text-fill: #FFD700;" text=" " VBox.vgrow="NEVER">
-                    <font><Font name="SansSerif Regular" size="14.0" /></font>
-                </Label>
-
-                <!-- Movie Table -->
-                <TableView fx:id="movieTableView" prefHeight="300.0" style="-fx-background-color: #1A1A1A; -fx-table-cell-border-color: #444444;" VBox.vgrow="ALWAYS">
-                    <columns>
-                        <TableColumn fx:id="colMovieId" prefWidth="80.0" text="ID" />
-                        <TableColumn fx:id="colTitle" prefWidth="250.0" text="Title" />
-                        <TableColumn fx:id="colGenre" prefWidth="120.0" text="Genre" />
-                        <TableColumn fx:id="colDuration" prefWidth="100.0" text="Duration (min)" />
-                        <TableColumn fx:id="colRating" prefWidth="80.0" text="Rating" />
-                        <TableColumn fx:id="colReleaseDate" prefWidth="120.0" text="Release Date" />
-                        <TableColumn fx:id="colStatus" prefWidth="100.0" text="Status" />
-                    </columns>
-                </TableView>
-
-                <!-- Movie Details and Management Section -->
-                <VBox spacing="15.0" style="-fx-padding: 20; -fx-background-color: #1A1A1A; -fx-background-radius: 8;">
-                    <Label style="-fx-text-fill: #FFFFFF; -fx-font-weight: bold; -fx-font-size: 16;" text="Selected Movie Details and Management" />
-                    <Label fx:id="currentMovieDetailsLabel" style="-fx-text-fill: #AAAAAA;" text="Select a movie from the table to view details." />
-
-                    <HBox spacing="30.0">
-                        <!-- Left Column: Movie Information -->
-                        <VBox spacing="12.0" style="-fx-padding: 15; -fx-border-color: #444444; -fx-border-radius: 5; -fx-background-color: #222222; -fx-background-radius: 5;" HBox.hgrow="ALWAYS">
-                            <Label style="-fx-text-fill: #FFD700; -fx-font-weight: bold;" text="Movie Information" />
-
-                            <HBox spacing="10.0">
-                                <Label style="-fx-text-fill: #FFFFFF; -fx-min-width: 100;" text="Title:" />
-                                <TextField fx:id="titleInput" prefWidth="300.0" promptText="Enter movie title" style="-fx-background-color: #333333; -fx-text-fill: #FFFFFF;" HBox.hgrow="ALWAYS" />
-                            </HBox>
-
-                            <HBox spacing="10.0">
-                                <Label style="-fx-text-fill: #FFFFFF; -fx-min-width: 100;" text="Genre:" />
-                                <ComboBox fx:id="genreComboBox" prefWidth="300.0" promptText="Select genre" style="-fx-background-color: #333333;" HBox.hgrow="ALWAYS" />
-                            </HBox>
-
-                            <HBox spacing="10.0">
-                                <Label style="-fx-text-fill: #FFFFFF; -fx-min-width: 100;" text="Duration (min):" />
-                                <TextField fx:id="durationInput" prefWidth="300.0" promptText="e.g., 120" style="-fx-background-color: #333333; -fx-text-fill: #FFFFFF;" HBox.hgrow="ALWAYS" />
-                            </HBox>
-
-                            <HBox spacing="10.0">
-                                <Label style="-fx-text-fill: #FFFFFF; -fx-min-width: 100;" text="Rating:" />
-                                <ComboBox fx:id="ratingComboBox" prefWidth="300.0" promptText="Select rating" style="-fx-background-color: #333333;" HBox.hgrow="ALWAYS" />
-                            </HBox>
-
-                            <HBox spacing="10.0">
-                                <Label style="-fx-text-fill: #FFFFFF; -fx-min-width: 100;" text="Release Date:" />
-                                <TextField fx:id="releaseDateInput" prefWidth="300.0" promptText="YYYY-MM-DD" style="-fx-background-color: #333333; -fx-text-fill: #FFFFFF;" HBox.hgrow="ALWAYS" />
-                            </HBox>
-
-                            <HBox spacing="10.0">
-                                <Label style="-fx-text-fill: #FFFFFF; -fx-min-width: 100;" text="Status:" />
-                                <ComboBox fx:id="statusComboBox" prefWidth="300.0" promptText="Select status" style="-fx-background-color: #333333;" HBox.hgrow="ALWAYS" />
-                            </HBox>
-                        </VBox>
-
-                        <!-- Vertical Separator -->
-                        <Region prefHeight="200.0" prefWidth="2.0" style="-fx-background-color: #444444;" />
-
-                        <!-- Right Column: Description and Poster -->
-                        <VBox spacing="12.0" style="-fx-padding: 15; -fx-border-color: #444444; -fx-border-radius: 5; -fx-background-color: #222222; -fx-background-radius: 5;" HBox.hgrow="ALWAYS">
-                            <Label style="-fx-text-fill: #FFD700; -fx-font-weight: bold;" text="Additional Details" />
-
-                            <VBox spacing="5.0">
-                                <Label style="-fx-text-fill: #FFFFFF;" text="Description:" />
-                                <TextArea fx:id="descriptionInput" prefHeight="100.0" prefWidth="400.0" promptText="Enter movie description..." style="-fx-background-color: #333333; -fx-text-fill: #FFFFFF; -fx-control-inner-background: #333333;" wrapText="true" />
-                            </VBox>
-
-                            <HBox spacing="10.0">
-                                <Label style="-fx-text-fill: #FFFFFF; -fx-min-width: 100;" text="Poster URL:" />
-                                <TextField fx:id="posterUrlInput" prefWidth="300.0" promptText="Enter poster image URL" style="-fx-background-color: #333333; -fx-text-fill: #FFFFFF;" HBox.hgrow="ALWAYS" />
-                            </HBox>
-
-                            <HBox spacing="10.0">
-                                <Label style="-fx-text-fill: #FFFFFF; -fx-min-width: 100;" text="Director:" />
-                                <TextField fx:id="directorInput" prefWidth="300.0" promptText="Enter director name" style="-fx-background-color: #333333; -fx-text-fill: #FFFFFF;" HBox.hgrow="ALWAYS" />
-                            </HBox>
-
-                            <HBox spacing="10.0">
-                                <Label style="-fx-text-fill: #FFFFFF; -fx-min-width: 100;" text="Cast:" />
-                                <TextField fx:id="castInput" prefWidth="300.0" promptText="Enter main cast (comma-separated)" style="-fx-background-color: #333333; -fx-text-fill: #FFFFFF;" HBox.hgrow="ALWAYS" />
-                            </HBox>
-                        </VBox>
-                    </HBox>
-
-                    <!-- Action Buttons -->
-                    <HBox alignment="CENTER" spacing="20.0" style="-fx-padding: 20 0 0 0;">
-                        <Button fx:id="btnSaveMovie" onAction="#handleSaveMovieClick" style="-fx-background-color: #00CC66; -fx-text-fill: #000000; -fx-font-weight: bold; -fx-padding: 12 40; -fx-font-size: 14;" text="Save Movie" />
-                        <Button fx:id="btnUpdateMovie" onAction="#handleUpdateMovieClick" style="-fx-background-color: #007ACC; -fx-text-fill: WHITE; -fx-font-weight: bold; -fx-padding: 12 40; -fx-font-size: 14;" text="Update Movie" />
-                        <Button fx:id="btnDeleteMovie" onAction="#handleDeleteMovieClick" style="-fx-background-color: #CC3333; -fx-text-fill: WHITE; -fx-font-weight: bold; -fx-padding: 12 40; -fx-font-size: 14;" text="Delete Movie" />
-                        <Button onAction="#handleClearFieldsClick" style="-fx-background-color: #555555; -fx-text-fill: WHITE; -fx-font-weight: bold; -fx-padding: 12 40; -fx-font-size: 14;" text="Clear Fields" />
+                    <!-- Search and Actions Bar -->
+                    <HBox alignment="CENTER_LEFT" spacing="12.0">
+                        <TextField fx:id="searchField" prefWidth="400.0" promptText="Search Movies by title" style="-fx-background-color: #292929; -fx-border-color: #ff2525; -fx-border-width: 2; -fx-border-radius: 5; -fx-padding: 10 15; -fx-font-size: 14px; -fx-text-fill: #FFFFFF; -fx-prompt-text-fill: #888888;" HBox.hgrow="ALWAYS">
+                            <font>
+                                <Font name="SansSerif Regular" size="14.0" />
+                            </font>
+                        </TextField>
+                        <Button fx:id="btnSearch" style="-fx-background-color: #1A1A1A; -fx-border-color: #ff2525; -fx-border-width: 2; -fx-border-radius: 5; -fx-padding: 10 18; -fx-font-size: 16px; -fx-cursor: hand; -fx-text-fill: #FFFFFF;" text="🔍" />
+                        <Button fx:id="btnFilter" style="-fx-background-color: #1A1A1A; -fx-border-color: #ff2525; -fx-border-width: 2; -fx-border-radius: 5; -fx-padding: 10 18; -fx-font-size: 16px; -fx-cursor: hand; -fx-text-fill: #FFFFFF;" text="☰" />
+                        <Button fx:id="btnAddNewMovie" style="-fx-background-color: #1A1A1A; -fx-border-color: #ff2525; -fx-border-width: 2; -fx-border-radius: 5; -fx-padding: 10 25; -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #ff2525; -fx-cursor: hand;" text="Add">
+                            <font>
+                                <Font name="SansSerif Bold" size="14.0" />
+                            </font>
+                        </Button>
+                        <Button fx:id="btnEdit" style="-fx-background-color: #1A1A1A; -fx-border-color: #ff2525; -fx-border-width: 2; -fx-border-radius: 5; -fx-padding: 10 25; -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #ff2525; -fx-cursor: hand;" text="Edit">
+                            <font>
+                                <Font name="SansSerif Bold" size="14.0" />
+                            </font>
+                        </Button>
                     </HBox>
                 </VBox>
 
+                <!-- Status Message -->
+                <Label fx:id="statusMessageLabel" maxWidth="1.7976931348623157E308" style="-fx-padding: 12; -fx-background-color: #1A1A1A; -fx-background-radius: 5; -fx-text-fill: #FFFFFF; -fx-font-size: 13px;" text=" " visible="false">
+                    <font>
+                        <Font name="SansSerif Regular" size="13.0" />
+                    </font>
+                </Label>
+
+                <!-- Movie Cards Grid with Pagination -->
+                <ScrollPane fitToHeight="true" fitToWidth="true" style="-fx-background: #292929; -fx-background-color: #292929;" VBox.vgrow="ALWAYS">
+                    <VBox spacing="20.0">
+                        <GridPane fx:id="movieGridPane" hgap="20.0" vgap="20.0" />
+
+                        <!-- Pagination -->
+                        <HBox alignment="CENTER" spacing="15.0" style="-fx-padding: 20 0 0 0;">
+                            <Button fx:id="btnPreviousPage" style="-fx-background-color: #1A1A1A; -fx-border-color: #ff2525; -fx-border-width: 2; -fx-border-radius: 5; -fx-padding: 8 15; -fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #ff2525; -fx-cursor: hand;" text="&lt;">
+                                <font>
+                                    <Font name="SansSerif Bold" size="16.0" />
+                                </font>
+                            </Button>
+                            <Label fx:id="pageLabel" style="-fx-text-fill: #FFFFFF; -fx-font-size: 20px; -fx-font-weight: bold;" text="1">
+                                <font>
+                                    <Font name="SansSerif Bold" size="20.0" />
+                                </font>
+                            </Label>
+                            <Button fx:id="btnNextPage" style="-fx-background-color: #1A1A1A; -fx-border-color: #ff2525; -fx-border-width: 2; -fx-border-radius: 5; -fx-padding: 8 15; -fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #ff2525; -fx-cursor: hand;" text="&gt;">
+                                <font>
+                                    <Font name="SansSerif Bold" size="16.0" />
+                                </font>
+                            </Button>
+                        </HBox>
+                    </VBox>
+                </ScrollPane>
             </VBox>
+
+            <!-- ADD MOVIE VIEW -->
+            <VBox fx:id="addMovieView" managed="false" spacing="20.0" style="-fx-background-color: #292929;" visible="false">
+                <padding>
+                    <Insets bottom="25.0" left="25.0" right="25.0" top="25.0" />
+                </padding>
+
+                <!-- Back Button -->
+                <HBox alignment="CENTER_LEFT">
+                    <Button fx:id="btnBackToGrid" style="-fx-background-color: transparent; -fx-text-fill: #ff2525; -fx-font-size: 14px; -fx-font-weight: bold; -fx-cursor: hand; -fx-underline: true;" text="← Back to Movies">
+                        <font>
+                            <Font name="SansSerif Bold" size="14.0" />
+                        </font>
+                    </Button>
+                </HBox>
+
+                <!-- Add Movie Form -->
+                <VBox spacing="20.0" style="-fx-background-color: #1A1A1A; -fx-padding: 30; -fx-background-radius: 5;">
+
+                    <Label style="-fx-text-fill: #FFFFFF; -fx-font-size: 22px; -fx-font-weight: bold;" text="Add New Movie">
+                        <font>
+                            <Font name="SansSerif Bold" size="22.0" />
+                        </font>
+                    </Label>
+
+                    <Separator style="-fx-background-color: #404040;" />
+
+                    <VBox spacing="18.0">
+                        <!-- Title -->
+                        <VBox spacing="6.0">
+                            <Label style="-fx-text-fill: #CCCCCC; -fx-font-size: 13px; -fx-font-weight: bold;" text="Movie Title *">
+                                <font>
+                                    <Font name="SansSerif Bold" size="13.0" />
+                                </font>
+                            </Label>
+                            <TextField fx:id="titleInput" promptText="Enter movie title" style="-fx-background-color: #292929; -fx-text-fill: #FFFFFF; -fx-border-color: #404040; -fx-border-width: 1; -fx-border-radius: 5; -fx-padding: 12 15; -fx-font-size: 14px; -fx-prompt-text-fill: #888888;">
+                                <font>
+                                    <Font name="SansSerif Regular" size="14.0" />
+                                </font>
+                            </TextField>
+                        </VBox>
+
+                        <!-- Genre and Rating -->
+                        <HBox spacing="16.0">
+                            <VBox spacing="6.0" HBox.hgrow="ALWAYS">
+                                <Label style="-fx-text-fill: #CCCCCC; -fx-font-size: 13px; -fx-font-weight: bold;" text="Genre *">
+                                    <font>
+                                        <Font name="SansSerif Bold" size="13.0" />
+                                    </font>
+                                </Label>
+                                <ComboBox fx:id="genreComboBox" maxWidth="1.7976931348623157E308" promptText="Select genre" style="-fx-background-color: #292929; -fx-border-color: #404040; -fx-border-width: 1; -fx-border-radius: 5;" />
+                            </VBox>
+                            <VBox spacing="6.0" HBox.hgrow="ALWAYS">
+                                <Label style="-fx-text-fill: #CCCCCC; -fx-font-size: 13px; -fx-font-weight: bold;" text="Rating *">
+                                    <font>
+                                        <Font name="SansSerif Bold" size="13.0" />
+                                    </font>
+                                </Label>
+                                <ComboBox fx:id="ratingComboBox" maxWidth="1.7976931348623157E308" promptText="Select rating" style="-fx-background-color: #292929; -fx-border-color: #404040; -fx-border-width: 1; -fx-border-radius: 5;" />
+                            </VBox>
+                        </HBox>
+
+                        <!-- Duration, Release Date, Status -->
+                        <HBox spacing="16.0">
+                            <VBox spacing="6.0" HBox.hgrow="ALWAYS">
+                                <Label style="-fx-text-fill: #CCCCCC; -fx-font-size: 13px; -fx-font-weight: bold;" text="Duration (min)">
+                                    <font>
+                                        <Font name="SansSerif Bold" size="13.0" />
+                                    </font>
+                                </Label>
+                                <TextField fx:id="durationInput" promptText="120" style="-fx-background-color: #292929; -fx-text-fill: #FFFFFF; -fx-border-color: #404040; -fx-border-width: 1; -fx-border-radius: 5; -fx-padding: 12 15; -fx-font-size: 14px; -fx-prompt-text-fill: #888888;">
+                                    <font>
+                                        <Font name="SansSerif Regular" size="14.0" />
+                                    </font>
+                                </TextField>
+                            </VBox>
+                            <VBox spacing="6.0" HBox.hgrow="ALWAYS">
+                                <Label style="-fx-text-fill: #CCCCCC; -fx-font-size: 13px; -fx-font-weight: bold;" text="Release Date">
+                                    <font>
+                                        <Font name="SansSerif Bold" size="13.0" />
+                                    </font>
+                                </Label>
+                                <TextField fx:id="releaseDateInput" promptText="YYYY-MM-DD" style="-fx-background-color: #292929; -fx-text-fill: #FFFFFF; -fx-border-color: #404040; -fx-border-width: 1; -fx-border-radius: 5; -fx-padding: 12 15; -fx-font-size: 14px; -fx-prompt-text-fill: #888888;">
+                                    <font>
+                                        <Font name="SansSerif Regular" size="14.0" />
+                                    </font>
+                                </TextField>
+                            </VBox>
+                            <VBox spacing="6.0" HBox.hgrow="ALWAYS">
+                                <Label style="-fx-text-fill: #CCCCCC; -fx-font-size: 13px; -fx-font-weight: bold;" text="Status">
+                                    <font>
+                                        <Font name="SansSerif Bold" size="13.0" />
+                                    </font>
+                                </Label>
+                                <ComboBox fx:id="statusComboBox" maxWidth="1.7976931348623157E308" promptText="Select status" style="-fx-background-color: #292929; -fx-border-color: #404040; -fx-border-width: 1; -fx-border-radius: 5;" />
+                            </VBox>
+                        </HBox>
+
+                        <!-- Description -->
+                        <VBox spacing="6.0">
+                            <Label style="-fx-text-fill: #CCCCCC; -fx-font-size: 13px; -fx-font-weight: bold;" text="Description">
+                                <font>
+                                    <Font name="SansSerif Bold" size="13.0" />
+                                </font>
+                            </Label>
+                            <TextArea fx:id="descriptionInput" prefRowCount="4" promptText="Enter movie description..." style="-fx-control-inner-background: #292929; -fx-text-fill: #FFFFFF; -fx-border-color: #404040; -fx-border-width: 1; -fx-border-radius: 5; -fx-font-size: 14px; -fx-prompt-text-fill: #888888;" wrapText="true">
+                                <font>
+                                    <Font name="SansSerif Regular" size="14.0" />
+                                </font>
+                            </TextArea>
+                        </VBox>
+
+                        <!-- Poster URL -->
+                        <VBox spacing="6.0">
+                            <Label style="-fx-text-fill: #CCCCCC; -fx-font-size: 13px; -fx-font-weight: bold;" text="Poster URL">
+                                <font>
+                                    <Font name="SansSerif Bold" size="13.0" />
+                                </font>
+                            </Label>
+                            <TextField fx:id="posterUrlInput" promptText="https://example.com/poster.jpg" style="-fx-background-color: #292929; -fx-text-fill: #FFFFFF; -fx-border-color: #404040; -fx-border-width: 1; -fx-border-radius: 5; -fx-padding: 12 15; -fx-font-size: 14px; -fx-prompt-text-fill: #888888;">
+                                <font>
+                                    <Font name="SansSerif Regular" size="14.0" />
+                                </font>
+                            </TextField>
+                        </VBox>
+
+                        <!-- Director and Cast -->
+                        <HBox spacing="16.0">
+                            <VBox spacing="6.0" HBox.hgrow="ALWAYS">
+                                <Label style="-fx-text-fill: #CCCCCC; -fx-font-size: 13px; -fx-font-weight: bold;" text="Director">
+                                    <font>
+                                        <Font name="SansSerif Bold" size="13.0" />
+                                    </font>
+                                </Label>
+                                <TextField fx:id="directorInput" promptText="Director name" style="-fx-background-color: #292929; -fx-text-fill: #FFFFFF; -fx-border-color: #404040; -fx-border-width: 1; -fx-border-radius: 5; -fx-padding: 12 15; -fx-font-size: 14px; -fx-prompt-text-fill: #888888;">
+                                    <font>
+                                        <Font name="SansSerif Regular" size="14.0" />
+                                    </font>
+                                </TextField>
+                            </VBox>
+                            <VBox spacing="6.0" HBox.hgrow="ALWAYS">
+                                <Label style="-fx-text-fill: #CCCCCC; -fx-font-size: 13px; -fx-font-weight: bold;" text="Cast">
+                                    <font>
+                                        <Font name="SansSerif Bold" size="13.0" />
+                                    </font>
+                                </Label>
+                                <TextField fx:id="castInput" promptText="Main actors (comma separated)" style="-fx-background-color: #292929; -fx-text-fill: #FFFFFF; -fx-border-color: #404040; -fx-border-width: 1; -fx-border-radius: 5; -fx-padding: 12 15; -fx-font-size: 14px; -fx-prompt-text-fill: #888888;">
+                                    <font>
+                                        <Font name="SansSerif Regular" size="14.0" />
+                                    </font>
+                                </TextField>
+                            </VBox>
+                        </HBox>
+                    </VBox>
+
+                    <Separator style="-fx-background-color: #404040;" />
+
+                    <!-- Action Buttons -->
+                    <HBox alignment="CENTER_LEFT" spacing="12.0">
+                        <Button fx:id="btnSaveMovie" style="-fx-background-color: #ff2525; -fx-text-fill: #FFFFFF; -fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 12 32; -fx-background-radius: 5; -fx-cursor: hand;" text="Save Movie">
+                            <font>
+                                <Font name="SansSerif Bold" size="14.0" />
+                            </font>
+                        </Button>
+                        <Button fx:id="btnClearFields" style="-fx-background-color: #1A1A1A; -fx-border-color: #404040; -fx-border-width: 1; -fx-border-radius: 5; -fx-text-fill: #CCCCCC; -fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 12 32; -fx-cursor: hand;" text="Clear">
+                            <font>
+                                <Font name="SansSerif Bold" size="14.0" />
+                            </font>
+                        </Button>
+                    </HBox>
+                </VBox>
+            </VBox>
+
+            <!-- EDIT MOVIE VIEW -->
+            <VBox fx:id="editMovieView" managed="false" spacing="20.0" style="-fx-background-color: #292929;" visible="false">
+                <padding>
+                    <Insets bottom="25.0" left="25.0" right="25.0" top="25.0" />
+                </padding>
+
+                <!-- Back Button -->
+                <HBox alignment="CENTER_LEFT">
+                    <Button fx:id="btnBackToGridFromEdit" style="-fx-background-color: transparent; -fx-text-fill: #ff2525; -fx-font-size: 14px; -fx-font-weight: bold; -fx-cursor: hand; -fx-underline: true;" text="← Back to Movies">
+                        <font>
+                            <Font name="SansSerif Bold" size="14.0" />
+                        </font>
+                    </Button>
+                </HBox>
+
+                <!-- Edit Movie Form -->
+                <VBox spacing="20.0" style="-fx-background-color: #1A1A1A; -fx-padding: 30; -fx-background-radius: 5;">
+
+                    <HBox alignment="CENTER_LEFT" spacing="15.0">
+                        <Label style="-fx-text-fill: #FFFFFF; -fx-font-size: 22px; -fx-font-weight: bold;" text="Edit Movie">
+                            <font>
+                                <Font name="SansSerif Bold" size="22.0" />
+                            </font>
+                        </Label>
+                        <Region HBox.hgrow="ALWAYS" />
+                        <Label fx:id="currentMovieDetailsLabel" style="-fx-text-fill: #888888; -fx-font-size: 13px;" text="Movie ID: -">
+                            <font>
+                                <Font name="SansSerif Regular" size="13.0" />
+                            </font>
+                        </Label>
+                    </HBox>
+
+                    <Separator style="-fx-background-color: #404040;" />
+
+                    <Label style="-fx-text-fill: #888888; -fx-font-size: 12px;" text="Edit fields use the same inputs as Add view">
+                        <font>
+                            <Font name="SansSerif Regular" size="12.0" />
+                        </font>
+                    </Label>
+
+                    <Separator style="-fx-background-color: #404040;" />
+
+                    <!-- Edit Action Buttons -->
+                    <HBox alignment="CENTER_LEFT" spacing="12.0">
+                        <Button fx:id="btnUpdateMovie" style="-fx-background-color: #ff2525; -fx-text-fill: #FFFFFF; -fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 12 32; -fx-background-radius: 5; -fx-cursor: hand;" text="Update Movie">
+                            <font>
+                                <Font name="SansSerif Bold" size="14.0" />
+                            </font>
+                        </Button>
+                        <Button fx:id="btnDeleteMovie" style="-fx-background-color: #8B0000; -fx-text-fill: #FFFFFF; -fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 12 32; -fx-background-radius: 5; -fx-cursor: hand;" text="Delete Movie">
+                            <font>
+                                <Font name="SansSerif Bold" size="14.0" />
+                            </font>
+                        </Button>
+                    </HBox>
+                </VBox>
+            </VBox>
+
         </StackPane>
     </center>
+
+    <!-- Hidden TableView for backward compatibility -->
+    <bottom>
+        <TableView fx:id="movieTableView" managed="false" visible="false">
+            <columns>
+                <TableColumn fx:id="colMovieId" text="ID" />
+                <TableColumn fx:id="colTitle" text="Title" />
+                <TableColumn fx:id="colGenre" text="Genre" />
+                <TableColumn fx:id="colDuration" text="Duration" />
+                <TableColumn fx:id="colRating" text="Rating" />
+                <TableColumn fx:id="colReleaseDate" text="Release Date" />
+                <TableColumn fx:id="colStatus" text="Status" />
+            </columns>
+        </TableView>
+    </bottom>
 </BorderPane>
