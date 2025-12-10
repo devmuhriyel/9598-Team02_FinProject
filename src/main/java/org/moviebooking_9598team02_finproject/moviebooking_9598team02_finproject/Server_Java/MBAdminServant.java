@@ -122,27 +122,222 @@ public class MBAdminServant extends AdminServicePOA {
 
     @Override
     public int addGenre(int adminId, String genreName, String genreDescription) throws AuthenticationException, InvalidInputException {
-        return 0;
+        if (!SessionManager.isAdminLoggedIn(adminId)) {
+            throw new AuthenticationException("Admin not logged in or session expired");
+        }
+
+        // Validate input
+        if (genreName == null || genreName.trim().isEmpty()) {
+            throw new InvalidInputException("Genre name cannot be empty", "Genre name is required");
+        }
+        if (genreDescription == null) {
+            genreDescription = "";
+        }
+
+        try (Connection connection = DatabaseAccess.getConnection()) {
+            // Check if genre name already exists
+            String checkQuery = "SELECT genre_id FROM genres WHERE genre_name = ?";
+            PreparedStatement checkStatement = connection.prepareStatement(checkQuery);
+            checkStatement.setString(1, genreName.trim());
+            ResultSet checkRs = checkStatement.executeQuery();
+            if (checkRs.next()) {
+                throw new InvalidInputException("Genre already exists", "A genre with this name already exists");
+            }
+
+            // Get next genre ID
+            int nextGenreId = getLatestGenreId() + 1;
+            LocalDateTime timeOfCreation = LocalDateTime.now();
+
+            // Insert new genre
+            String query = "INSERT INTO genres (genre_id, genre_name, genre_description, created_at, updated_at) VALUES (?, ?, ?, ?, ?)";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1, nextGenreId);
+            statement.setString(2, genreName.trim());
+            statement.setString(3, genreDescription.trim());
+            statement.setString(4, timeOfCreation.toString());
+            statement.setString(5, timeOfCreation.toString());
+
+            int rowsAffected = statement.executeUpdate();
+
+            if (rowsAffected > 0) {
+                System.out.println("Successfully created genre: " + genreName + " with ID: " + nextGenreId);
+                return nextGenreId;
+            } else {
+                throw new InvalidInputException("Failed to create genre", "Database insert failed");
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            if (e.getMessage().contains("Duplicate entry")) {
+                throw new InvalidInputException("Genre already exists", "A genre with this name already exists");
+            }
+            throw new InvalidInputException("Database Error", "Failed to create genre: " + e.getMessage());
+        }
     }
 
     @Override
     public void updateGenre(int adminId, int genreId, String genreName, String genreDescription) throws AuthenticationException {
+        // Check authentication
+        if (!SessionManager.isAdminLoggedIn(adminId)) {
+            throw new AuthenticationException("Admin not logged in or session expired");
+        }
 
+        // Validate input
+        if (genreName == null || genreName.trim().isEmpty()) {
+            throw new AuthenticationException("Genre name cannot be empty");
+        }
+        if (genreDescription == null) {
+            genreDescription = "";
+        }
+
+        try (Connection connection = DatabaseAccess.getConnection()) {
+            // Check if genre exists
+            String checkQuery = "SELECT genre_id FROM genres WHERE genre_id = ?";
+            PreparedStatement checkStatement = connection.prepareStatement(checkQuery);
+            checkStatement.setInt(1, genreId);
+            ResultSet checkRs = checkStatement.executeQuery();
+            if (!checkRs.next()) {
+                throw new AuthenticationException("Genre not found");
+            }
+
+            // Check if another genre with the same name exists
+            String duplicateQuery = "SELECT genre_id FROM genres WHERE genre_name = ? AND genre_id != ?";
+            PreparedStatement duplicateStatement = connection.prepareStatement(duplicateQuery);
+            duplicateStatement.setString(1, genreName.trim());
+            duplicateStatement.setInt(2, genreId);
+            ResultSet duplicateRs = duplicateStatement.executeQuery();
+            if (duplicateRs.next()) {
+                throw new AuthenticationException("A genre with this name already exists");
+            }
+
+            // Update genre
+            LocalDateTime timeOfUpdate = LocalDateTime.now();
+            String query = "UPDATE genres SET genre_name = ?, genre_description = ?, updated_at = ? WHERE genre_id = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setString(1, genreName.trim());
+            statement.setString(2, genreDescription.trim());
+            statement.setString(3, timeOfUpdate.toString());
+            statement.setInt(4, genreId);
+
+            int rowsAffected = statement.executeUpdate();
+
+            if (rowsAffected > 0) {
+                System.out.println("Successfully updated genre ID: " + genreId);
+            } else {
+                throw new AuthenticationException("Failed to update genre");
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new AuthenticationException("Database error: " + e.getMessage());
+        }
     }
 
     @Override
     public void deleteGenre(int adminId, int genreId) throws AuthenticationException {
+        // Check authentication
+        if (!SessionManager.isAdminLoggedIn(adminId)) {
+            throw new AuthenticationException("Admin not logged in or session expired");
+        }
 
+        try (Connection connection = DatabaseAccess.getConnection()) {
+            // Check if genre exists
+            String checkQuery = "SELECT genre_id FROM genres WHERE genre_id = ?";
+            PreparedStatement checkStatement = connection.prepareStatement(checkQuery);
+            checkStatement.setInt(1, genreId);
+            ResultSet checkRs = checkStatement.executeQuery();
+            if (!checkRs.next()) {
+                throw new AuthenticationException("Genre not found");
+            }
+
+            // Check if genre is being used by any movies
+            String usageQuery = "SELECT COUNT(*) as count FROM movie_genres WHERE genre_id = ?";
+            PreparedStatement usageStatement = connection.prepareStatement(usageQuery);
+            usageStatement.setInt(1, genreId);
+            ResultSet usageRs = usageStatement.executeQuery();
+            if (usageRs.next() && usageRs.getInt("count") > 0) {
+                throw new AuthenticationException("Cannot delete genre: It is currently assigned to one or more movies");
+            }
+
+            // Delete genre
+            String query = "DELETE FROM genres WHERE genre_id = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1, genreId);
+
+            int rowsAffected = statement.executeUpdate();
+
+            if (rowsAffected > 0) {
+                System.out.println("Successfully deleted genre ID: " + genreId);
+            } else {
+                throw new AuthenticationException("Failed to delete genre");
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new AuthenticationException("Database error: " + e.getMessage());
+        }
     }
 
     @Override
     public Genre[] getAllGenres(int adminId) throws AuthenticationException {
-        return new Genre[0];
+        // Check authentication
+        if (!SessionManager.isAdminLoggedIn(adminId)) {
+            throw new AuthenticationException("Admin not logged in or session expired");
+        }
+
+        try (Connection connection = DatabaseAccess.getConnection()) {
+            String query = "SELECT * FROM genres ORDER BY genre_name";
+            PreparedStatement statement = connection.prepareStatement(query);
+            ResultSet rs = statement.executeQuery();
+
+            java.util.List<Genre> genreList = new java.util.ArrayList<>();
+            while (rs.next()) {
+                Genre genre = new Genre();
+                genre.genreId = rs.getInt("genre_id");
+                genre.genreName = rs.getString("genre_name");
+                genre.genreDescription = rs.getString("genre_description");
+                genre.createdAt = rs.getString("created_at");
+                genre.updatedAt = rs.getString("updated_at");
+                genreList.add(genre);
+            }
+
+            return genreList.toArray(new Genre[0]);
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new AuthenticationException("Database error: " + e.getMessage());
+        }
     }
 
     @Override
     public Genre getGenreById(int adminId, int genreId) throws AuthenticationException {
-        return null;
+        // Check authentication
+        if (!SessionManager.isAdminLoggedIn(adminId)) {
+            throw new AuthenticationException("Admin not logged in or session expired");
+        }
+
+        try (Connection connection = DatabaseAccess.getConnection()) {
+            String query = "SELECT * FROM genres WHERE genre_id = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1, genreId);
+            ResultSet rs = statement.executeQuery();
+
+            if (rs.next()) {
+                Genre genre = new Genre();
+                genre.genreId = rs.getInt("genre_id");
+                genre.genreName = rs.getString("genre_name");
+                genre.genreDescription = rs.getString("genre_description");
+                genre.createdAt = rs.getString("created_at");
+                genre.updatedAt = rs.getString("updated_at");
+                return genre;
+            } else {
+                throw new AuthenticationException("Genre not found");
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new AuthenticationException("Database error: " + e.getMessage());
+        }
     }
 
     @Override
@@ -1138,6 +1333,23 @@ public class MBAdminServant extends AdminServicePOA {
     private int getLatestAdminID() throws AuthenticationException {
         try(Connection connection = DatabaseAccess.getConnection()){
             String query = "SELECT MAX(admin_id) as max_id FROM admins";
+            PreparedStatement statement = connection.prepareStatement(query);
+            ResultSet resultSet = statement.executeQuery();
+
+            if(resultSet.next()){
+                int maxID = resultSet.getInt("max_id");
+                return resultSet.wasNull() ? 0 : maxID;  // Return 0 if table is empty
+            }
+        } catch (SQLException e){
+            e.printStackTrace();
+            throw new AuthenticationException("Database error: " + e.getMessage());
+        }
+        return 0;
+    }
+
+    private int getLatestGenreId() throws AuthenticationException {
+        try(Connection connection = DatabaseAccess.getConnection()){
+            String query = "SELECT MAX(genre_id) as max_id FROM genres";
             PreparedStatement statement = connection.prepareStatement(query);
             ResultSet resultSet = statement.executeQuery();
 
