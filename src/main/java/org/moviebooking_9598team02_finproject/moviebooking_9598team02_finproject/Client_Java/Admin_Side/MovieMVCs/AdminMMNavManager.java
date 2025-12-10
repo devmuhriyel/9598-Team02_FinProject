@@ -11,7 +11,7 @@ public class AdminMMNavManager {
 
     private final AdminService adminService;
     private final int currentAdminId;
-    private Pane movieMgmtPane; // The root pane of the loaded FXML
+    private Pane movieMgmtPane;
 
     private MovieController movieController;
     private MovieModel movieModel;
@@ -23,19 +23,31 @@ public class AdminMMNavManager {
     }
 
     private void initializeMovieMgmtView() throws IOException {
-        movieModel = new MovieModel(adminService, currentAdminId);
-        movieView = new MovieView();
-        movieController = new MovieController(movieModel, movieView);
+        System.out.println("🎬 Initializing Movie Management MVC...");
 
+        // 1. Load FXML FIRST (this creates the View)
         FXMLLoader loader = new FXMLLoader(
                 getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/AdminMovieMgmt.fxml")
         );
 
-        loader.setController(movieView);
         movieMgmtPane = loader.load();
+        System.out.println("✅ FXML loaded");
 
-        // Initialize the controller after the FXML is loaded
-        movieController.initialize(null, null);
+        // 2. Get the View from FXML loader
+        movieView = loader.getController();
+        System.out.println("✅ View obtained from FXML");
+
+        // 3. Create Model
+        movieModel = new MovieModel(adminService, currentAdminId);
+        System.out.println("✅ Model created");
+
+        // 4. Create Controller and pass View + Model
+        movieController = new MovieController(movieModel, movieView, currentAdminId);
+        System.out.println("✅ Controller created");
+
+        // 5. NOW initialize the controller (wires buttons + loads data)
+        movieController.initialize();
+        System.out.println("✅ Controller initialized - all buttons wired!");
     }
 
     public Pane getMovieMgmtView() {
@@ -43,6 +55,7 @@ public class AdminMMNavManager {
             try {
                 initializeMovieMgmtView();
             } catch (IOException e) {
+                System.err.println("❌ ERROR loading Movie Management:");
                 e.printStackTrace();
                 movieMgmtPane = new Pane(new javafx.scene.control.Label("Error loading Movie Management View."));
             }
