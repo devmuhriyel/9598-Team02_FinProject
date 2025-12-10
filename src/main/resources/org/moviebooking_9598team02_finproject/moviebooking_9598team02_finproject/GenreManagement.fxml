@@ -23,7 +23,7 @@
 
     <!-- Content -->
     <center>
-        <SplitPane dividerPositions="0.5677655677655677" orientation="VERTICAL" BorderPane.alignment="CENTER">
+        <SplitPane dividerPositions="0.60" orientation="VERTICAL" BorderPane.alignment="CENTER">
             <items>
                 <!-- Genre Table -->
                 <VBox spacing="10.0" style="-fx-padding: 20; -fx-background-color: #121212;">
@@ -31,7 +31,8 @@
                         <Text fill="#ffffff" text="Genres List">
                             <font><Font name="SansSerif Bold" size="16.0" /></font>
                         </Text>
-                        <TableView fx:id="genreTable" prefHeight="260.0" prefWidth="940.0" style="-fx-background-color: #1e1e1e; -fx-control-inner-background: #1e1e1e; -fx-table-cell-border-color: #1e1e1e; -fx-table-header-border-color: #2a2a2a;">
+                        <TableView fx:id="genreTable" VBox.vgrow="ALWAYS" prefWidth="940.0"
+                                   style="-fx-background-color: #1e1e1e; -fx-control-inner-background: #1e1e1e; -fx-table-cell-border-color: #1e1e1e; -fx-table-header-border-color: #2a2a2a;">
                             <columns>
                                 <TableColumn fx:id="idColumn" prefWidth="100.0" text="ID" />
                                 <TableColumn fx:id="nameColumn" prefWidth="250.0" text="Genre Name" />
@@ -42,7 +43,7 @@
                 </VBox>
 
                 <!-- Form Section -->
-                <VBox spacing="15.0" style="-fx-padding: 20; -fx-background-color: #121212;">
+                <VBox spacing="15.0" style="-fx-padding: 20; -fx-background-color: #121212;" VBox.vgrow="ALWAYS">
                     <children>
                         <Text fill="#ffffff" text="Genre Details">
                             <font><Font name="SansSerif Bold" size="16.0" /></font>
@@ -58,7 +59,7 @@
                                 <Label style="-fx-text-fill: #e0e0e0;" text="Description:">
                                     <font><Font name="SansSerif Regular" size="12.0" /></font>
                                 </Label>
-                                <TextArea fx:id="genreDescriptionField" prefHeight="120.0" prefWidth="940.0" promptText="Enter genre description" style="-fx-control-inner-background: #1e1e1e; -fx-background-color: #1e1e1e; -fx-text-fill: #ffffff; -fx-prompt-text-fill: #6d6d6d; -fx-border-color: #2a2a2a; -fx-text-box-border: transparent;" wrapText="true" />
+                        <TextArea fx:id="genreDescriptionField" prefHeight="120.0" prefWidth="940.0" promptText="Enter genre description" style="-fx-control-inner-background: #1e1e1e; -fx-background-color: #1e1e1e; -fx-text-fill: #ffffff; -fx-prompt-text-fill: #6d6d6d; -fx-border-color: #2a2a2a; -fx-text-box-border: transparent;" wrapText="true" VBox.vgrow="ALWAYS" />
                             </children>
                         </VBox>
 
