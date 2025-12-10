@@ -13,6 +13,7 @@ import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.SeatMgmtMVCs.AdminSMNavManager;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingAdmin.AdminService;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.PaymentMVCs.AdminPaymentNavManager;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.GenreMgmtMVCs.AdminGenreManager;
 
 
 import java.io.IOException;
@@ -42,6 +43,7 @@ public class AdminNavigationManager {
     private AdminSMNavManager seatNavManager;
     private AccountNavigationManager accNavManager;
     private AdminPaymentNavManager paymentNavManager;
+    private AdminGenreManager genreManager;
 
 
     // Add others as needed
@@ -156,17 +158,17 @@ public class AdminNavigationManager {
     }
 
     public void showGenreMgmtView(){
-        if (dashboardPane == null) {
-            try {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/GenreManagement.fxml"));
-                dashboardPane = loader.load();
-                // Initialize controller if needed
-            } catch (IOException e) {
-                e.printStackTrace();
-                dashboardPane = createPlaceholder("Dashboard");
-            }
+        if (genreManager == null) {
+            genreManager = new AdminGenreManager(admin.adminId);
         }
-        loadContentPane(dashboardPane);
+        Pane genreViewContent = genreManager.getGenrePane();
+        if (genreViewContent == null) {
+            System.err.println("ERROR: Genre Management returned null pane!");
+            genreViewContent = createPlaceholder("Genre Management - Error Loading");
+        } else {
+            System.out.println("✅ Genre Management loaded successfully with MVC wiring");
+        }
+        loadContentPane(genreViewContent);
     }
 
     //

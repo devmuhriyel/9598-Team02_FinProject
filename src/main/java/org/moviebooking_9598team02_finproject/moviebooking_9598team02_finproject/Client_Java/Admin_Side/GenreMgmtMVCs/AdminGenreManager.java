@@ -2,9 +2,13 @@ package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finprojec
 
 import javafx.fxml.FXMLLoader;
 import javafx.scene.layout.Pane;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.AuthenticationException;
 
 import java.io.IOException;
 
+/**
+ * AdminGenreManager - Manager for Genre Management MVC
+ */
 public class AdminGenreManager {
     private Pane genrePane;
     private GenreMgmtView genreView;
@@ -19,49 +23,26 @@ public class AdminGenreManager {
 
     private void initializeGenreMVC() {
         try {
-            // Load Genre Management FXML
-            FXMLLoader genreLoader = new FXMLLoader(getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/GenreManagement.fxml"));
-            genrePane = genreLoader.load();
-            genreView = genreLoader.getController();
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/GenreManagement.fxml")
+            );
+            genrePane = loader.load();
+            genreView = loader.getController();
 
-            // Create Model with admin ID
             genreModel = new GenreMgmtModel(adminId);
+            genreController = new GenreMgmtController(genreModel, genreView);
 
-            // Create Controller with Model
-            genreController = new GenreMgmtController(genreModel);
+            System.out.println("✅ Genre Management MVC initialized");
 
-            // Set Controller in View
-            genreView.setController(genreController);
-
-        } catch (IOException e) {
+        } catch (IOException | AuthenticationException e) {
             e.printStackTrace();
-            System.err.println("Error loading Genre Management FXML: " + e.getMessage());
+            System.err.println("❌ Error initializing Genre Management: " + e.getMessage());
         }
     }
 
+    // ===== GETTERS =====
     public Pane getGenrePane() {
         return genrePane;
-    }
-
-    public void showGenreView(Pane containerPane) {
-        if (containerPane != null && genrePane != null) {
-            containerPane.getChildren().clear();
-            containerPane.getChildren().add(genrePane);
-        }
-    }
-
-    public void updateAdminId(int newAdminId) {
-        this.adminId = newAdminId;
-        if (genreModel != null) {
-            genreModel.setAdminId(newAdminId);
-        }
-        if (genreController != null) {
-            genreController.setAdminId(newAdminId);
-        }
-    }
-
-    public int getAdminId() {
-        return adminId;
     }
 
     public GenreMgmtView getGenreView() {
@@ -75,5 +56,15 @@ public class AdminGenreManager {
     public GenreMgmtController getGenreController() {
         return genreController;
     }
-}
 
+    public int getAdminId() {
+        return adminId;
+    }
+
+    public void updateAdminId(int newAdminId) {
+        this.adminId = newAdminId;
+        if (genreModel != null) {
+            genreModel.setAdminId(newAdminId);
+        }
+    }
+}

@@ -1,27 +1,37 @@
 package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.GenreMgmtMVCs;
 
+import javafx.beans.property.SimpleLongProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.text.Text;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Genre;
 
+/**
+ * GenreMgmtView - Pure UI for Genre Management
+ * Handles all JavaFX-specific UI logic
+ */
 public class GenreMgmtView {
 
-    // ===== VARIABLES =====
+    // ===== TABLE =====
     @FXML
-    private TableView<org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.GenreMgmtMVCs.GenreMgmtModel.GenreTableItem> genreTable;
+    private TableView<Genre> genreTable;
     @FXML
-    private TableColumn<org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.GenreMgmtMVCs.GenreMgmtModel.GenreTableItem, Integer> idColumn;
+    private TableColumn<Genre, Long> idColumn;
     @FXML
-    private TableColumn<org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.GenreMgmtMVCs.GenreMgmtModel.GenreTableItem, String> nameColumn;
+    private TableColumn<Genre, String> nameColumn;
     @FXML
-    private TableColumn<org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.GenreMgmtMVCs.GenreMgmtModel.GenreTableItem, String> descriptionColumn;
+    private TableColumn<Genre, String> descriptionColumn;
+
+    // ===== FORM FIELDS =====
     @FXML
     private TextField genreNameField;
     @FXML
     private TextArea genreDescriptionField;
+
+    // ===== BUTTONS =====
     @FXML
     private Button addButton;
     @FXML
@@ -32,27 +42,37 @@ public class GenreMgmtView {
     private Button clearButton;
     @FXML
     private Button refreshButton;
+
+    // ===== MESSAGES =====
     @FXML
     private Text messageText;
 
-    private org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.GenreMgmtMVCs.GenreMgmtController controller;
-    private ObservableList<org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.GenreMgmtMVCs.GenreMgmtModel.GenreTableItem> genreList;
+    // ===== VARIABLES =====
+    private ObservableList<Genre> genreList;
 
     // ===== INITIALIZATION =====
+    @FXML
     public void initialize() {
-        // Set up table columns
-        idColumn.setCellValueFactory(new PropertyValueFactory<>("genreId"));
-        nameColumn.setCellValueFactory(new PropertyValueFactory<>("genreName"));
-        descriptionColumn.setCellValueFactory(new PropertyValueFactory<>("genreDescription"));
+        setupTable();
+    }
 
-        // Make table rows selectable
+    private void setupTable() {
+        // Use SimpleProperty wrappers for CORBA objects
+        idColumn.setCellValueFactory(cellData ->
+                new SimpleLongProperty(cellData.getValue().genreId).asObject());
+
+        nameColumn.setCellValueFactory(cellData ->
+                new SimpleStringProperty(cellData.getValue().genreName));
+
+        descriptionColumn.setCellValueFactory(cellData ->
+                new SimpleStringProperty(cellData.getValue().genreDescription != null ? cellData.getValue().genreDescription : ""));
+
         genreTable.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
 
-        // Initialize observable list
         genreList = FXCollections.observableArrayList();
         genreTable.setItems(genreList);
 
-        // Set up table selection listener
+        // When a row is selected, populate the form fields
         genreTable.getSelectionModel().selectedItemProperty().addListener(
                 (observable, oldValue, newValue) -> {
                     if (newValue != null) {
@@ -62,98 +82,30 @@ public class GenreMgmtView {
         );
     }
 
-    // ===== CONTROLLER SETUP =====
-    public void setController(org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.GenreMgmtMVCs.GenreMgmtController controller) {
-        this.controller = controller;
-        setupButtonHandlers();
-        loadGenres();
-    }
+    // ===== DATA DISPLAY =====
+    public void displayGenreList(Genre[] genres) {
+        System.out.println("=== View Displaying Genres ===");
+        genreList.clear();
 
-    private void setupButtonHandlers() {
-        // Add button
-        addButton.setOnAction(event -> handleAddGenre());
-
-        // Update button
-        updateButton.setOnAction(event -> handleUpdateGenre());
-
-        // Delete button
-        deleteButton.setOnAction(event -> handleDeleteGenre());
-
-        // Clear button
-        clearButton.setOnAction(event -> handleClearFields());
-
-        // Refresh button
-        refreshButton.setOnAction(event -> loadGenres());
-    }
-
-    // ===== BUTTON HANDLERS =====
-    private void handleAddGenre() {
-        if (controller == null) return;
-
-        String genreName = getGenreName();
-        String genreDescription = getGenreDescription();
-
-        org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.GenreMgmtMVCs.GenreMgmtModel.GenreOperationResult result = controller.addGenre(genreName, genreDescription);
-        showMessage(result.getMessage());
-
-        if (result.isSuccess()) {
-            clearFields();
-            loadGenres();
-        }
-    }
-
-    private void handleUpdateGenre() {
-        if (controller == null) return;
-
-        org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.GenreMgmtMVCs.GenreMgmtModel.GenreTableItem selectedGenre = getSelectedGenre();
-        if (selectedGenre == null) {
-            showMessage("Error: Please select a genre to update");
-            return;
+        if (genres != null) {
+            System.out.println("Received " + genres.length + " genres");
+            genreList.addAll(genres);
+            System.out.println("Added to observable list. List size now: " + genreList.size());
+        } else {
+            System.out.println("Received NULL genres array!");
         }
 
-        String genreName = getGenreName();
-        String genreDescription = getGenreDescription();
-
-        org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.GenreMgmtMVCs.GenreMgmtModel.GenreOperationResult result = controller.updateGenre(
-                selectedGenre.getGenreId(), genreName, genreDescription);
-        showMessage(result.getMessage());
-
-        if (result.isSuccess()) {
-            clearFields();
-            loadGenres();
-        }
+        System.out.println("Table items size: " + genreTable.getItems().size());
     }
 
-    private void handleDeleteGenre() {
-        if (controller == null) return;
+    public void populateFields(Genre genre) {
+        if (genre == null) return;
 
-        org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.GenreMgmtMVCs.GenreMgmtModel.GenreTableItem selectedGenre = getSelectedGenre();
-        if (selectedGenre == null) {
-            showMessage("Error: Please select a genre to delete");
-            return;
-        }
-
-        org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.GenreMgmtMVCs.GenreMgmtModel.GenreOperationResult result = controller.deleteGenre(selectedGenre.getGenreId());
-        showMessage(result.getMessage());
-
-        if (result.isSuccess()) {
-            clearFields();
-            loadGenres();
-        }
+        genreNameField.setText(genre.genreName != null ? genre.genreName : "");
+        genreDescriptionField.setText(genre.genreDescription != null ? genre.genreDescription : "");
     }
 
-    private void handleClearFields() {
-        clearFields();
-        genreTable.getSelectionModel().clearSelection();
-        clearMessage();
-    }
-
-    // ===== METHODS =====
-    public void clearFields() {
-        genreNameField.clear();
-        genreDescriptionField.clear();
-    }
-
+    // ===== MESSAGE HELPERS =====
     public void showMessage(String message) {
         if (messageText != null) {
             messageText.setText(message);
@@ -168,38 +120,50 @@ public class GenreMgmtView {
         }
     }
 
-    public void populateFields(org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.GenreMgmtMVCs.GenreMgmtModel.GenreTableItem genre) {
-        if (genre != null) {
-            genreNameField.setText(genre.getGenreName());
-            genreDescriptionField.setText(genre.getGenreDescription());
-        }
-    }
-
-    public void loadGenres() {
-        if (controller == null) return;
-
-        org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.GenreMgmtMVCs.GenreMgmtModel.GenreLoadResult result = controller.loadGenres();
-
-        if (result.isSuccess() && result.getGenres() != null) {
-            genreList.clear();
-            genreList.addAll(result.getGenres());
-            clearMessage();
-        } else {
-            showMessage(result.getErrorMessage());
-        }
+    // ===== FIELD HELPERS =====
+    public void clearFields() {
+        genreNameField.clear();
+        genreDescriptionField.clear();
     }
 
     // ===== GETTERS =====
-    public String getGenreName() {
-        return genreNameField.getText();
+    public TableView<Genre> getGenreTable() {
+        return genreTable;
     }
 
-    public String getGenreDescription() {
-        return genreDescriptionField.getText();
+    public TextField getGenreNameField() {
+        return genreNameField;
     }
 
-    public org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.GenreMgmtMVCs.GenreMgmtModel.GenreTableItem getSelectedGenre() {
-        return genreTable.getSelectionModel().getSelectedItem();
+    public TextArea getGenreDescriptionField() {
+        return genreDescriptionField;
+    }
+
+    public Button getAddButton() {
+        return addButton;
+    }
+
+    public Button getUpdateButton() {
+        return updateButton;
+    }
+
+    public Button getDeleteButton() {
+        return deleteButton;
+    }
+
+    public Button getClearButton() {
+        return clearButton;
+    }
+
+    public Button getRefreshButton() {
+        return refreshButton;
+    }
+
+    public Text getMessageText() {
+        return messageText;
+    }
+
+    public ObservableList<Genre> getGenreList() {
+        return genreList;
     }
 }
-
