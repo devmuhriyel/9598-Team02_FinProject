@@ -16,6 +16,7 @@ public class CustomerSignupController {
         this.model = signupModel;
         this.authManager = authManager;
         initializeButtons();
+        view.clearError();
     }
 
     private void initializeButtons() {

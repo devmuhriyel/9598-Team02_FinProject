@@ -15,6 +15,7 @@ public class CustomerLoginController {
         this.model = loginModel;
         this.authManager = authManager;
         initializeButtons();
+        view.clearError();
     }
 
     private void initializeButtons() {
@@ -40,7 +41,7 @@ public class CustomerLoginController {
             view.clearError();
             authManager.openCustomerHome(customer);
         } catch (AuthenticationException e) {
-            view.showError(e.getMessage());
+            view.showError("Invalid username or password");
         }
     }
 

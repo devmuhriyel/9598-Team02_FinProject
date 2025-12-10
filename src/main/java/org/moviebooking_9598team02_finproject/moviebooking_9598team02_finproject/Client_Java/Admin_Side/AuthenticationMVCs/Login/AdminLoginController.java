@@ -15,6 +15,7 @@ public class AdminLoginController {
         this.model = loginModel;
         this.authManager = authManager;
         initializeButtons();
+        view.clearError();
     }
 
     private void initializeButtons() {
@@ -40,7 +41,7 @@ public class AdminLoginController {
             view.clearError();
             authManager.openAdminHome(admin);
         } catch (AuthenticationException e) {
-            view.showError(e.getMessage());
+            view.showError("Invalid username or password");
         }
     }
 

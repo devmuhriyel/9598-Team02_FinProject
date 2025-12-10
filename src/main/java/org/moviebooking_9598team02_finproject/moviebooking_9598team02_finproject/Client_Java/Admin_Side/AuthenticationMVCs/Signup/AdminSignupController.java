@@ -15,6 +15,7 @@ public class AdminSignupController {
         this.model = signupModel;
         this.authManager = authManager;
         initializeButtons();
+        view.clearError();
     }
 
     private void initializeButtons() {
