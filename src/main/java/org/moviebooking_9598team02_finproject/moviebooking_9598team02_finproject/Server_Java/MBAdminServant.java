@@ -1402,7 +1402,6 @@ public class MBAdminServant extends AdminServicePOA {
     // ===== BOOKINGS METHODS =====
     @Override
     public Booking[] getAllBookings(int adminId) throws AuthenticationException {
-        System.out.println("Admin " + adminId + " requesting ALL bookings...");
         List<Booking> list = new ArrayList<>();
         String sql = "SELECT * FROM bookings ORDER BY created_at DESC";
 
@@ -1413,7 +1412,6 @@ public class MBAdminServant extends AdminServicePOA {
             while (rs.next()) {
                 list.add(mapResultSetToBooking(rs));
             }
-            System.out.println("Found " + list.size() + " bookings.");
         } catch (SQLException e) {
             e.printStackTrace();
         }
