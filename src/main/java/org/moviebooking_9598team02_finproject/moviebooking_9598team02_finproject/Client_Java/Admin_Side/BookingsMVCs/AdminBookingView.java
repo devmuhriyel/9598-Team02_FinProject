@@ -2,11 +2,7 @@ package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finprojec
 
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Booking;
 
 public class AdminBookingView {
@@ -17,9 +13,13 @@ public class AdminBookingView {
     @FXML private TableColumn<Booking, String> colStatus, colDate;
 
     @FXML private TextField searchField;
-    @FXML private Button btnSearch, btnClearSearch;
-    @FXML private Button btnCancelBooking, btnRefresh;
+    @FXML private Button btnRefresh;
     @FXML private Label lblStatus;
+
+    @FXML private ComboBox<String> comboStatus;
+    @FXML private ComboBox<String> comboSchedule;
+    @FXML private ComboBox<String> comboMovie;
+    @FXML private Button btnClearFilters;
 
     public void setBookingList(ObservableList<Booking> list) {
         bookingTable.setItems(list);
@@ -34,21 +34,17 @@ public class AdminBookingView {
         return bookingTable.getSelectionModel().getSelectedItem();
     }
 
-
     public TableView<Booking> getBookingTable() { return bookingTable; }
-
-
     public TableColumn<Booking, Integer> getColId() { return colId; }
     public TableColumn<Booking, Integer> getColCustId() { return colCustId; }
     public TableColumn<Booking, Integer> getColSchedId() { return colSchedId; }
     public TableColumn<Booking, Double> getColPrice() { return colPrice; }
     public TableColumn<Booking, String> getColStatus() { return colStatus; }
     public TableColumn<Booking, String> getColDate() { return colDate; }
-
-
     public TextField getSearchField() { return searchField; }
-    public Button getBtnSearch() { return btnSearch; }
-    public Button getBtnClearSearch() { return btnClearSearch; }
-    public Button getBtnCancelBooking() { return btnCancelBooking; }
     public Button getBtnRefresh() { return btnRefresh; }
+    public ComboBox<String> getComboStatus() { return comboStatus; }
+    public ComboBox<String> getComboSchedule() { return comboSchedule; }
+    public ComboBox<String> getComboMovie() { return comboMovie; }
+    public Button getBtnClearFilters() { return btnClearFilters; }
 }

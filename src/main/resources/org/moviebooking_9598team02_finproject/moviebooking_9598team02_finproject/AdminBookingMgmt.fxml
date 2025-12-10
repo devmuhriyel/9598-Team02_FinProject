@@ -2,6 +2,7 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
@@ -25,14 +26,11 @@
             </HBox>
 
             <HBox spacing="10.0" alignment="CENTER_LEFT">
-                <TextField fx:id="searchField" promptText="Search Booking ID, Customer ID, or Status..."
+                <TextField fx:id="searchField" promptText="Search ID or Customer..."
                            prefWidth="400.0"
                            style="-fx-background-color: #404040; -fx-text-fill: white; -fx-prompt-text-fill: #888888;" />
 
-                <Button fx:id="btnSearch" text="Search"
-                        style="-fx-background-color: #007ACC; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;" />
-
-                <Button fx:id="btnClearSearch" text="Clear"
+                <Button fx:id="btnRefresh" text="Refresh Table"
                         style="-fx-background-color: #444444; -fx-text-fill: white; -fx-cursor: hand;" />
             </HBox>
         </VBox>
@@ -58,25 +56,24 @@
     </center>
 
     <right>
-        <VBox alignment="TOP_CENTER" prefWidth="250.0" spacing="15.0" style="-fx-background-color: #1A1A1A; -fx-padding: 20;">
-            <Label text="Actions" textFill="#ff2525">
-                <font><Font name="SansSerif Bold" size="18.0" /></font>
+        <VBox prefWidth="280.0" spacing="15.0" style="-fx-background-color: #1A1A1A; -fx-padding: 20;">
+            <Label text="FILTER RESULTS" textFill="#ff2525">
+                <font><Font name="SansSerif Bold" size="16.0" /></font>
             </Label>
 
-            <Label text="Select a booking to modify:" textFill="WHITE" wrapText="true" style="-fx-font-size: 12;" />
+            <Label text="By Status" textFill="#aaaaaa" style="-fx-font-size: 11px; -fx-font-weight: bold;" />
+            <ComboBox fx:id="comboStatus" prefWidth="240.0" promptText="All Statuses" style="-fx-base: #444444;" />
 
-            <Button fx:id="btnCancelBooking" maxWidth="1.7976931348623157E308" mnemonicParsing="false"
-                    style="-fx-background-color: #dc3545; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;"
-                    text="CANCEL BOOKING">
-                <padding><Insets bottom="12" top="12" /></padding>
-            </Button>
+            <Label text="By Schedule ID" textFill="#aaaaaa" style="-fx-font-size: 11px; -fx-font-weight: bold;" />
+            <ComboBox fx:id="comboSchedule" prefWidth="240.0" promptText="All Schedules" style="-fx-base: #444444;" />
 
-            <Label text="_________________________" textFill="#444444" />
+            <Label text="By Movie ID (via Schedule)" textFill="#aaaaaa" style="-fx-font-size: 11px; -fx-font-weight: bold;" />
+            <ComboBox fx:id="comboMovie" prefWidth="240.0" promptText="All Movies" style="-fx-base: #444444;" />
 
-            <Button fx:id="btnRefresh" maxWidth="1.7976931348623157E308" mnemonicParsing="false"
-                    style="-fx-background-color: #444444; -fx-text-fill: white; -fx-cursor: hand;"
-                    text="Refresh List">
-                <padding><Insets bottom="10" top="10" /></padding>
+            <Button fx:id="btnClearFilters" maxWidth="Infinity"
+                    style="-fx-background-color: #ff2525; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;"
+                    text="RESET FILTERS">
+                <VBox.margin><Insets top="20" /></VBox.margin>
             </Button>
         </VBox>
     </right>
