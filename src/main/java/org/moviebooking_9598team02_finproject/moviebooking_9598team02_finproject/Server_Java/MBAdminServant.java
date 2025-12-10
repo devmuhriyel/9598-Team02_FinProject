@@ -921,42 +921,117 @@ public class MBAdminServant extends AdminServicePOA {
     // ===== BOOKINGS METHODS =====
     @Override
     public Booking[] getAllBookings(int adminId) throws AuthenticationException {
-        return new Booking[0];
+        System.out.println("Admin " + adminId + " requesting ALL bookings...");
+        List<Booking> list = new ArrayList<>();
+        String sql = "SELECT * FROM bookings ORDER BY created_at DESC";
+
+        try (Connection conn = DatabaseAccess.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+                list.add(mapResultSetToBooking(rs));
+            }
+            System.out.println("Found " + list.size() + " bookings.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list.toArray(new Booking[0]);
     }
 
     @Override
     public Booking[] getBookingsByMovie(int adminId, int movieId) throws AuthenticationException, MovieNotFoundException {
-        return new Booking[0];
+        List<Booking> list = new ArrayList<>();
+        String sql = "SELECT b.* FROM bookings b " +
+                "JOIN schedules s ON b.schedule_id = s.schedule_id " +
+                "JOIN movies m ON s.movie_id = m.movie_id " +
+                "WHERE m.movie_id = ? ORDER BY b.created_at DESC";
+
+        try (Connection conn = DatabaseAccess.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, movieId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) list.add(mapResultSetToBooking(rs));
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list.toArray(new Booking[0]);
     }
 
     @Override
     public Booking[] getBookingsBySchedule(int adminId, int scheduleId) throws AuthenticationException, ScheduleNotFoundException {
-        return new Booking[0];
+        List<Booking> list = new ArrayList<>();
+        String sql = "SELECT * FROM bookings WHERE schedule_id = ?";
+
+        try (Connection conn = DatabaseAccess.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, scheduleId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) list.add(mapResultSetToBooking(rs));
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list.toArray(new Booking[0]);
     }
 
     @Override
     public Booking[] getBookingsByStatus(int adminId, String status) throws AuthenticationException {
-        return new Booking[0];
+        List<Booking> list = new ArrayList<>();
+        String sql = "SELECT * FROM bookings WHERE booking_status = ? ORDER BY created_at DESC";
+
+        try (Connection conn = DatabaseAccess.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, status);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) list.add(mapResultSetToBooking(rs));
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list.toArray(new Booking[0]);
     }
 
     @Override
-    public void cancelBooking(int adminId, int bookingId, String reason) throws AuthenticationException, BookingException {
-
-    }
+    public void cancelBooking(int adminId, int bookingId, String reason) throws AuthenticationException, BookingException {}
 
     @Override
-    public void updateBookingAdmin(int adminId, int bookingId, int[] newSeatIds, String status) throws AuthenticationException, BookingException {
-
-    }
+    public void updateBookingAdmin(int adminId, int bookingId, int[] newSeatIds, String status) throws AuthenticationException, BookingException {}
 
     @Override
     public BookingDetails getBookingDetailsView(int adminId, int bookingId) throws AuthenticationException, BookingException {
-        return null;
+        String sql = "SELECT b.booking_id, b.total_price, b.booking_status, b.created_at, " +
+                "c.username, c.full_name, m.movie_title, ms.screening_date, ms.screening_time " +
+                "FROM bookings b " +
+                "JOIN customers c ON b.customer_id = c.customer_id " +
+                "JOIN schedules s ON b.schedule_id = s.schedule_id " +
+                "JOIN movies m ON s.movie_id = m.movie_id " +
+                "JOIN movie_schedules ms ON s.movie_schedule_id = ms.movie_schedule_id " +
+                "WHERE b.booking_id = ?";
+
+        try (Connection conn = DatabaseAccess.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, bookingId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) return mapResultSetToBookingDetails(rs);
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        throw new BookingException();
     }
 
     @Override
     public BookingDetails[] getAllBookingsWithDetails(int adminId) throws AuthenticationException {
-        return new BookingDetails[0];
+        List<BookingDetails> list = new ArrayList<>();
+        String sql = "SELECT b.booking_id, b.total_price, b.booking_status, b.created_at, " +
+                "c.username, c.full_name, m.movie_title, ms.screening_date, ms.screening_time " +
+                "FROM bookings b " +
+                "JOIN customers c ON b.customer_id = c.customer_id " +
+                "JOIN schedules s ON b.schedule_id = s.schedule_id " +
+                "JOIN movies m ON s.movie_id = m.movie_id " +
+                "JOIN movie_schedules ms ON s.movie_schedule_id = ms.movie_schedule_id " +
+                "ORDER BY b.created_at DESC";
+
+        try (Connection conn = DatabaseAccess.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) list.add(mapResultSetToBookingDetails(rs));
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list.toArray(new BookingDetails[0]);
     }
 
     @Override
@@ -1400,5 +1475,69 @@ public class MBAdminServant extends AdminServicePOA {
         }
 
         return p;
+    }
+    //helper for booking
+    private Booking mapResultSetToBooking(ResultSet rs) throws SQLException {
+        Booking b = new Booking();
+
+        b.bookingId = rs.getInt("booking_id");
+        b.customerId = rs.getInt("customer_id");
+        b.scheduleId = rs.getInt("schedule_id");
+
+        try { b.totalPrice = rs.getDouble("total_price"); } catch (Exception e) { b.totalPrice = 0.0; }
+
+        b.scheduleListSeatIds = new int[0];
+
+        b.bookingStatus = "Unknown";
+        b.bookingDate = "N/A";
+        b.cancellationReason = "";
+        b.createdAt = "N/A";
+        b.updatedAt = "N/A";
+
+        String status = rs.getString("booking_status");
+        if (status != null) b.bookingStatus = status;
+        String created = rs.getString("created_at");
+        if (created != null) {
+            b.createdAt = created;
+            b.bookingDate = created;
+        }
+
+        String updated = rs.getString("updated_at");
+        if (updated != null) b.updatedAt = updated;
+        try {
+            String reason = rs.getString("cancellation_reason");
+            if (reason != null) b.cancellationReason = reason;
+        } catch (SQLException e) {
+        }
+
+        return b;
+    }
+
+    //helper for booking
+    private BookingDetails mapResultSetToBookingDetails(ResultSet rs) throws SQLException {
+        BookingDetails bd = new BookingDetails();
+
+        bd.bookingId = rs.getInt("booking_id");
+        bd.totalPrice = rs.getDouble("total_price");
+
+        String status = rs.getString("booking_status");
+        bd.bookingStatus = (status != null) ? status : "Unknown";
+
+        String custName = rs.getString("full_name");
+        bd.customerName = (custName != null) ? custName : "Guest";
+
+        String movieTitle = rs.getString("movie_title");
+        bd.movieTitle = (movieTitle != null) ? movieTitle : "Untitled";
+
+        String sDate = rs.getString("screening_date");
+        bd.screeningDate = (sDate != null) ? sDate : "N/A";
+
+        String sTime = rs.getString("screening_time");
+        bd.screeningTime = (sTime != null) ? sTime : "N/A";
+
+        String created = rs.getString("created_at");
+        bd.bookingDate = (created != null) ? created : "N/A";
+
+        return bd;
     }
 }
