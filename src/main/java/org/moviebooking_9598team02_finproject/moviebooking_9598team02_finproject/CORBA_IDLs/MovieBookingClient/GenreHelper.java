@@ -32,7 +32,7 @@ abstract public class GenreHelper
   {
     if (__typeCode == null)
     {
-      __typeCode = GenreHelper.type ();
+      __typeCode = org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.GenreHelper.type ();
       __typeCode = org.omg.CORBA.ORB.init ().create_alias_tc (GenreHelper.id (), "Genre", __typeCode);
     }
     return __typeCode;
@@ -46,7 +46,7 @@ abstract public class GenreHelper
   public static Genre read (org.omg.CORBA.portable.InputStream istream)
   {
     Genre value = null;
-    value = GenreHelper.read (istream);
+    value = org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.GenreHelper.read (istream);
     return value;
   }
 

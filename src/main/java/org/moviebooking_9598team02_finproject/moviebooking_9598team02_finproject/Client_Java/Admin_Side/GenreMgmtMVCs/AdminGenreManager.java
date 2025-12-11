@@ -24,7 +24,7 @@ public class AdminGenreManager {
     private void initializeGenreMVC() {
         try {
             FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/GenreManagement.fxml")
+                    getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/Admin/GenreManagement.fxml")
             );
             genrePane = loader.load();
             genreView = loader.getController();

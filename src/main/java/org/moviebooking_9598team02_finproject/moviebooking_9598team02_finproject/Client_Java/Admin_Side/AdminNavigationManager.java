@@ -11,7 +11,6 @@ import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.CustomerMgmtMVCs.AccountNavigationManager;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.MovieMVCs.AdminMMNavManager;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.SeatMgmtMVCs.AdminSMNavManager;
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingAdmin.AdminService;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.PaymentMVCs.AdminPaymentNavManager;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.GenreMgmtMVCs.AdminGenreManager;
 
@@ -62,7 +61,7 @@ public class AdminNavigationManager {
 
     private void initializeHomeView() {
         try {
-            FXMLLoader homeLoader = new FXMLLoader(getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/AdminHome.fxml"));
+            FXMLLoader homeLoader = new FXMLLoader(getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/Admin/AdminHome.fxml"));
             homePane = homeLoader.load();
             homeView = homeLoader.getController();
             AdminHomeModel homeModel = new AdminHomeModel();
@@ -125,7 +124,7 @@ public class AdminNavigationManager {
     public void showBookingMgmtView() {
         if (bookingMgmtPane == null) {
             try {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/AdminBookingMgmt.fxml"));
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/Admin/AdminBookingMgmt.fxml"));
                 bookingMgmtPane = loader.load();
 
                 // Initialize booking nav manager if this section has sub-views

@@ -37,14 +37,14 @@ public class CustomerAuthNavManager {
     private void initializeAuthViews() {
         try {
             // Load Login View
-            FXMLLoader loginLoader = new FXMLLoader(getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/CustomerLogin.fxml"));
+            FXMLLoader loginLoader = new FXMLLoader(getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/Customer/CustomerLogin.fxml"));
             loginPane = loginLoader.load();
             CustomerLoginView loginView = loginLoader.getController();
             CustomerLoginModel loginModel = new CustomerLoginModel();
             loginController = new CustomerLoginController(loginView, loginModel, this);
 
             // Load Signup View
-            FXMLLoader signupLoader = new FXMLLoader(getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/CustomerSignup.fxml"));
+            FXMLLoader signupLoader = new FXMLLoader(getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/Customer/CustomerSignup.fxml"));
             signupPane = signupLoader.load();
             CustomerSignupView signupView = signupLoader.getController();
             CustomerSignupModel signupModel = new CustomerSignupModel();

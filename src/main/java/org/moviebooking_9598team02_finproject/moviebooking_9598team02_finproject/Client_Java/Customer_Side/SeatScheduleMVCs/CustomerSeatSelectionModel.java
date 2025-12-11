@@ -35,5 +35,9 @@ public class CustomerSeatSelectionModel extends CustomerParentModel {
     public ScheduleDetails getScheduleDetailsView() throws ScheduleNotFoundException {
         return clientService.getScheduleDetailsView(currentScheduleId);
     }
+
+    public int getCurrentCustomerId() {
+        return currentCustomerId;
+    }
 }
 

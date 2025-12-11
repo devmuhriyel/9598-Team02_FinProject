@@ -50,7 +50,7 @@ public class AccountNavigationManager {
     private void initializeAdminMVC() {
         try {
             FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/AccountAdminMgmt.fxml")
+                    getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/Admin/AccountAdminMgmt.fxml")
             );
             adminPane = loader.load();
             adminView = loader.getController();
@@ -70,7 +70,7 @@ public class AccountNavigationManager {
     private void initializeCustomerMVC() {
         try {
             FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/AccountCustomerMgmt.fxml")
+                    getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/Admin/AccountCustomerMgmt.fxml")
             );
             customerPane = loader.load();
             customerView = loader.getController();

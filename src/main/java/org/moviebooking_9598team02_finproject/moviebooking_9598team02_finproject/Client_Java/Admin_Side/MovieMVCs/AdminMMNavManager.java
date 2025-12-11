@@ -27,7 +27,7 @@ public class AdminMMNavManager {
 
         // 1. Load FXML FIRST (this creates the View)
         FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/AdminMovieMgmt.fxml")
+                getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/Admin/AdminMovieMgmt.fxml")
         );
 
         movieMgmtPane = loader.load();
