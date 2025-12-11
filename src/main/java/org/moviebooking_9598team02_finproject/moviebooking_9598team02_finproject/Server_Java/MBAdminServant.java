@@ -1221,33 +1221,325 @@ public class MBAdminServant extends AdminServicePOA {
 
     // ===== MOVIE SCHEDULES METHODS =====
     @Override
-    public int createMovieSchedule(int adminId, String screeningDate, String screeningTime) throws AuthenticationException, InvalidInputException {
-        return 0;
+    public int createMovieSchedule(int adminId, String screeningDate, String screeningTime)
+            throws AuthenticationException, InvalidInputException {
+
+        // Check authentication
+        if (!SessionManager.isAdminLoggedIn(adminId)) {
+            throw new AuthenticationException("Admin not logged in or session expired");
+        }
+
+        // Validate inputs
+        if (screeningDate == null || screeningDate.trim().isEmpty()) {
+            throw new InvalidInputException("Screening date cannot be empty", "date");
+        }
+        if (screeningTime == null || screeningTime.trim().isEmpty()) {
+            throw new InvalidInputException("Screening time cannot be empty", "time");
+        }
+
+        try (Connection connection = DatabaseAccess.getConnection()) {
+            // Get next movie_schedule_id
+            String maxIdQuery = "SELECT MAX(movie_schedule_id) as max_id FROM movie_schedules";
+            PreparedStatement maxIdStmt = connection.prepareStatement(maxIdQuery);
+            ResultSet maxIdRs = maxIdStmt.executeQuery();
+
+            int nextScheduleId = 1;
+            if (maxIdRs.next()) {
+                int maxId = maxIdRs.getInt("max_id");
+                nextScheduleId = maxId + 1;
+            }
+
+            // Insert new movie_schedule
+            LocalDateTime now = LocalDateTime.now();
+            String query = "INSERT INTO movie_schedules (movie_schedule_id, screening_date, screening_time, created_by_admin, created_at, updated_at) " +
+                    "VALUES (?, ?, ?, ?, ?, ?)";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1, nextScheduleId);
+            statement.setString(2, screeningDate);
+            statement.setString(3, screeningTime);
+            statement.setInt(4, adminId);
+            statement.setString(5, now.toString());
+            statement.setString(6, now.toString());
+
+            int rowsAffected = statement.executeUpdate();
+
+            if (rowsAffected > 0) {
+                System.out.println("✅ Created movie schedule ID: " + nextScheduleId + " for " + screeningDate + " at " + screeningTime);
+                return nextScheduleId;
+            } else {
+                throw new InvalidInputException("Failed to create movie schedule", "database");
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new InvalidInputException("Database error: " + e.getMessage(), "database");
+        }
+    }
+
+
+    @Override
+    public int assignMovieToSchedule(int adminId, int movieId, int movieScheduleId)
+            throws AuthenticationException, MovieNotFoundException, ScheduleNotFoundException {
+
+        // Check authentication
+        if (!SessionManager.isAdminLoggedIn(adminId)) {
+            throw new AuthenticationException("Admin not logged in or session expired");
+        }
+
+        try (Connection connection = DatabaseAccess.getConnection()) {
+            // Check if movie exists
+            String checkMovieQuery = "SELECT movie_id FROM movies WHERE movie_id = ?";
+            PreparedStatement checkMovieStmt = connection.prepareStatement(checkMovieQuery);
+            checkMovieStmt.setInt(1, movieId);
+            ResultSet movieRs = checkMovieStmt.executeQuery();
+            if (!movieRs.next()) {
+                throw new MovieNotFoundException();
+            }
+
+            // Check if movie_schedule exists
+            String checkScheduleQuery = "SELECT movie_schedule_id FROM movie_schedules WHERE movie_schedule_id = ?";
+            PreparedStatement checkScheduleStmt = connection.prepareStatement(checkScheduleQuery);
+            checkScheduleStmt.setInt(1, movieScheduleId);
+            ResultSet scheduleRs = checkScheduleStmt.executeQuery();
+            if (!scheduleRs.next()) {
+                throw new ScheduleNotFoundException();
+            }
+
+            // Get next schedule_id
+            String maxIdQuery = "SELECT MAX(schedule_id) as max_id FROM schedules";
+            PreparedStatement maxIdStmt = connection.prepareStatement(maxIdQuery);
+            ResultSet maxIdRs = maxIdStmt.executeQuery();
+
+            int nextScheduleId = 1;
+            if (maxIdRs.next()) {
+                int maxId = maxIdRs.getInt("max_id");
+                nextScheduleId = maxId + 1;
+            }
+
+            // Insert into schedules table
+            LocalDateTime now = LocalDateTime.now();
+            String query = "INSERT INTO schedules (schedule_id, movie_id, movie_schedule_id, created_at, updated_at) " +
+                    "VALUES (?, ?, ?, ?, ?)";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1, nextScheduleId);
+            statement.setInt(2, movieId);
+            statement.setInt(3, movieScheduleId);
+            statement.setString(4, now.toString());
+            statement.setString(5, now.toString());
+
+            int rowsAffected = statement.executeUpdate();
+
+            if (rowsAffected > 0) {
+                // Initialize seats for this schedule
+                initializeScheduleSeatsInternal(connection, nextScheduleId);
+
+                System.out.println("✅ Assigned movie " + movieId + " to schedule " + nextScheduleId);
+                return nextScheduleId;
+            } else {
+                throw new AuthenticationException("Failed to assign movie to schedule");
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new AuthenticationException("Database error: " + e.getMessage());
+        }
+    }
+
+    // Helper method to initialize seats for a schedule
+    private void initializeScheduleSeatsInternal(Connection connection, int scheduleId) throws SQLException {
+        // Get all seats
+        String getAllSeatsQuery = "SELECT seat_id FROM seats ORDER BY seat_row, seat_number";
+        PreparedStatement getAllSeatsStmt = connection.prepareStatement(getAllSeatsQuery);
+        ResultSet seatsRs = getAllSeatsStmt.executeQuery();
+
+        // Get next schedule_list_seat_id
+        String maxIdQuery = "SELECT MAX(schedule_list_seat_id) as max_id FROM schedule_list_seats";
+        PreparedStatement maxIdStmt = connection.prepareStatement(maxIdQuery);
+        ResultSet maxIdRs = maxIdStmt.executeQuery();
+
+        int nextSeatId = 1;
+        if (maxIdRs.next()) {
+            int maxId = maxIdRs.getInt("max_id");
+            nextSeatId = maxId + 1;
+        }
+
+        // Insert schedule_list_seats
+        String insertQuery = "INSERT INTO schedule_list_seats (schedule_list_seat_id, schedule_id, seat_id, status, created_at, updated_at) " +
+                "VALUES (?, ?, ?, 'available', NOW(), NOW())";
+        PreparedStatement insertStmt = connection.prepareStatement(insertQuery);
+
+        int count = 0;
+        while (seatsRs.next()) {
+            int seatId = seatsRs.getInt("seat_id");
+            insertStmt.setInt(1, nextSeatId++);
+            insertStmt.setInt(2, scheduleId);
+            insertStmt.setInt(3, seatId);
+            insertStmt.addBatch();
+            count++;
+        }
+
+        int[] results = insertStmt.executeBatch();
+        System.out.println("✅ Initialized " + count + " seats for schedule " + scheduleId);
     }
 
     @Override
-    public int assignMovieToSchedule(int adminId, int movieId, int movieScheduleId) throws AuthenticationException, MovieNotFoundException, ScheduleNotFoundException {
-        return 0;
+    public void updateScheduleDateTime(int adminId, int scheduleId, String newDate, String newTime)
+            throws AuthenticationException, ScheduleNotFoundException {
+
+        if (!SessionManager.isAdminLoggedIn(adminId)) {
+            throw new AuthenticationException("Admin not logged in or session expired");
+        }
+
+        try (Connection connection = DatabaseAccess.getConnection()) {
+            // Get movie_schedule_id from schedule
+            String getQuery = "SELECT movie_schedule_id FROM schedules WHERE schedule_id = ?";
+            PreparedStatement getStmt = connection.prepareStatement(getQuery);
+            getStmt.setInt(1, scheduleId);
+            ResultSet rs = getStmt.executeQuery();
+
+            if (!rs.next()) {
+                throw new ScheduleNotFoundException();
+            }
+
+            int movieScheduleId = rs.getInt("movie_schedule_id");
+
+            // Update movie_schedules
+            String updateQuery = "UPDATE movie_schedules SET screening_date = ?, screening_time = ?, updated_at = NOW() " +
+                    "WHERE movie_schedule_id = ?";
+            PreparedStatement updateStmt = connection.prepareStatement(updateQuery);
+            updateStmt.setString(1, newDate);
+            updateStmt.setString(2, newTime);
+            updateStmt.setInt(3, movieScheduleId);
+
+            int rowsAffected = updateStmt.executeUpdate();
+
+            if (rowsAffected > 0) {
+                System.out.println("✅ Updated schedule " + scheduleId + " to " + newDate + " at " + newTime);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new AuthenticationException("Database error: " + e.getMessage());
+        }
     }
 
     @Override
-    public void updateScheduleDateTime(int adminId, int scheduleId, String newDate, String newTime) throws AuthenticationException, ScheduleNotFoundException {
+    public void deleteSchedule(int adminId, int scheduleId)
+            throws AuthenticationException, ScheduleNotFoundException {
 
-    }
+        if (!SessionManager.isAdminLoggedIn(adminId)) {
+            throw new AuthenticationException("Admin not logged in or session expired");
+        }
 
-    @Override
-    public void deleteSchedule(int adminId, int scheduleId) throws AuthenticationException, ScheduleNotFoundException {
+        try (Connection connection = DatabaseAccess.getConnection()) {
+            // Check if schedule exists
+            String checkQuery = "SELECT schedule_id FROM schedules WHERE schedule_id = ?";
+            PreparedStatement checkStmt = connection.prepareStatement(checkQuery);
+            checkStmt.setInt(1, scheduleId);
+            ResultSet rs = checkStmt.executeQuery();
 
+            if (!rs.next()) {
+                throw new ScheduleNotFoundException();
+            }
+
+            // Delete schedule (cascade will handle schedule_list_seats)
+            String deleteQuery = "DELETE FROM schedules WHERE schedule_id = ?";
+            PreparedStatement deleteStmt = connection.prepareStatement(deleteQuery);
+            deleteStmt.setInt(1, scheduleId);
+
+            int rowsAffected = deleteStmt.executeUpdate();
+
+            if (rowsAffected > 0) {
+                System.out.println("✅ Deleted schedule " + scheduleId);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new AuthenticationException("Database error: " + e.getMessage());
+        }
     }
 
     @Override
     public Schedule[] getAllSchedules(int adminId) throws AuthenticationException {
-        return new Schedule[0];
-    }
+        if (!SessionManager.isAdminLoggedIn(adminId)) {
+            throw new AuthenticationException("Admin not logged in or session expired");
+        }
 
+        try (Connection connection = DatabaseAccess.getConnection()) {
+            String query = "SELECT s.schedule_id, s.movie_id, s.movie_schedule_id, " +
+                    "s.created_at, s.updated_at " +
+                    "FROM schedules s " +
+                    "ORDER BY s.schedule_id";
+            PreparedStatement statement = connection.prepareStatement(query);
+            ResultSet rs = statement.executeQuery();
+
+            List<Schedule> scheduleList = new ArrayList<>();
+            while (rs.next()) {
+                Schedule schedule = new Schedule();
+                schedule.scheduleId = rs.getInt("schedule_id");
+                schedule.movieId = rs.getInt("movie_id");
+                schedule.movieScheduleId = rs.getInt("movie_schedule_id");
+                schedule.createdAt = rs.getString("created_at");
+                schedule.updatedAt = rs.getString("updated_at");
+                scheduleList.add(schedule);
+            }
+
+            return scheduleList.toArray(new Schedule[0]);
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new AuthenticationException("Database error: " + e.getMessage());
+        }
+    }
     @Override
-    public Schedule[] getSchedulesByMovie(int adminId, int movieId) throws AuthenticationException, MovieNotFoundException {
-        return new Schedule[0];
+    public Schedule[] getSchedulesByMovie(int adminId, int movieId)
+            throws AuthenticationException, MovieNotFoundException {
+
+        // Check authentication
+        if (!SessionManager.isAdminLoggedIn(adminId)) {
+            throw new AuthenticationException("Admin not logged in or session expired");
+        }
+
+        try (Connection connection = DatabaseAccess.getConnection()) {
+            // Check if movie exists
+            String checkQuery = "SELECT movie_id FROM movies WHERE movie_id = ?";
+            PreparedStatement checkStmt = connection.prepareStatement(checkQuery);
+            checkStmt.setInt(1, movieId);
+            ResultSet checkRs = checkStmt.executeQuery();
+            if (!checkRs.next()) {
+                throw new MovieNotFoundException();
+            }
+
+            // Get schedules for this movie
+            String query = "SELECT s.schedule_id, s.movie_id, s.movie_schedule_id, " +
+                    "ms.screening_date, ms.screening_time, " +
+                    "s.created_at, s.updated_at " +
+                    "FROM schedules s " +
+                    "JOIN movie_schedules ms ON s.movie_schedule_id = ms.movie_schedule_id " +
+                    "WHERE s.movie_id = ? " +
+                    "ORDER BY ms.screening_date, ms.screening_time";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1, movieId);
+            ResultSet rs = statement.executeQuery();
+
+            List<Schedule> scheduleList = new ArrayList<>();
+            while (rs.next()) {
+                Schedule schedule = new Schedule();
+                schedule.scheduleId = rs.getInt("schedule_id");
+                schedule.movieId = rs.getInt("movie_id");
+                schedule.movieScheduleId = rs.getInt("movie_schedule_id");
+                schedule.createdAt = rs.getString("created_at");
+                schedule.updatedAt = rs.getString("updated_at");
+                scheduleList.add(schedule);
+            }
+
+            System.out.println("✅ Found " + scheduleList.size() + " schedules for movie " + movieId);
+            return scheduleList.toArray(new Schedule[0]);
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new AuthenticationException("Database error: " + e.getMessage());
+        }
     }
 
     // ===== SEATS MANAGEMENT METHODS =====

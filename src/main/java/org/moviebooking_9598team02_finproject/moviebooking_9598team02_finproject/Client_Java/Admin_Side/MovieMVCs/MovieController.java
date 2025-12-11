@@ -1,6 +1,7 @@
 package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.MovieMVCs;
 
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.*;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.AdminParentModel;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -93,9 +94,7 @@ public class MovieController {
         view.getBtnClearFields().setOnAction(event -> handleClearFieldsClick());
 
         // Schedule management
-        if (view.getBtnManageSchedules() != null) {
-            view.getBtnManageSchedules().setOnAction(event -> handleManageSchedulesClick());
-        }
+        view.setAddScheduleButtonAction(this::handleAddNewScheduleClick);
 
         System.out.println("✅ All buttons wired successfully");
     }
@@ -177,6 +176,10 @@ public class MovieController {
         currentViewState = ViewState.EDIT;
         view.showEditView();
         populateFieldsWithMovie(movie);
+
+        // Load schedules for this movie
+        loadSchedulesForMovie(movie.movieId);
+
         System.out.println("✏️ Switched to Edit View - Movie ID: " + movie.movieId);
     }
 
@@ -238,6 +241,194 @@ public class MovieController {
             e.printStackTrace();
         } catch (Exception e) {
             view.showErrorAlert("Error Loading Movies", "Failed to load movies: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Load and display schedules for currently selected movie in edit view
+     * Uses getSchedulesByMovie and commonServices to get full details
+     */
+    private void loadSchedulesForMovie(int movieId) {
+        try {
+            System.out.println("📅 Loading schedules for movie ID: " + movieId);
+
+            // Get schedules using model
+            Schedule[] schedules = model.getSchedulesByMovie(movieId);
+
+            if (schedules == null || schedules.length == 0) {
+                view.populateScheduleList(new ArrayList<>(), this::handleScheduleSave, this::handleScheduleDelete);
+                System.out.println("📅 No schedules found for movie ID: " + movieId);
+                return;
+            }
+
+            List<Map<String, Object>> scheduleDataList = new ArrayList<>();
+
+            // For each schedule, get the MovieSchedule details using commonServices
+            for (Schedule schedule : schedules) {
+                try {
+                    // Use commonServices to get MovieSchedule details
+                    MovieSchedule movieSchedule = AdminParentModel.commonServices.getMovieScheduleById(schedule.movieScheduleId);
+
+                    if (movieSchedule != null) {
+                        Map<String, Object> data = new HashMap<>();
+                        data.put("scheduleId", schedule.scheduleId);
+                        data.put("movieScheduleId", schedule.movieScheduleId);
+                        data.put("screeningDate", movieSchedule.screeningDate);
+                        data.put("screeningTime", movieSchedule.screeningTime);
+                        scheduleDataList.add(data);
+
+                        System.out.println("📅 Loaded schedule " + schedule.scheduleId +
+                                " - Date: " + movieSchedule.screeningDate +
+                                " Time: " + movieSchedule.screeningTime);
+                    }
+                } catch (Exception e) {
+                    System.err.println("⚠️ Error loading movie schedule " + schedule.movieScheduleId + ": " + e.getMessage());
+                }
+            }
+
+            // Pass data to view with action handlers
+            view.populateScheduleList(scheduleDataList, this::handleScheduleSave, this::handleScheduleDelete);
+            System.out.println("✅ Loaded " + scheduleDataList.size() + " schedule(s) for movie " + movieId);
+
+        } catch (AuthenticationException e) {
+            view.showErrorAlert("Authentication Error", "Session expired. Please log in again.");
+            e.printStackTrace();
+        } catch (MovieNotFoundException e) {
+            view.showErrorAlert("Movie Not Found", "Could not load schedules for this movie.");
+            e.printStackTrace();
+        } catch (Exception e) {
+            view.showErrorAlert("Error", "Failed to load schedules: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Handle schedule save button click
+     */
+    private void handleScheduleSave(Integer scheduleId, String[] dateTime) {
+        String newDate = dateTime[0];
+        String newTime = dateTime[1];
+
+        if (newDate == null || newDate.isEmpty() || newTime == null || newTime.isEmpty()) {
+            view.showWarningAlert("Validation Error", "Please provide both date and time.");
+            return;
+        }
+
+        if (!isValidTimeFormat(newTime)) {
+            view.showWarningAlert("Invalid Time", "Please use HH:mm format (e.g., 14:30, 19:00)");
+            return;
+        }
+
+        try {
+            model.updateScheduleDateTime(scheduleId, newDate, newTime);
+
+            view.showInfoAlert("Success!", "✅ Schedule updated successfully!");
+
+            // Reload schedules to reflect changes
+            if (selectedMovieId != -1) {
+                loadSchedulesForMovie(selectedMovieId);
+            }
+
+            System.out.println("✅ Updated schedule " + scheduleId + " to " + newDate + " at " + newTime);
+
+        } catch (AuthenticationException e) {
+            view.showErrorAlert("Authentication Error", "Session expired. Please log in again.");
+            e.printStackTrace();
+        } catch (ScheduleNotFoundException e) {
+            view.showErrorAlert("Schedule Not Found", "This schedule no longer exists.");
+            e.printStackTrace();
+        } catch (Exception e) {
+            view.showErrorAlert("Update Error", "Failed to update schedule: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Handle schedule delete button click
+     */
+    private void handleScheduleDelete(Integer scheduleId) {
+        boolean confirmed = view.showConfirmationDialog(
+                "Delete Schedule",
+                "Are you sure you want to delete this schedule?",
+                "Schedule ID: " + scheduleId + "\nThis action cannot be undone."
+        );
+
+        if (!confirmed) {
+            System.out.println("🚫 Schedule delete cancelled");
+            return;
+        }
+
+        try {
+            model.deleteSchedule(scheduleId);
+            view.showInfoAlert("Success!", "✅ Schedule deleted successfully!");
+
+            // Reload schedules to reflect changes
+            if (selectedMovieId != -1) {
+                loadSchedulesForMovie(selectedMovieId);
+            }
+
+            System.out.println("✅ Deleted schedule " + scheduleId);
+
+        } catch (AuthenticationException e) {
+            view.showErrorAlert("Authentication Error", "Session expired. Please log in again.");
+            e.printStackTrace();
+        } catch (ScheduleNotFoundException e) {
+            view.showErrorAlert("Schedule Not Found", "This schedule no longer exists.");
+            e.printStackTrace();
+        } catch (Exception e) {
+            view.showErrorAlert("Delete Error", "Failed to delete schedule: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Handle add new schedule button click
+     */
+    private void handleAddNewScheduleClick() {
+        if (selectedMovieId == -1 || currentlySelectedMovie == null) {
+            view.showWarningAlert("No Movie Selected", "Please select a movie first.");
+            return;
+        }
+
+        // Show input dialog for new schedule
+        String dateInput = view.showInputDialog("Add New Schedule", "Enter screening date (yyyy-MM-dd):", LocalDate.now().toString());
+        if (dateInput == null || dateInput.trim().isEmpty()) {
+            return;
+        }
+
+        String timeInput = view.showInputDialog("Add New Schedule", "Enter screening time (HH:mm):", "14:00");
+        if (timeInput == null || timeInput.trim().isEmpty()) {
+            return;
+        }
+
+        if (!isValidTimeFormat(timeInput)) {
+            view.showWarningAlert("Invalid Time", "Please use HH:mm format (e.g., 14:30, 19:00)");
+            return;
+        }
+
+        try {
+            // Use combined method from model
+            int scheduleId = model.createAndAssignSchedule(selectedMovieId, dateInput.trim(), timeInput.trim());
+
+            view.showInfoAlert("Success!", "✅ New schedule added!\nSchedule ID: " + scheduleId);
+
+            // Reload schedules
+            loadSchedulesForMovie(selectedMovieId);
+
+            System.out.println("✅ Created new schedule " + scheduleId + " for movie " + selectedMovieId);
+
+        } catch (AuthenticationException e) {
+            view.showErrorAlert("Authentication Error", "Session expired. Please log in again.");
+            e.printStackTrace();
+        } catch (InvalidInputException e) {
+            view.showErrorAlert("Invalid Input", e.message);
+            e.printStackTrace();
+        } catch (MovieNotFoundException e) {
+            view.showErrorAlert("Movie Not Found", "The selected movie no longer exists.");
+            e.printStackTrace();
+        } catch (Exception e) {
+            view.showErrorAlert("Error", "Failed to create schedule: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -355,45 +546,6 @@ public class MovieController {
         return IMAGE_DIRECTORY + fileName;
     }
 
-    private void handleManageSchedulesClick() {
-        if (selectedMovieId == -1) {
-            view.showWarningAlert("No Movie Selected", "Please select a movie first.");
-            return;
-        }
-
-        // Open schedule editor dialog
-        openScheduleEditor();
-    }
-
-    private void openScheduleEditor() {
-        try {
-            // Get existing schedules for this movie
-            Schedule[] schedules = model.getSchedulesByMovie(selectedMovieId);
-
-            StringBuilder scheduleInfo = new StringBuilder();
-            scheduleInfo.append("Current Schedules for ").append(currentlySelectedMovie.movieTitle).append(":\n\n");
-
-            if (schedules == null || schedules.length == 0) {
-                scheduleInfo.append("No schedules found.\n\n");
-            } else {
-                for (Schedule schedule : schedules) {
-                    scheduleInfo.append("Schedule ID: ").append(schedule.scheduleId).append("\n");
-                    scheduleInfo.append("Movie Schedule ID: ").append(schedule.movieScheduleId).append("\n\n");
-                }
-            }
-
-            scheduleInfo.append("To edit schedules:\n");
-            scheduleInfo.append("1. Update the date and time fields below\n");
-            scheduleInfo.append("2. Click 'Update Movie' to save changes");
-
-            view.showInfoAlert("Schedule Management", scheduleInfo.toString());
-
-        } catch (Exception e) {
-            view.showErrorAlert("Error", "Failed to load schedules: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
     // ===== CRUD OPERATIONS =====
 
     private void handleAddMovieClick() {
@@ -454,8 +606,7 @@ public class MovieController {
                     String formattedDate = scheduleDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 
                     try {
-                        int movieScheduleId = model.createMovieSchedule(formattedDate, scheduleTime);
-                        int scheduleId = model.assignMovieToSchedule(newMovieId, movieScheduleId);
+                        int scheduleId = model.createAndAssignSchedule(newMovieId, formattedDate, scheduleTime);
 
                         view.showInfoAlert("Success!",
                                 "✅ Movie added successfully!\n" +

@@ -17,6 +17,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import java.io.File;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -77,7 +78,10 @@ public class MovieView {
     @FXML private Button btnUpdateMovie;
     @FXML private Button btnDeleteMovie;
     @FXML private Button btnClearFields;
-    @FXML private Button btnManageSchedules;
+
+    // ===== SCHEDULE SECTION ======
+    @FXML private VBox scheduleListContainer;
+    @FXML private Button btnAddNewSchedule;
 
     // Genre tracking with checkbox state
     private final Map<String, BooleanProperty> genreCheckMap = new LinkedHashMap<>();
@@ -558,15 +562,34 @@ public class MovieView {
 
         return card;
     }
+// ONLY showing the FIXED createPosterImageView method
+// Replace this method in MovieView.java
 
     private ImageView createPosterImageView(String posterURL) {
         try {
-            String resourcePath = posterURL.startsWith("/") ? posterURL : "/" + posterURL;
+            // Try loading from file system first (for newly uploaded images)
+            File imageFile = new File("src/main/resources/" + posterURL);
 
-            Image image = new Image(
-                    Objects.requireNonNull(getClass().getResourceAsStream(resourcePath)),
-                    180, 280, false, true
-            );
+            Image image = null;
+
+            if (imageFile.exists()) {
+                // Load from file system
+                image = new Image(imageFile.toURI().toString(), 180, 280, false, true);
+                System.out.println("✅ Loaded image from file: " + imageFile.getAbsolutePath());
+            } else {
+                // Try loading from classpath (for packaged resources)
+                String resourcePath = posterURL.startsWith("/") ? posterURL : "/" + posterURL;
+                try {
+                    image = new Image(
+                            Objects.requireNonNull(getClass().getResourceAsStream(resourcePath)),
+                            180, 280, false, true
+                    );
+                    System.out.println("✅ Loaded image from classpath: " + resourcePath);
+                } catch (NullPointerException e) {
+                    System.err.println("⚠️ Image not found in classpath: " + resourcePath);
+                    return null;
+                }
+            }
 
             if (image.isError()) {
                 System.err.println("⚠️ Error loading image: " + image.getException());
@@ -583,6 +606,7 @@ public class MovieView {
 
         } catch (Exception e) {
             System.err.println("⚠️ Exception loading image: " + e.getMessage());
+            e.printStackTrace();
             return null;
         }
     }
@@ -622,6 +646,142 @@ public class MovieView {
         if (btnNextPage != null) {
             btnNextPage.setDisable(!enableNext);
         }
+    }
+
+    // ===== SCHEDULE UI =====
+    /**
+     * Populate schedule list in edit view
+     */
+    public void populateScheduleList(java.util.List<java.util.Map<String, Object>> scheduleData,
+                                     java.util.function.BiConsumer<Integer, String[]> onSave,
+                                     java.util.function.Consumer<Integer> onDelete) {
+        if (scheduleListContainer == null) {
+            System.err.println("❌ ERROR: scheduleListContainer is NULL!");
+            return;
+        }
+
+        scheduleListContainer.getChildren().clear();
+
+        if (scheduleData.isEmpty()) {
+            Label emptyLabel = new Label("No schedules found for this movie.");
+            emptyLabel.setStyle("-fx-text-fill: #CCCCCC; -fx-font-size: 13px; -fx-padding: 20;");
+            scheduleListContainer.getChildren().add(emptyLabel);
+            return;
+        }
+
+        for (java.util.Map<String, Object> data : scheduleData) {
+            VBox scheduleCard = createScheduleCard(data, onSave, onDelete);
+            scheduleListContainer.getChildren().add(scheduleCard);
+        }
+
+        System.out.println("✅ Populated " + scheduleData.size() + " schedule(s)");
+    }
+
+    /**
+     * Create a single schedule card with date/time fields and action buttons
+     */
+    private VBox createScheduleCard(java.util.Map<String, Object> data,
+                                    java.util.function.BiConsumer<Integer, String[]> onSave,
+                                    java.util.function.Consumer<Integer> onDelete) {
+        int scheduleId = (Integer) data.get("scheduleId");
+        String screeningDate = (String) data.get("screeningDate");
+        String screeningTime = (String) data.get("screeningTime");
+
+        VBox card = new VBox(10);
+        card.setStyle("-fx-background-color: #1A1A1A; -fx-padding: 15; -fx-background-radius: 5; -fx-border-color: #404040; -fx-border-width: 1; -fx-border-radius: 5;");
+
+        // Header with schedule ID
+        Label headerLabel = new Label("Schedule ID: " + scheduleId);
+        headerLabel.setStyle("-fx-text-fill: #ff2525; -fx-font-size: 14px; -fx-font-weight: bold;");
+
+        // Date picker
+        HBox dateBox = new HBox(10);
+        dateBox.setAlignment(Pos.CENTER_LEFT);
+        Label dateLabel = new Label("Date:");
+        dateLabel.setStyle("-fx-text-fill: #FFFFFF; -fx-font-size: 13px; -fx-min-width: 60px;");
+        DatePicker datePicker = new DatePicker();
+        datePicker.setPrefWidth(200);
+        datePicker.setStyle("-fx-background-color: #292929; -fx-text-fill: #FFFFFF;");
+
+        // Parse and set date
+        try {
+            LocalDate date = LocalDate.parse(screeningDate);
+            datePicker.setValue(date);
+        } catch (Exception e) {
+            System.err.println("⚠️ Error parsing date: " + screeningDate);
+        }
+
+        dateBox.getChildren().addAll(dateLabel, datePicker);
+
+        // Time field
+        HBox timeBox = new HBox(10);
+        timeBox.setAlignment(Pos.CENTER_LEFT);
+        Label timeLabel = new Label("Time:");
+        timeLabel.setStyle("-fx-text-fill: #FFFFFF; -fx-font-size: 13px; -fx-min-width: 60px;");
+        TextField timeField = new TextField(screeningTime);
+        timeField.setPrefWidth(200);
+        timeField.setPromptText("HH:mm");
+        timeField.setStyle("-fx-background-color: #292929; -fx-text-fill: #FFFFFF; -fx-border-color: #404040; -fx-border-width: 1; -fx-border-radius: 5; -fx-padding: 8 12;");
+
+        timeBox.getChildren().addAll(timeLabel, timeField);
+
+        // Action buttons
+        HBox buttonBox = new HBox(10);
+        buttonBox.setAlignment(Pos.CENTER_LEFT);
+
+        Button saveButton = new Button("✅ Save");
+        saveButton.setStyle("-fx-background-color: #00CC66; -fx-text-fill: #FFFFFF; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 8 16; -fx-background-radius: 5; -fx-cursor: hand;");
+
+        Button deleteButton = new Button("🗑️ Delete");
+        deleteButton.setStyle("-fx-background-color: #8B0000; -fx-text-fill: #FFFFFF; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 8 16; -fx-background-radius: 5; -fx-cursor: hand;");
+
+        // Set actions
+        saveButton.setOnAction(e -> {
+            if (onSave != null) {
+                LocalDate newDate = datePicker.getValue();
+                String newTime = timeField.getText().trim();
+                String formattedDate = newDate != null ? newDate.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")) : "";
+                onSave.accept(scheduleId, new String[]{formattedDate, newTime});
+            }
+        });
+
+        deleteButton.setOnAction(e -> {
+            if (onDelete != null) {
+                onDelete.accept(scheduleId);
+            }
+        });
+
+        buttonBox.getChildren().addAll(saveButton, deleteButton);
+
+        card.getChildren().addAll(headerLabel, dateBox, timeBox, buttonBox);
+
+        return card;
+    }
+
+    /**
+     * Add new schedule button handler
+     */
+    public void setAddScheduleButtonAction(Runnable action) {
+        if (btnAddNewSchedule != null) {
+            btnAddNewSchedule.setOnAction(e -> {
+                if (action != null) {
+                    action.run();
+                }
+            });
+        }
+    }
+
+    /**
+     * Show input dialog
+     */
+    public String showInputDialog(String title, String header, String defaultValue) {
+        TextInputDialog dialog = new TextInputDialog(defaultValue);
+        dialog.setTitle(title);
+        dialog.setHeaderText(header);
+        dialog.setContentText("Value:");
+
+        Optional<String> result = dialog.showAndWait();
+        return result.orElse(null);
     }
 
     // ===== UI UPDATE METHODS =====
@@ -753,7 +913,7 @@ public class MovieView {
     public Button getBtnUpdateMovie() { return btnUpdateMovie; }
     public Button getBtnDeleteMovie() { return btnDeleteMovie; }
     public Button getBtnClearFields() { return btnClearFields; }
-    public Button getBtnManageSchedules() { return btnManageSchedules; }
+    public Button getBtnAddNewSchedule() { return btnAddNewSchedule; }
 
     // Schedule field getters
     public DatePicker getScheduleDatePicker() { return scheduleDatePicker; }
