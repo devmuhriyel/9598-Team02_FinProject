@@ -4,6 +4,7 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
@@ -26,138 +27,140 @@
     </top>
 
     <center>
-        <VBox alignment="TOP_CENTER" spacing="0.0" style="-fx-background-color: #FFFFFF; -fx-padding: 25 30 25 30;">
+        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" style="-fx-background-color: #FFFFFF; -fx-background: #FFFFFF;">
+            <VBox alignment="TOP_CENTER" spacing="0.0" style="-fx-background-color: #FFFFFF; -fx-padding: 25 30 25 30;">
 
-            <!-- Receipt Header -->
-            <VBox alignment="CENTER" spacing="5.0" style="-fx-padding: 0 0 15 0;">
-                <Label text="BOOKING CONFIRMATION" style="-fx-font-weight: bold; -fx-font-size: 14;">
-                    <font><Font name="SansSerif Bold" size="14.0" /></font>
+                <!-- Receipt Header -->
+                <VBox alignment="CENTER" spacing="5.0" style="-fx-padding: 0 0 15 0;">
+                    <Label text="BOOKING CONFIRMATION" style="-fx-font-weight: bold; -fx-font-size: 14;">
+                        <font><Font name="SansSerif Bold" size="14.0" /></font>
+                    </Label>
+                    <Label fx:id="lblReceiptDate" text="Date: December 08, 2025" style="-fx-font-size: 11;" />
+                    <Label fx:id="lblReceiptTime" text="Time: 02:30 PM" style="-fx-font-size: 11;" />
+                </VBox>
+
+                <Separator style="-fx-border-style: dashed; -fx-border-width: 1 0 0 0; -fx-border-color: #333333;" />
+
+                <!-- Booking Details -->
+                <VBox spacing="8.0" style="-fx-padding: 15 0 15 0;">
+                    <Label text="BOOKING DETAILS" style="-fx-font-weight: bold; -fx-font-size: 12; -fx-underline: true;" />
+
+                    <HBox>
+                        <Label text="Booking ID:" prefWidth="120.0" style="-fx-font-size: 11;" />
+                        <Label fx:id="lblBookingId" text="BK-00001" style="-fx-font-weight: bold; -fx-font-size: 11;" />
+                    </HBox>
+
+                    <HBox>
+                        <Label text="Customer:" prefWidth="120.0" style="-fx-font-size: 11;" />
+                        <Label fx:id="lblCustomerName" text="John Doe" style="-fx-font-size: 11;" />
+                    </HBox>
+                </VBox>
+
+                <Separator style="-fx-border-style: dashed; -fx-border-width: 1 0 0 0; -fx-border-color: #333333;" />
+
+                <!-- Movie Information -->
+                <VBox spacing="8.0" style="-fx-padding: 15 0 15 0;">
+                    <Label text="MOVIE INFORMATION" style="-fx-font-weight: bold; -fx-font-size: 12; -fx-underline: true;" />
+
+                    <HBox>
+                        <Label text="Movie:" prefWidth="120.0" style="-fx-font-size: 11;" />
+                        <Label fx:id="lblMovieTitle" text="Avengers: Endgame" style="-fx-font-weight: bold; -fx-font-size: 11;" wrapText="true" />
+                    </HBox>
+
+                    <HBox>
+                        <Label text="Show Date:" prefWidth="120.0" style="-fx-font-size: 11;" />
+                        <Label fx:id="lblShowDate" text="Dec 10, 2025" style="-fx-font-size: 11;" />
+                    </HBox>
+
+                    <HBox>
+                        <Label text="Show Time:" prefWidth="120.0" style="-fx-font-size: 11;" />
+                        <Label fx:id="lblShowTime" text="7:30 PM" style="-fx-font-size: 11;" />
+                    </HBox>
+
+                    <HBox>
+                        <Label text="Cinema:" prefWidth="120.0" style="-fx-font-size: 11;" />
+                        <Label fx:id="lblCinema" text="Cinema 1" style="-fx-font-size: 11;" />
+                    </HBox>
+
+                    <HBox>
+                        <Label text="Seats:" prefWidth="120.0" style="-fx-font-size: 11;" />
+                        <Label fx:id="lblSeats" text="A5, A6, A7" style="-fx-font-weight: bold; -fx-font-size: 11;" wrapText="true" />
+                    </HBox>
+                </VBox>
+
+                <Separator style="-fx-border-style: dashed; -fx-border-width: 1 0 0 0; -fx-border-color: #333333;" />
+
+                <!-- Price Breakdown -->
+                <VBox spacing="8.0" style="-fx-padding: 15 0 15 0;">
+                    <Label text="PRICE BREAKDOWN" style="-fx-font-weight: bold; -fx-font-size: 12; -fx-underline: true;" />
+
+                    <HBox>
+                        <Label text="Ticket Price:" prefWidth="120.0" style="-fx-font-size: 11;" />
+                        <Region HBox.hgrow="ALWAYS" />
+                        <Label fx:id="lblTicketPrice" text="₱ 0.00" style="-fx-font-size: 11;" />
+                    </HBox>
+
+                    <HBox>
+                        <Label text="No. of Tickets:" prefWidth="120.0" style="-fx-font-size: 11;" />
+                        <Region HBox.hgrow="ALWAYS" />
+                        <Label fx:id="lblTicketCount" text="x 0" style="-fx-font-size: 11;" />
+                    </HBox>
+
+                    <HBox>
+                        <Label text="Subtotal:" prefWidth="120.0" style="-fx-font-size: 11;" />
+                        <Region HBox.hgrow="ALWAYS" />
+                        <Label fx:id="lblSubtotal" text="₱ 0.00" style="-fx-font-size: 11;" />
+                    </HBox>
+
+                    <HBox>
+                        <Label text="Other Fee:" prefWidth="120.0" style="-fx-font-size: 11;" />
+                        <Region HBox.hgrow="ALWAYS" />
+                        <Label fx:id="lblServiceFee" text="₱ 0.00" style="-fx-font-size: 11;" />
+                    </HBox>
+                </VBox>
+
+                <Separator style="-fx-border-style: solid; -fx-border-width: 2 0 0 0; -fx-border-color: #333333;" />
+
+                <!-- Total Amount -->
+                <HBox alignment="CENTER_LEFT" style="-fx-padding: 15 0 15 0;">
+                    <Label text="TOTAL AMOUNT:" style="-fx-font-weight: bold; -fx-font-size: 14;" />
+                    <Region HBox.hgrow="ALWAYS" />
+                    <Label fx:id="lblAmount" text="₱ 0.00" style="-fx-font-weight: bold; -fx-font-size: 16; -fx-text-fill: #ff2525;" />
+                </HBox>
+
+                <Separator style="-fx-border-style: dashed; -fx-border-width: 1 0 0 0; -fx-border-color: #333333;" />
+
+                <!-- Payment Method Selection -->
+                <VBox spacing="8.0" style="-fx-padding: 15 0 10 0;">
+                    <Label text="SELECT PAYMENT METHOD" style="-fx-font-weight: bold; -fx-font-size: 11; -fx-underline: true;" />
+                    <ComboBox fx:id="comboPaymentMethod" prefWidth="390.0" promptText="Choose payment method..." style="-fx-font-size: 12;" />
+                </VBox>
+
+                <!-- Transaction ID -->
+                <VBox spacing="8.0" style="-fx-padding: 10 0 15 0;">
+                    <Label text="TRANSACTION REFERENCE" style="-fx-font-weight: bold; -fx-font-size: 11; -fx-underline: true;" />
+                    <TextField fx:id="txtTransactionId" promptText="Enter reference number..." style="-fx-font-size: 12; -fx-padding: 8;" />
+                    <Label text="* Auto-generated for Cash/Online payment" style="-fx-font-size: 9; -fx-text-fill: #666666; -fx-font-style: italic;" />
+                </VBox>
+
+                <Separator style="-fx-border-style: dashed; -fx-border-width: 1 0 0 0; -fx-border-color: #333333;" />
+
+                <!-- Status Message -->
+                <Label fx:id="lblStatus" alignment="CENTER" maxWidth="390.0" text="" textAlignment="CENTER" visible="false" wrapText="true" style="-fx-font-weight: bold; -fx-padding: 10; -fx-background-radius: 3; -fx-font-size: 11;">
+                    <VBox.margin>
+                        <Insets top="10" />
+                    </VBox.margin>
                 </Label>
-                <Label fx:id="lblReceiptDate" text="Date: December 08, 2025" style="-fx-font-size: 11;" />
-                <Label fx:id="lblReceiptTime" text="Time: 02:30 PM" style="-fx-font-size: 11;" />
+
+                <!-- Footer Note -->
+                <VBox alignment="CENTER" spacing="5.0" style="-fx-padding: 15 0 0 0;">
+                    <Label text="━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" style="-fx-font-size: 10; -fx-text-fill: #CCCCCC;" />
+                    <Label text="Thank you for choosing FILMBOOK!" style="-fx-font-weight: bold; -fx-font-size: 11;" />
+                    <Label text="Keep this receipt for your records" style="-fx-font-size: 9; -fx-text-fill: #666666;" />
+                </VBox>
+
             </VBox>
-
-            <Separator style="-fx-border-style: dashed; -fx-border-width: 1 0 0 0; -fx-border-color: #333333;" />
-
-            <!-- Booking Details -->
-            <VBox spacing="8.0" style="-fx-padding: 15 0 15 0;">
-                <Label text="BOOKING DETAILS" style="-fx-font-weight: bold; -fx-font-size: 12; -fx-underline: true;" />
-
-                <HBox>
-                    <Label text="Booking ID:" prefWidth="120.0" style="-fx-font-size: 11;" />
-                    <Label fx:id="lblBookingId" text="BK-00001" style="-fx-font-weight: bold; -fx-font-size: 11;" />
-                </HBox>
-
-                <HBox>
-                    <Label text="Customer:" prefWidth="120.0" style="-fx-font-size: 11;" />
-                    <Label fx:id="lblCustomerName" text="John Doe" style="-fx-font-size: 11;" />
-                </HBox>
-            </VBox>
-
-            <Separator style="-fx-border-style: dashed; -fx-border-width: 1 0 0 0; -fx-border-color: #333333;" />
-
-            <!-- Movie Information -->
-            <VBox spacing="8.0" style="-fx-padding: 15 0 15 0;">
-                <Label text="MOVIE INFORMATION" style="-fx-font-weight: bold; -fx-font-size: 12; -fx-underline: true;" />
-
-                <HBox>
-                    <Label text="Movie:" prefWidth="120.0" style="-fx-font-size: 11;" />
-                    <Label fx:id="lblMovieTitle" text="Avengers: Endgame" style="-fx-font-weight: bold; -fx-font-size: 11;" />
-                </HBox>
-
-                <HBox>
-                    <Label text="Show Date:" prefWidth="120.0" style="-fx-font-size: 11;" />
-                    <Label fx:id="lblShowDate" text="Dec 10, 2025" style="-fx-font-size: 11;" />
-                </HBox>
-
-                <HBox>
-                    <Label text="Show Time:" prefWidth="120.0" style="-fx-font-size: 11;" />
-                    <Label fx:id="lblShowTime" text="7:30 PM" style="-fx-font-size: 11;" />
-                </HBox>
-
-                <HBox>
-                    <Label text="Cinema:" prefWidth="120.0" style="-fx-font-size: 11;" />
-                    <Label fx:id="lblCinema" text="Cinema 1" style="-fx-font-size: 11;" />
-                </HBox>
-
-                <HBox>
-                    <Label text="Seats:" prefWidth="120.0" style="-fx-font-size: 11;" />
-                    <Label fx:id="lblSeats" text="A5, A6, A7" style="-fx-font-weight: bold; -fx-font-size: 11;" />
-                </HBox>
-            </VBox>
-
-            <Separator style="-fx-border-style: dashed; -fx-border-width: 1 0 0 0; -fx-border-color: #333333;" />
-
-            <!-- Price Breakdown -->
-            <VBox spacing="8.0" style="-fx-padding: 15 0 15 0;">
-                <Label text="PRICE BREAKDOWN" style="-fx-font-weight: bold; -fx-font-size: 12; -fx-underline: true;" />
-
-                <HBox>
-                    <Label text="Ticket Price:" prefWidth="120.0" style="-fx-font-size: 11;" />
-                    <Region HBox.hgrow="ALWAYS" />
-                    <Label fx:id="lblTicketPrice" text="₱ 0.00" style="-fx-font-size: 11;" />
-                </HBox>
-
-                <HBox>
-                    <Label text="No. of Tickets:" prefWidth="120.0" style="-fx-font-size: 11;" />
-                    <Region HBox.hgrow="ALWAYS" />
-                    <Label fx:id="lblTicketCount" text="x 0" style="-fx-font-size: 11;" />
-                </HBox>
-
-                <HBox>
-                    <Label text="Subtotal:" prefWidth="120.0" style="-fx-font-size: 11;" />
-                    <Region HBox.hgrow="ALWAYS" />
-                    <Label fx:id="lblSubtotal" text="₱ 0.00" style="-fx-font-size: 11;" />
-                </HBox>
-
-                <HBox>
-                    <Label text="Other Fee:" prefWidth="120.0" style="-fx-font-size: 11;" />
-                    <Region HBox.hgrow="ALWAYS" />
-                    <Label fx:id="lblServiceFee" text="₱ 0.00" style="-fx-font-size: 11;" />
-                </HBox>
-            </VBox>
-
-            <Separator style="-fx-border-style: solid; -fx-border-width: 2 0 0 0; -fx-border-color: #333333;" />
-
-            <!-- Total Amount -->
-            <HBox alignment="CENTER_LEFT" style="-fx-padding: 15 0 15 0;">
-                <Label text="TOTAL AMOUNT:" style="-fx-font-weight: bold; -fx-font-size: 14;" />
-                <Region HBox.hgrow="ALWAYS" />
-                <Label fx:id="lblAmount" text="₱ 0.00" style="-fx-font-weight: bold; -fx-font-size: 16; -fx-text-fill: #ff2525;" />
-            </HBox>
-
-            <Separator style="-fx-border-style: dashed; -fx-border-width: 1 0 0 0; -fx-border-color: #333333;" />
-
-            <!-- Payment Method Selection -->
-            <VBox spacing="8.0" style="-fx-padding: 15 0 10 0;">
-                <Label text="SELECT PAYMENT METHOD" style="-fx-font-weight: bold; -fx-font-size: 11; -fx-underline: true;" />
-                <ComboBox fx:id="comboPaymentMethod" prefWidth="390.0" promptText="Choose payment method..." style="-fx-font-size: 12;" />
-            </VBox>
-
-            <!-- Transaction ID -->
-            <VBox spacing="8.0" style="-fx-padding: 10 0 15 0;">
-                <Label text="TRANSACTION REFERENCE" style="-fx-font-weight: bold; -fx-font-size: 11; -fx-underline: true;" />
-                <TextField fx:id="txtTransactionId" promptText="Enter reference number..." style="-fx-font-size: 12; -fx-padding: 8;" />
-                <Label text="* Auto-generated for Cash payment" style="-fx-font-size: 9; -fx-text-fill: #666666; -fx-font-style: italic;" />
-            </VBox>
-
-            <Separator style="-fx-border-style: dashed; -fx-border-width: 1 0 0 0; -fx-border-color: #333333;" />
-
-            <!-- Status Message -->
-            <Label fx:id="lblStatus" alignment="CENTER" maxWidth="390.0" text="" textAlignment="CENTER" visible="false" wrapText="true" style="-fx-font-weight: bold; -fx-padding: 10; -fx-background-radius: 3; -fx-font-size: 11;">
-                <VBox.margin>
-                    <Insets top="10" />
-                </VBox.margin>
-            </Label>
-
-            <!-- Footer Note -->
-            <VBox alignment="CENTER" spacing="5.0" style="-fx-padding: 15 0 0 0;">
-                <Label text="━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" style="-fx-font-size: 10; -fx-text-fill: #CCCCCC;" />
-                <Label text="Thank you for choosing FILMBOOK!" style="-fx-font-weight: bold; -fx-font-size: 11;" />
-                <Label text="Keep this receipt for your records" style="-fx-font-size: 9; -fx-text-fill: #666666;" />
-            </VBox>
-
-        </VBox>
+        </ScrollPane>
     </center>
 
     <bottom>

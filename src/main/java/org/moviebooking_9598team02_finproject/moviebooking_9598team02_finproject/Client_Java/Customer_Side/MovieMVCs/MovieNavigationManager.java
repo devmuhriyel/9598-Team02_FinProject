@@ -110,27 +110,8 @@ public class MovieNavigationManager {
             // Create Model
             seatModel = new CustomerSeatSelectionModel(customer.customerId, scheduleId);
 
-            // Create Controller with navigation callback
-            seatController = new CustomerSeatSelectionController(seatView, seatModel, null) {
-                // Override booking success to navigate to payment
-                @Override
-                public void handleBook(javafx.event.ActionEvent event) {
-                    try {
-                        // Get selected seats and create booking
-                        super.handleBook(event);
-
-                        // After successful booking, show payment
-                        // The booking ID should be returned from the model
-                        // We'll implement payment navigation next
-
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        if (seatView != null) {
-                            seatView.getStatusMessageLabel().setText("Booking failed: " + e.getMessage());
-                        }
-                    }
-                }
-            };
+            // Create Controller (pass null for navigation manager since we're using modal window)
+            seatController = new CustomerSeatSelectionController(seatView, seatModel, null);
 
             // Initialize controller with schedule data
             seatController.init(scheduleId);

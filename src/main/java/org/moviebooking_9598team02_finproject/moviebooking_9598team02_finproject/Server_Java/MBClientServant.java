@@ -1175,6 +1175,7 @@ public class MBClientServant extends ClientServicePOA {
     }
 
     // ===== PAYMENT METHODS =====
+    // REPLACE the processPayment method in MBClientServant.java (around line 1100)
     @Override
     public int processPayment(int customerId, int bookingId, double amount, String paymentMethod, String transactionId)
             throws AuthenticationException, BookingException, PaymentException {
@@ -1186,7 +1187,7 @@ public class MBClientServant extends ClientServicePOA {
         Connection connection = null;
         try {
             connection = DatabaseAccess.getConnection();
-            connection.setAutoCommit(false);
+            connection.setAutoCommit(false); // Start transaction
 
             // 1. Validate booking exists and belongs to customer
             String checkBooking = "SELECT booking_status, total_price FROM bookings WHERE booking_id = ? AND customer_id = ?";
@@ -1216,10 +1217,10 @@ public class MBClientServant extends ClientServicePOA {
             // 2. Get next payment ID
             int nextPaymentId = getLatestPaymentID(connection) + 1;
 
-            // 3. Insert payment record
+            // 3. Insert payment record with PENDING status
             String insertPayment = "INSERT INTO payments (payment_id, booking_id, amount, payment_method, " +
                     "payment_status, payment_date, transaction_id, created_at, updated_at) " +
-                    "VALUES (?, ?, ?, ?, 'completed', ?, ?, ?, ?)";
+                    "VALUES (?, ?, ?, ?, 'pending', ?, ?, ?, ?)";
 
             PreparedStatement paymentStmt = connection.prepareStatement(insertPayment);
             LocalDateTime now = LocalDateTime.now();
@@ -1238,7 +1239,7 @@ public class MBClientServant extends ClientServicePOA {
                 throw new PaymentException("Failed to process payment", 500);
             }
 
-            // 4. Update booking status to confirmed
+            // 4. Update booking status to 'confirmed' (payment is pending, but booking is confirmed)
             String updateBooking = "UPDATE bookings SET booking_status = 'confirmed', updated_at = ? WHERE booking_id = ?";
             PreparedStatement updateStmt = connection.prepareStatement(updateBooking);
             updateStmt.setString(1, now.toString());
@@ -1248,7 +1249,7 @@ public class MBClientServant extends ClientServicePOA {
             // Commit transaction
             connection.commit();
             System.out.println("✅ Payment processed successfully! ID: " + nextPaymentId +
-                    " | Booking: " + bookingId + " | Amount: ₱" + amount);
+                    " | Booking: " + bookingId + " | Amount: ₱" + amount + " | Status: PENDING");
 
             return nextPaymentId;
 
