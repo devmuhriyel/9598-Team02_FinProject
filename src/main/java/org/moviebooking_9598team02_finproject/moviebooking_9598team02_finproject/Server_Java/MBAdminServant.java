@@ -2148,7 +2148,57 @@ public class MBAdminServant extends AdminServicePOA {
 
     @Override
     public double getMovieRevenue(int adminId, int movieId) throws AuthenticationException, MovieNotFoundException {
-        return 0;
+        if (!SessionManager.isAdminLoggedIn(adminId)) {
+            throw new AuthenticationException("Admin not logged in or session expired");
+        }
+        if (movieId == 0) {
+            return getTotalSystemRevenue(adminId);
+        }
+        try (Connection connection = DatabaseAccess.getConnection()) {
+            String query = "SELECT SUM(p.amount) AS MovieRevenue FROM payments p " +
+                    "JOIN bookings b ON p.booking_id = b.booking_id " +
+                    "JOIN schedules s ON b.schedule_id = s.schedule_id " +
+                    "WHERE s.movie_id = ? AND p.payment_status = 'completed'";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1, movieId);
+            ResultSet rs = statement.executeQuery();
+
+            if (rs.next()) {
+                double revenue = rs.getDouble("MovieRevenue");
+                if (rs.wasNull()) {
+                    return 0.0;
+                }
+                return revenue;
+            }
+            String checkMovieQuery = "SELECT movie_id FROM movies WHERE movie_id = ?";
+            PreparedStatement checkMovieStatement = connection.prepareStatement(checkMovieQuery);
+            checkMovieStatement.setInt(1, movieId);
+            if (!checkMovieStatement.executeQuery().next()) {
+                throw new MovieNotFoundException();
+            }
+            return 0.0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new AuthenticationException("Database error: " + e.getMessage());
+        }
+    }
+
+    public double getTotalSystemRevenue(int adminId) throws AuthenticationException {
+        if (!SessionManager.isAdminLoggedIn(adminId)) {
+            throw new AuthenticationException("Admin not logged in or session expired");
+        }
+        try (Connection connection = DatabaseAccess.getConnection()) {
+            String query = "SELECT SUM(amount) AS TotalRevenue FROM payments WHERE payment_status = 'completed'";
+            PreparedStatement statement = connection.prepareStatement(query);
+            ResultSet rs = statement.executeQuery();
+            if (rs.next()) {
+                return rs.getDouble("TotalRevenue");
+            }
+            return 0.0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new AuthenticationException("Database error: " + e.getMessage());
+        }
     }
 
     @Override

@@ -6,6 +6,10 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Admin;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.AddtlFeaturesMVCs.AdminDashboardNavManager;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.AddtlFeaturesMVCs.DashboardController;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.AddtlFeaturesMVCs.DashboardModel;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.AddtlFeaturesMVCs.DashboardView;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.AuthenticationMVCs.AdminAuthNavManager;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.BookingsMVCs.AdminBookingNavManager;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.CustomerMgmtMVCs.AccountNavigationManager;
@@ -26,6 +30,9 @@ public class AdminNavigationManager {
     private Pane homePane;
     private AdminHomeController homeController;
     private AdminHomeView homeView;
+    private DashboardController dashboardController;
+    private DashboardView dashboardView;
+
 
     // Cache for main section panes
     private Pane dashboardPane;
@@ -43,6 +50,7 @@ public class AdminNavigationManager {
     private AdminSMNavManager seatNavManager;
     private AccountNavigationManager accNavManager;
     private AdminPaymentNavManager paymentNavManager;
+    private AdminDashboardNavManager dashboardNavManager;
     private AdminGenreManager genreManager;
 
 
@@ -56,6 +64,8 @@ public class AdminNavigationManager {
 
         this.seatNavManager = new AdminSMNavManager(admin);
         this.paymentNavManager = new AdminPaymentNavManager(admin);
+        this.bookingNavManager = new AdminBookingNavManager(admin);
+        this.dashboardNavManager = new AdminDashboardNavManager(admin);
 
         initializeHomeView();
     }
@@ -78,19 +88,9 @@ public class AdminNavigationManager {
         }
     }
 
-    // Methods called by AdminHomeController to load main sections
     public void showDashboardView() {
-        if (dashboardPane == null) {
-            try {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/AdminDashboard.fxml"));
-                dashboardPane = loader.load();
-                // Initialize controller if needed
-            } catch (IOException e) {
-                e.printStackTrace();
-                dashboardPane = createPlaceholder("Dashboard");
-            }
-        }
-        loadContentPane(dashboardPane);
+        Pane pane = dashboardNavManager.getDashboardView();
+        loadContentPane(pane);
     }
 
     public void showMovieMgmtView() {
@@ -117,7 +117,6 @@ public class AdminNavigationManager {
 
 
     public void showSeatMgmtView() {
-        // Use the dedicated seat navigation manager - it handles all initialization
         Pane pane = seatNavManager.getSeatMgmtView();
         loadContentPane(pane);
     }
