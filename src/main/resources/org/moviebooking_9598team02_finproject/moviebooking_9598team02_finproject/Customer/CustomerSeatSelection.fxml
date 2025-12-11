@@ -71,9 +71,9 @@
                             <ColumnConstraints halignment="CENTER" minWidth="60.0" prefWidth="60.0" />
                             <ColumnConstraints halignment="CENTER" minWidth="60.0" prefWidth="60.0" />
                             <ColumnConstraints halignment="CENTER" minWidth="20.0" prefWidth="20.0" />
-                            <ColumnConstraints halignment="CENTER" minWidth="75.0" prefWidth="75.0" />
-                            <ColumnConstraints halignment="CENTER" minWidth="75.0" prefWidth="75.0" />
-                            <ColumnConstraints halignment="CENTER" minWidth="75.0" prefWidth="75.0" />
+                            <ColumnConstraints halignment="CENTER" minWidth="60.0" prefWidth="60.0" />
+                            <ColumnConstraints halignment="CENTER" minWidth="60.0" prefWidth="60.0" />
+                            <ColumnConstraints halignment="CENTER" minWidth="60.0" prefWidth="60.0" />
                         </columnConstraints>
                         <rowConstraints>
                             <RowConstraints minHeight="10.0" prefHeight="30.0" valignment="CENTER" />
@@ -92,9 +92,9 @@
                         <Button fx:id="btnA7" style="-fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 5; -fx-min-width: 60; -fx-pref-width: 60;" text="A7" GridPane.columnIndex="7" GridPane.rowIndex="1" />
                         <Button fx:id="btnA8" style="-fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 5; -fx-min-width: 60; -fx-pref-width: 60;" text="A8" GridPane.columnIndex="8" GridPane.rowIndex="1" />
 
-                        <Button fx:id="btnA9" style="-fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 5; -fx-min-width: 75; -fx-pref-width: 75;" text="A9" GridPane.columnIndex="10" GridPane.rowIndex="0" />
-                        <Button fx:id="btnA10" style="-fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 5; -fx-min-width: 75; -fx-pref-width: 75;" text="A10" GridPane.columnIndex="11" GridPane.rowIndex="0" />
-                        <Button fx:id="btnA11" prefWidth="75.0" style="-fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 5; -fx-min-width: 75; -fx-pref-width: 75;" text="A11" GridPane.columnIndex="12" GridPane.rowIndex="0" />
+                        <Button fx:id="btnA9" style="-fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 5; -fx-min-width: 60; -fx-pref-width: 60;" text="A9" GridPane.columnIndex="10" GridPane.rowIndex="0" />
+                        <Button fx:id="btnA10" style="-fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 5; -fx-min-width: 60; -fx-pref-width: 60;" text="A10" GridPane.columnIndex="11" GridPane.rowIndex="0" />
+                        <Button fx:id="btnA11" prefWidth="60.0" style="-fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 5; -fx-min-width: 60; -fx-pref-width: 60;" text="A11" GridPane.columnIndex="12" GridPane.rowIndex="0" />
 
                         <Button fx:id="btnB1" style="-fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 5; -fx-min-width: 60; -fx-pref-width: 60;" text="B1" GridPane.columnIndex="0" GridPane.rowIndex="1" />
                         <Button fx:id="btnB2" style="-fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 5; -fx-min-width: 60; -fx-pref-width: 60;" text="B2" GridPane.columnIndex="1" GridPane.rowIndex="1" />
@@ -106,9 +106,9 @@
                         <Button fx:id="btnB7" style="-fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 5; -fx-min-width: 60; -fx-pref-width: 60;" text="B7" GridPane.columnIndex="7" GridPane.rowIndex="2" />
                         <Button fx:id="btnB8" style="-fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 5; -fx-min-width: 60; -fx-pref-width: 60;" text="B8" GridPane.columnIndex="8" GridPane.rowIndex="2" />
 
-                        <Button fx:id="btnB9" style="-fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 5; -fx-min-width: 75; -fx-pref-width: 75;" text="B9" GridPane.columnIndex="10" GridPane.rowIndex="1" />
-                        <Button fx:id="btnB10" style="-fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 5; -fx-min-width: 75; -fx-pref-width: 75;" text="B10" GridPane.columnIndex="11" GridPane.rowIndex="1" />
-                        <Button fx:id="btnB11" style="-fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 5; -fx-min-width: 75; -fx-pref-width: 75;" text="B11" GridPane.columnIndex="12" GridPane.rowIndex="1" />
+                        <Button fx:id="btnB9" style="-fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 5; -fx-min-width: 60; -fx-pref-width: 60;" text="B9" GridPane.columnIndex="10" GridPane.rowIndex="1" />
+                        <Button fx:id="btnB10" style="-fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 5; -fx-min-width: 60; -fx-pref-width: 60;" text="B10" GridPane.columnIndex="11" GridPane.rowIndex="1" />
+                        <Button fx:id="btnB11" style="-fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 5; -fx-min-width: 60; -fx-pref-width: 60;" text="B11" GridPane.columnIndex="12" GridPane.rowIndex="1" />
 
                         <Button fx:id="btnC1" style="-fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 5; -fx-min-width: 60; -fx-pref-width: 60;" text="C1" GridPane.columnIndex="0" GridPane.rowIndex="2" />
                         <Button fx:id="btnC2" style="-fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 5; -fx-min-width: 60; -fx-pref-width: 60;" text="C2" GridPane.columnIndex="1" GridPane.rowIndex="2" />
@@ -120,9 +120,9 @@
                         <Button fx:id="btnC7" style="-fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 5; -fx-min-width: 60; -fx-pref-width: 60;" text="C7" GridPane.columnIndex="7" GridPane.rowIndex="3" />
                         <Button fx:id="btnC8" style="-fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 5; -fx-min-width: 60; -fx-pref-width: 60;" text="C8" GridPane.columnIndex="8" GridPane.rowIndex="3" />
 
-                        <Button fx:id="btnC9" style="-fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 5; -fx-min-width: 75; -fx-pref-width: 75;" text="C9" GridPane.columnIndex="10" GridPane.rowIndex="2" />
-                        <Button fx:id="btnC10" style="-fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 5; -fx-min-width: 75; -fx-pref-width: 75;" text="C10" GridPane.columnIndex="11" GridPane.rowIndex="2" />
-                        <Button fx:id="btnC11" style="-fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 5; -fx-min-width: 75; -fx-pref-width: 75;" text="C11" GridPane.columnIndex="12" GridPane.rowIndex="2" />
+                        <Button fx:id="btnC9" style="-fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 5; -fx-min-width: 60; -fx-pref-width: 60;" text="C9" GridPane.columnIndex="10" GridPane.rowIndex="2" />
+                        <Button fx:id="btnC10" style="-fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 5; -fx-min-width: 60; -fx-pref-width: 60;" text="C10" GridPane.columnIndex="11" GridPane.rowIndex="2" />
+                        <Button fx:id="btnC11" style="-fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 5; -fx-min-width: 60; -fx-pref-width: 60;" text="C11" GridPane.columnIndex="12" GridPane.rowIndex="2" />
                     </GridPane>
                 </HBox>
 

@@ -513,8 +513,7 @@ public class MBClientServant extends ClientServicePOA {
         return scheduleList.toArray(new Schedule[0]);
     }
 
-    // ===== SEAT METHODS =====
-    @Override
+    // ===== SEAT METHODS =====@Override
     public Seat[] getAvailableSeats(int scheduleId) throws ScheduleNotFoundException {
         List<Seat> seatList = new ArrayList<>();
         try (Connection connection = DatabaseAccess.getConnection()) {
@@ -528,10 +527,11 @@ public class MBClientServant extends ClientServicePOA {
                 throw new ScheduleNotFoundException("Schedule not found", scheduleId);
             }
 
-            // Get available seats for this schedule
+            // Get ALL seats for this schedule (not just available ones)
+            // We need ALL seats to show their types and prices in the UI
             String query = "SELECT s.* FROM seats s " +
                     "INNER JOIN schedule_list_seats sls ON s.seat_id = sls.seat_id " +
-                    "WHERE sls.schedule_id = ? AND sls.status = 'available' " +
+                    "WHERE sls.schedule_id = ? " +
                     "ORDER BY s.seat_row, s.seat_number";
 
             PreparedStatement statement = connection.prepareStatement(query);
@@ -549,6 +549,8 @@ public class MBClientServant extends ClientServicePOA {
                 seat.updatedAt = rs.getString("updated_at");
                 seatList.add(seat);
             }
+
+            System.out.println("✅ Retrieved " + seatList.size() + " total seats for schedule " + scheduleId);
 
         } catch (SQLException e) {
             e.printStackTrace();
