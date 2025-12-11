@@ -37,14 +37,14 @@ public class AdminAuthNavManager {
     private void initializeAuthViews() {
         try {
             // Load Login View
-            FXMLLoader loginLoader = new FXMLLoader(getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/AdminLogin.fxml"));
+            FXMLLoader loginLoader = new FXMLLoader(getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/Admin/AdminLogin.fxml"));
             loginPane = loginLoader.load();
             AdminLoginView loginView = loginLoader.getController();
             AdminLoginModel loginModel = new AdminLoginModel();
             loginController = new AdminLoginController(loginView, loginModel, this);
 
             // Load Signup View
-            FXMLLoader signupLoader = new FXMLLoader(getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/AdminSignup.fxml"));
+            FXMLLoader signupLoader = new FXMLLoader(getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/Admin/AdminSignup.fxml"));
             signupPane = signupLoader.load();
             AdminSignupView signupView = signupLoader.getController();
             AdminSignupModel signupModel = new AdminSignupModel();

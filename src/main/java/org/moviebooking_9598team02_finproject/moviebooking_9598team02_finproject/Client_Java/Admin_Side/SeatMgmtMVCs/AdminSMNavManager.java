@@ -21,7 +21,7 @@ public class AdminSMNavManager {
     private void initializeSeatMgmtView() throws IOException {
         seatModel = new SeatModel(currentAdminId);
         FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/AdminSeatMgmt.fxml")
+                getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/Admin/AdminSeatMgmt.fxml")
         );
         seatMgmtPane = loader.load();
         seatView = loader.getController();

@@ -1,8 +1,5 @@
 package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Customer_Side.SeatScheduleMVCs;
 
-import javafx.event.ActionEvent;
-import javafx.scene.control.Button;
-import javafx.scene.layout.GridPane;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.*;
 
 import java.util.*;
@@ -12,9 +9,13 @@ public class CustomerSeatSelectionController {
     private CustomerSeatSelectionView view;
     private CustomerSeatSelectionModel model;
     private SSNavigationManager ssNavigationManager;
+
     private ScheduleListSeat[] scheduleListSeatsData = new ScheduleListSeat[0];
+    private Seat[] allSeatsData = new Seat[0];
+    private Map<Integer, Seat> seatMap = new HashMap<>();
 
     private String[] selectedSeatKeys = new String[0];
+    private int currentScheduleId;
 
     public CustomerSeatSelectionController(CustomerSeatSelectionView view, CustomerSeatSelectionModel model, SSNavigationManager ssNavigationManager) {
         this.view = view;
@@ -22,95 +23,126 @@ public class CustomerSeatSelectionController {
         this.ssNavigationManager = ssNavigationManager;
     }
 
-    /**
-     * Manual initializer invoked by SSNavigationManager after construction.
-     * Wires buttons and loads data for the provided schedule.
-     */
     public void init(int scheduleId) {
-        Buttons();
+        this.currentScheduleId = scheduleId;
+        wireButtons();
         initializeData(scheduleId);
     }
 
     private void initializeData(int scheduleID) {
         try {
+            System.out.println("🔄 Loading seats for schedule ID: " + scheduleID);
+
+            // Load ALL seats from database (with their types)
+            allSeatsData = model.getAvailableSeats();
+            System.out.println("✅ Loaded " + allSeatsData.length + " total seats from database");
+
+            // Create map for quick lookup
+            seatMap.clear();
+            for (Seat seat : allSeatsData) {
+                seatMap.put(seat.seatId, seat);
+                System.out.println("   Seat " + seat.seatRow + seat.seatNumber +
+                        " | Type: " + seat.seatType +
+                        " | Price: ₱" + seat.seatPrice);
+            }
+
+            // Load schedule-specific availability
             scheduleListSeatsData = model.getAvailableSeats(scheduleID);
+            System.out.println("✅ Loaded " + scheduleListSeatsData.length + " schedule list seats");
+
+            for (ScheduleListSeat sls : scheduleListSeatsData) {
+                Seat seat = seatMap.get(sls.seatId);
+                if (seat != null) {
+                    System.out.println("   Schedule Seat " + seat.seatRow + seat.seatNumber +
+                            " | Status: " + sls.status);
+                }
+            }
+
             loadSeats();
+            showStatus("Seats loaded successfully. Select your seats and click Book.");
         } catch (Exception e) {
             showStatus("Error loading schedule: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
-    private void Buttons() {
+    private void wireButtons() {
         if (view == null) return;
-        if (view.getCancelButton() != null) {
-            view.getCancelButton().setOnAction(this::handleCancel);
-        }
-        if (view.getHomeButton() != null) {
-            view.getHomeButton().setOnAction(this::handleHome);
-        }
-        if (view.getBookButton() != null) {
-            view.getBookButton().setOnAction(this::handleBook);
-        }
+        view.setCancelButtonAction(() -> handleCancel());
+        view.setHomeButtonAction(() -> handleHome());
+        view.setBookButtonAction(() -> handleBook());
     }
 
     private void loadSeats() {
-        if (model == null || scheduleListSeatsData == null) {
+        if (model == null || scheduleListSeatsData == null || allSeatsData == null) {
             return;
         }
 
         try {
-            // Get all seats
-            Seat[] allSeats = model.getAvailableSeats();
-            
-            // Update seat buttons in the grid
-            if (view != null && view.getSeatGridPane() != null) {
-                updateSeatButtons(allSeats, scheduleListSeatsData);
-            }
-
-            showStatus("Seats loaded successfully");
+            updateSeatButtons();
+            showStatus("Seats loaded successfully. Select your seats.");
         } catch (Exception e) {
             showStatus("Error loading seats: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
-    private void updateSeatButtons(Seat[] allSeats, ScheduleListSeat[] scheduleListSeats) {
-        GridPane gridPane = view.getSeatGridPane();
-        if (gridPane == null) return;
+    private void updateSeatButtons() {
+        System.out.println("🎨 Updating seat button styles...");
 
-        // Iterate through all buttons in the grid and update their state
-        for (javafx.scene.Node node : gridPane.getChildren()) {
-            if (node instanceof Button) {
-                Button btn = (Button) node;
-                String buttonText = btn.getText();
-                
-                // Parse seat identifier (e.g., "A1", "B3")
-                if (buttonText != null && buttonText.length() >= 2) {
-                    String row = buttonText.substring(0, 1);
-                    int seatNum = Integer.parseInt(buttonText.substring(1));
-                    
-                    // Find matching seat
-                    Seat seat = findSeat(allSeats, row, seatNum);
-                    if (seat != null) {
-                        // Find matching ScheduleListSeat
-                        ScheduleListSeat sls = findScheduleListSeat(scheduleListSeats, seat.seatId);
-                        
-                        String key = row + seatNum;
-                        
-                        if (sls != null) {
-                            // Update button style based on availability
-                            if ("available".equalsIgnoreCase(sls.status)) {
-                                view.styleSeatAvailable(btn);
-                                btn.setDisable(false);
-                                btn.setOnAction(e -> handleSeatClick(key, seat, sls));
-                            } else {
-                                view.styleSeatTaken(btn);
-                                btn.setDisable(true);
-                            }
+        List<String> allSeatKeys = view.getAllSeatButtonKeys();
+
+        for (String seatKey : allSeatKeys) {
+            String row = seatKey.substring(0, 1);
+            int seatNum;
+            try {
+                seatNum = Integer.parseInt(seatKey.substring(1));
+            } catch (NumberFormatException e) {
+                continue;
+            }
+
+            // Find seat from database
+            Seat seat = findSeat(allSeatsData, row, seatNum);
+            if (seat != null) {
+                // Find schedule-specific availability
+                ScheduleListSeat sls = findScheduleListSeat(scheduleListSeatsData, seat.seatId);
+
+                if (sls != null) {
+                    System.out.println("   Button " + seatKey +
+                            " | Seat Type: " + seat.seatType +
+                            " | Status: " + sls.status);
+
+                    if ("available".equalsIgnoreCase(sls.status)) {
+                        // Available seat - show its type
+                        if ("vip".equalsIgnoreCase(seat.seatType)) {
+                            view.applySeatStyle(seatKey, "vip");
+                        } else if ("maintenance".equalsIgnoreCase(seat.seatType)) {
+                            view.applySeatStyle(seatKey, "maintenance");
+                        } else {
+                            view.applySeatStyle(seatKey, "available");
                         }
+                        view.enableSeatButton(seatKey, true);
+                        view.setSeatClickHandler(seatKey, () -> handleSeatClick(seatKey, seat, sls));
+
+                    } else if ("maintenance".equalsIgnoreCase(sls.status)) {
+                        view.applySeatStyle(seatKey, "maintenance");
+                        view.enableSeatButton(seatKey, false);
+
+                    } else {
+                        // Booked/taken
+                        view.applySeatStyle(seatKey, "taken");
+                        view.enableSeatButton(seatKey, false);
                     }
+                } else {
+                    System.out.println("   ⚠️ Button " + seatKey + " - No schedule list seat found!");
+                    view.enableSeatButton(seatKey, false);
                 }
+            } else {
+                System.out.println("   ⚠️ Button " + seatKey + " - No seat data found!");
             }
         }
+
+        System.out.println("✅ Seat button styles updated");
     }
 
     private Seat findSeat(Seat[] seats, String row, int seatNum) {
@@ -131,75 +163,59 @@ public class CustomerSeatSelectionController {
         return null;
     }
 
-    private ScheduleListSeat findScheduleListSeatByKey(ScheduleListSeat[] scheduleListSeats, String seatKey) {
+    private ScheduleListSeat findScheduleListSeatByKey(String seatKey) {
         if (seatKey == null || seatKey.length() < 2) return null;
         String row = seatKey.substring(0, 1);
-        int seatNum = Integer.parseInt(seatKey.substring(1));
-        
-        // First find the seat
+        int seatNum;
         try {
-            Seat[] allSeats = model.getAvailableSeats();
-            Seat seat = findSeat(allSeats, row, seatNum);
+            seatNum = Integer.parseInt(seatKey.substring(1));
+        } catch (NumberFormatException e) {
+            return null;
+        }
+
+        try {
+            Seat seat = findSeat(allSeatsData, row, seatNum);
             if (seat != null) {
-                return findScheduleListSeat(scheduleListSeats, seat.seatId);
+                return findScheduleListSeat(scheduleListSeatsData, seat.seatId);
             }
         } catch (Exception e) {
-            // Handle exception
+            e.printStackTrace();
         }
         return null;
     }
 
     private void handleSeatClick(String key, Seat seat, ScheduleListSeat sls) {
-        // Check if seat is already selected
         boolean isSelected = containsString(selectedSeatKeys, key);
-        
+
         if (isSelected) {
             // Deselect seat
             selectedSeatKeys = removeString(selectedSeatKeys, key);
-            Button button = ButtonByKey(key);
-            if (button != null) {
-                view.styleSeatAvailable(button);
+
+            // Restore original style based on seat type
+            if ("vip".equalsIgnoreCase(seat.seatType)) {
+                view.applySeatStyle(key, "vip");
+            } else {
+                view.applySeatStyle(key, "available");
             }
         } else {
-            // Select seat (highlight in yellow)
+            // Select seat
             selectedSeatKeys = addString(selectedSeatKeys, key);
-            Button button = ButtonByKey(key);
-            if (button != null) {
-                view.styleSeatSelected(button);
-            }
+            view.applySeatStyle(key, "selected");
         }
-        updateSelectionDisplay();
-    }
 
-    private Button ButtonByKey(String key) {
-        if (view == null || view.getSeatGridPane() == null) return null;
-        
-        GridPane gridPane = view.getSeatGridPane();
-        for (javafx.scene.Node node : gridPane.getChildren()) {
-            if (node instanceof Button) {
-                Button btn = (Button) node;
-                if (key.equals(btn.getText())) {
-                    return btn;
-                }
-            }
-        }
-        return null;
+        updateSelectionDisplay();
     }
 
     private boolean containsString(String[] array, String value) {
         if (array == null) return false;
         for (String s : array) {
-            if (value.equals(s)) {
-                return true;
-            }
+            if (value.equals(s)) return true;
         }
         return false;
     }
 
     private String[] addString(String[] array, String value) {
-        if (containsString(array, value)) {
-            return array;
-        }
+        if (containsString(array, value)) return array;
         String[] newArray = new String[array.length + 1];
         System.arraycopy(array, 0, newArray, 0, array.length);
         newArray[array.length] = value;
@@ -207,9 +223,7 @@ public class CustomerSeatSelectionController {
     }
 
     private String[] removeString(String[] array, String value) {
-        if (!containsString(array, value)) {
-            return array;
-        }
+        if (!containsString(array, value)) return array;
         String[] newArray = new String[array.length - 1];
         int index = 0;
         for (String s : array) {
@@ -228,48 +242,34 @@ public class CustomerSeatSelectionController {
             }
         }
         Collections.sort(selectedList);
-        
-        if (view != null) {
-            view.updateSelectedSeats(selectedList);
-            if (view.getCurrentSeatDetailsLabel() != null) {
-                if (selectedList.isEmpty()) {
-                    view.getCurrentSeatDetailsLabel().setText("No seats selected");
-                } else {
-                    view.getCurrentSeatDetailsLabel().setText("Selected: " + String.join(", ", selectedList));
-                }
-            }
-        }
+        view.updateSelectedSeatsDisplay(selectedList);
     }
 
-    public void handleCancel(ActionEvent event) {
+    public void handleCancel() {
         selectedSeatKeys = new String[0];
-        loadSeats(); // Reload to reset all buttons
+        loadSeats();
         updateSelectionDisplay();
         showStatus("Selection cancelled");
-        
-        if (ssNavigationManager != null) {
-            ssNavigationManager.goBack();
-        }
+        view.closeWindow();
     }
 
-    public void handleHome(ActionEvent event) {
-        if (ssNavigationManager != null) {
-            ssNavigationManager.goHome();
-        }
+    public void handleHome() {
+        view.closeWindow();
     }
 
-    public void handleBook(ActionEvent event) {
+    public void handleBook() {
         if (selectedSeatKeys == null || selectedSeatKeys.length == 0) {
             showStatus("Please select at least one seat");
             return;
         }
 
         try {
-            // Convert selected seats to scheduleListSeatIds using strings
+            // Map selected seat keys to schedule list seat IDs
             int[] scheduleListSeatIds = new int[selectedSeatKeys.length];
             int index = 0;
+
             for (String seatKey : selectedSeatKeys) {
-                ScheduleListSeat sls = findScheduleListSeatByKey(scheduleListSeatsData, seatKey);
+                ScheduleListSeat sls = findScheduleListSeatByKey(seatKey);
                 if (sls != null) {
                     scheduleListSeatIds[index++] = sls.scheduleListSeatId;
                 }
@@ -287,40 +287,76 @@ public class CustomerSeatSelectionController {
                 scheduleListSeatIds = resized;
             }
 
-            int bookingId = model.createBooking(scheduleListSeatIds);
-            showStatus("Booking created successfully! Booking ID: " + bookingId);
-            
-            // Clear selection after booking
-            selectedSeatKeys = new String[0];
-            updateSelectionDisplay();
-            loadSeats();
+            showStatus("Creating booking...");
 
-            if (ssNavigationManager != null) {
-                ssNavigationManager.onBookingSuccess(bookingId);
-            }
+            // Create booking through CORBA
+            int bookingId = model.createBooking(scheduleListSeatIds);
+            double totalPrice = calculateTotalPrice(scheduleListSeatIds);
+
+            showStatus("Booking created! ID: " + bookingId);
+            System.out.println("✅ Booking created: #" + bookingId + " | Total: ₱" + totalPrice);
+
+            // Get schedule details for payment window
+            ScheduleDetails scheduleDetails = model.getScheduleDetailsView();
+
+            // Calculate price breakdown
+            double ticketPrice = selectedSeatKeys.length > 0 ? totalPrice / selectedSeatKeys.length : 0;
+            double serviceFee = 0.0;
+
+            // Open payment window via view
+            view.openPaymentWindow(
+                    model.getCurrentCustomerId(),
+                    bookingId,
+                    totalPrice,
+                    scheduleDetails,
+                    selectedSeatKeys,
+                    ticketPrice,
+                    serviceFee
+            );
+
         } catch (Exception e) {
             showStatus("Error creating booking: " + e.getMessage());
+            e.printStackTrace();
         }
+    }
+
+    private double calculateTotalPrice(int[] scheduleListSeatIds) {
+        double total = 0.0;
+        try {
+            for (int slsId : scheduleListSeatIds) {
+                for (ScheduleListSeat sls : scheduleListSeatsData) {
+                    if (sls.scheduleListSeatId == slsId) {
+                        Seat seat = seatMap.get(sls.seatId);
+                        if (seat != null) {
+                            total += seat.seatPrice;
+                            System.out.println("   Adding seat price: ₱" + seat.seatPrice + " | Total: ₱" + total);
+                        }
+                        break;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        System.out.println("💰 Total booking price: ₱" + total);
+        return total;
     }
 
     private void showStatus(String message) {
-        if (view != null && view.getStatusMessageLabel() != null) {
-            view.getStatusMessageLabel().setText(message);
-            view.getStatusMessageLabel().setVisible(true);
+        if (view != null) {
+            view.showStatus(message);
         }
+        System.out.println("📢 Status: " + message);
     }
 
-    // Public method to initialize with schedule ID
     public void setScheduleId(int scheduleId) {
         initializeData(scheduleId);
     }
 
-    // Getter for view (used by SSNavigationManager)
     public CustomerSeatSelectionView getView() {
         return view;
     }
 
-    // Setter for view (used by SSNavigationManager)
     public void setView(CustomerSeatSelectionView view) {
         this.view = view;
     }

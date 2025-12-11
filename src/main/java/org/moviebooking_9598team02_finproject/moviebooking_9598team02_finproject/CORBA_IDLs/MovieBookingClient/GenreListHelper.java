@@ -32,7 +32,7 @@ abstract public class GenreListHelper
   {
     if (__typeCode == null)
     {
-      __typeCode = GenreHelper.type ();
+      __typeCode = org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.GenreHelper.type ();
       __typeCode = org.omg.CORBA.ORB.init ().create_sequence_tc (0, __typeCode);
       __typeCode = org.omg.CORBA.ORB.init ().create_alias_tc (GenreListHelper.id (), "GenreList", __typeCode);
     }

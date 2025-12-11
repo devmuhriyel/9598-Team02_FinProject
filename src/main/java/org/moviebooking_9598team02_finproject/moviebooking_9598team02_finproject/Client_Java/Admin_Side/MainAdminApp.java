@@ -16,7 +16,7 @@ public class MainAdminApp extends Application {
     @Override
     public void start(Stage primaryStage) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/AdminConnection.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/Admin/AdminConnection.fxml"));
             Pane connectionPane = loader.load();
             AdminParentView connectionView = loader.getController();
 

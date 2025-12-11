@@ -18,7 +18,7 @@ public class AdminPaymentNavManager {
     public Pane getPaymentMgmtView() {
         if (paymentViewPane == null) {
             try {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/AdminPaymentMgmt.fxml"));
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/Admin/AdminPaymentMgmt.fxml"));
                 paymentViewPane = loader.load();
                 AdminPaymentView view = loader.getController();
                 AdminPaymentModel model = new AdminPaymentModel();

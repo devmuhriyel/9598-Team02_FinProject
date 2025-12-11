@@ -1,106 +1,193 @@
 package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Customer_Side.MovieMVCs;
 
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Customer;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Customer_Side.SeatScheduleMVCs.CustomerSeatSelectionController;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Customer_Side.SeatScheduleMVCs.CustomerSeatSelectionModel;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Customer_Side.SeatScheduleMVCs.CustomerSeatSelectionView;
 
 import java.io.IOException;
 
 public class MovieNavigationManager {
 
-    private final int currentCustomerId;
-    private Pane movieBrowsePane; // The root pane of the loaded FXML
+    private Customer customer;
+    private Pane movieBrowsePane;
+    private Pane scheduleSelectionPane;
+    private Pane seatSelectionPane;
 
     private CustomerMovieController movieController;
     private CustomerMovieModel movieModel;
     private CustomerMovieView movieView;
 
-    // Reference to parent navigation (if needed)
-    private Object parentNavigationManager;
+    // Seat selection components
+    private Stage seatSelectionStage;
+    private CustomerSeatSelectionController seatController;
+    private CustomerSeatSelectionModel seatModel;
+    private CustomerSeatSelectionView seatView;
 
     public MovieNavigationManager(Customer customer) {
-        this.currentCustomerId = customer.customerId;
+        this.customer = customer;
     }
 
-    public MovieNavigationManager(int customerId) {
-        this.currentCustomerId = customerId;
-    }
-
-    private void initializeMovieBrowseView() throws IOException {
-        movieModel = new CustomerMovieModel(currentCustomerId);
-        movieView = new CustomerMovieView();
-        movieController = new CustomerMovieController(movieView, movieModel, this);
-
-        FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/CustomerMovieBrowse.fxml")
-        );
-
-        loader.setController(movieView);
-        movieBrowsePane = loader.load();
-
-        // Initialize the controller after the FXML is loaded
-        movieController.init();
-    }
-
+    /**
+     * Initialize and return the movie browse view with MVC wiring
+     */
     public Pane getMovieBrowseView() {
         if (movieBrowsePane == null) {
             try {
-                initializeMovieBrowseView();
+                System.out.println("🎬 Initializing Movie Browse MVC...");
+
+                // 1. Load FXML FIRST (this creates the View)
+                FXMLLoader loader = new FXMLLoader(
+                        getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/Customer/CustomerBrowseMovies.fxml")
+                );
+
+                movieBrowsePane = loader.load();
+                System.out.println("✅ FXML loaded");
+
+                // 2. Get the View from FXML loader
+                movieView = loader.getController();
+                System.out.println("✅ View obtained from FXML");
+
+                // 3. Create Model
+                movieModel = new CustomerMovieModel(customer.customerId);
+                System.out.println("✅ Model created");
+
+                // 4. Create Controller and pass View + Model + this manager
+                movieController = new CustomerMovieController(movieView, movieModel, this);
+                System.out.println("✅ Controller created");
+
+                // 5. NOW initialize the controller (wires buttons + loads data)
+                movieController.init();
+                System.out.println("✅ Controller initialized - all buttons wired!");
+
             } catch (IOException e) {
+                System.err.println("❌ ERROR loading Movie Browse:");
                 e.printStackTrace();
-                movieBrowsePane = new Pane(new javafx.scene.control.Label("Error loading Movie Browse View."));
+                movieBrowsePane = createErrorPane("Error loading Movie Browse View: " + e.getMessage());
             }
         }
         return movieBrowsePane;
     }
 
-    // ===== NAVIGATION METHODS =====
-
     /**
-     * Navigate to schedule selection for a specific movie
+     * Show schedule selection for a specific movie (currently not used)
      */
     public void showScheduleSelection(int movieId) {
-        // This would navigate to the schedule/seat selection view
-        // Implementation depends on your application structure
-        System.out.println("Navigating to schedule selection for movie ID: " + movieId);
+        System.out.println("📅 Showing schedule selection for movie ID: " + movieId);
 
-        // Example: If you have a SSNavigationManager for schedule/seat selection
-        // ssNavigationManager.showScheduleForMovie(movieId);
+        // TODO: Implement schedule selection view if needed
+        // For now, just show a message
+        if (movieView != null) {
+            movieView.showStatusMessage("Schedule selection coming soon for movie ID: " + movieId, false);
+        }
     }
 
     /**
-     * Go back to previous view
+     * Show seat selection for a specific schedule - FIXED VERSION
      */
-    public void goBack() {
-        // Implementation depends on your navigation stack
-        System.out.println("Going back to previous view");
+    public void showSeatSelection(int scheduleId) {
+        System.out.println("💺 Opening seat selection for schedule ID: " + scheduleId);
 
-        // Example: If you have a parent navigation manager
-        // if (parentNavigationManager != null) {
-        //     parentNavigationManager.goToPreviousView();
-        // }
+        try {
+            // Create new stage for seat selection (modal window)
+            seatSelectionStage = new Stage();
+            seatSelectionStage.setTitle("Select Your Seats - Schedule #" + scheduleId);
+            seatSelectionStage.initModality(Modality.APPLICATION_MODAL);
+
+            // Load FXML
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/Customer/CustomerSeatSelection.fxml")
+            );
+
+            Pane seatPane = loader.load();
+            seatView = loader.getController();
+
+            // Create Model
+            seatModel = new CustomerSeatSelectionModel(customer.customerId, scheduleId);
+
+            // Create Controller (pass null for navigation manager since we're using modal window)
+            seatController = new CustomerSeatSelectionController(seatView, seatModel, null);
+
+            // Initialize controller with schedule data
+            seatController.init(scheduleId);
+
+            // Setup stage
+            Scene scene = new Scene(seatPane, 1280, 720);
+            seatSelectionStage.setScene(scene);
+            seatSelectionStage.show();
+
+            System.out.println("✅ Seat selection window opened successfully!");
+
+        } catch (Exception e) {
+            System.err.println("❌ ERROR opening seat selection:");
+            e.printStackTrace();
+            if (movieView != null) {
+                movieView.showStatusMessage("Error opening seat selection: " + e.getMessage(), true);
+            }
+        }
     }
 
     /**
-     * Go to home/main menu
+     * Show payment window after booking
      */
-    public void goHome() {
-        // Implementation depends on your application structure
-        System.out.println("Going to home view");
+    public void showPayment(int bookingId, double totalAmount) {
+        System.out.println("💳 Opening payment for booking ID: " + bookingId);
 
-        // Example: If you have a main navigation manager
-        // if (parentNavigationManager != null) {
-        //     parentNavigationManager.showHomeView();
-        // }
+        try {
+            // Close seat selection window if open
+            if (seatSelectionStage != null) {
+                seatSelectionStage.close();
+            }
+
+            // TODO: Implement payment window
+            // For now, just show success message
+            if (movieView != null) {
+                movieView.showStatusMessage("Booking created! ID: " + bookingId + " | Amount: ₱" + totalAmount, false);
+            }
+
+        } catch (Exception e) {
+            System.err.println("❌ ERROR opening payment:");
+            e.printStackTrace();
+        }
     }
 
-    // ===== SETTERS FOR PARENT NAVIGATION =====
+    /**
+     * Return to customer home
+     */
+    public void returnToHome() {
+        System.out.println("🏠 Returning to customer home...");
+        // This should be handled by CustomerNavigationManager
+        // For now, just log
+    }
 
-    public void setParentNavigationManager(Object parentNavManager) {
-        this.parentNavigationManager = parentNavManager;
+    /**
+     * Create an error pane when loading fails
+     */
+    private Pane createErrorPane(String errorMessage) {
+        Pane errorPane = new Pane();
+        errorPane.setStyle("-fx-background-color: #1A1A1A;");
+
+        javafx.scene.control.Label errorLabel = new javafx.scene.control.Label("❌ " + errorMessage);
+        errorLabel.setStyle("-fx-text-fill: #FF6B6B; -fx-font-size: 16px; -fx-font-weight: bold;");
+        errorLabel.setLayoutX(50);
+        errorLabel.setLayoutY(50);
+        errorLabel.setWrapText(true);
+        errorLabel.setMaxWidth(600);
+
+        errorPane.getChildren().add(errorLabel);
+        return errorPane;
     }
 
     // ===== GETTERS =====
+
+    public Customer getCustomer() {
+        return customer;
+    }
 
     public CustomerMovieController getMovieController() {
         return movieController;

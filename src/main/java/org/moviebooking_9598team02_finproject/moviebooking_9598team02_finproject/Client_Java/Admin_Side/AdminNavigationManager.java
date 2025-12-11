@@ -56,14 +56,13 @@ public class AdminNavigationManager {
 
         this.seatNavManager = new AdminSMNavManager(admin);
         this.paymentNavManager = new AdminPaymentNavManager(admin);
-        this.bookingNavManager = new AdminBookingNavManager(admin);
 
         initializeHomeView();
     }
 
     private void initializeHomeView() {
         try {
-            FXMLLoader homeLoader = new FXMLLoader(getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/AdminHome.fxml"));
+            FXMLLoader homeLoader = new FXMLLoader(getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/Admin/AdminHome.fxml"));
             homePane = homeLoader.load();
             homeView = homeLoader.getController();
             AdminHomeModel homeModel = new AdminHomeModel();
@@ -124,8 +123,24 @@ public class AdminNavigationManager {
     }
 
     public void showBookingMgmtView() {
-        Pane bookingViewContent = bookingNavManager.getBookingMgmtView();
-        loadContentPane(bookingViewContent);
+        if (bookingMgmtPane == null) {
+            try {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/Admin/AdminBookingMgmt.fxml"));
+                bookingMgmtPane = loader.load();
+
+                // Initialize booking nav manager if this section has sub-views
+                StackPane bookingContainer = (StackPane) bookingMgmtPane.lookup("#bookingSubContainer");
+                if (bookingContainer != null) {
+                    //Put stack pane of Booking MVCs here
+//                    bookingNavManager = new AdminBookingNavManager(bookingContainer);
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+                bookingMgmtPane = createPlaceholder("Booking Management");
+            }
+        }
+        loadContentPane(bookingMgmtPane);
     }
 
     public void showCustomerMgmtView() {

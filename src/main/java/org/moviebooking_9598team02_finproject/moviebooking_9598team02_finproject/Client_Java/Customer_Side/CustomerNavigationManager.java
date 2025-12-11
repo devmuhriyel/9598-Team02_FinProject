@@ -7,12 +7,13 @@ import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Customer;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Customer_Side.AuthenticationMVCs.CustomerAuthNavManager;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Customer_Side.MovieMVCs.MovieNavigationManager;
 
 import java.io.IOException;
 
 /**
  * CustomerNavigationManager - Manages customer home screen and all main sections
- * FIXED VERSION - Matches CustomerHome.fxml navigation structure
+ * UPDATED VERSION - Implements proper MVC navigation like Admin
  */
 public class CustomerNavigationManager {
     private Stage homeStage;
@@ -30,16 +31,16 @@ public class CustomerNavigationManager {
     private Pane myProfilePane;
     private Pane settingsPane;
 
-    // Sub-navigation managers (add as needed)
-    // private CustomerMovieNavManager movieNavManager;
-    // private CustomerBookingNavManager bookingNavManager;
+    // Sub-navigation managers
+    private MovieNavigationManager movieNavManager;
+    // Add other nav managers as needed (BookingNavManager, etc.)
 
     public CustomerNavigationManager(Stage homeStage, CustomerAuthNavManager authNavManager, Customer customer) {
         this.homeStage = homeStage;
         this.authNavManager = authNavManager;
         this.customer = customer;
 
-        // Initialize CORBA connection if needed
+        // Initialize CORBA connection
         CustomerParentModel.initializeCORBAConnection(new String[]{});
 
         initializeHomeView();
@@ -50,7 +51,7 @@ public class CustomerNavigationManager {
     private void initializeHomeView() {
         try {
             FXMLLoader homeLoader = new FXMLLoader(
-                    getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/CustomerHome.fxml")
+                    getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/Customer/CustomerHome.fxml")
             );
             homePane = homeLoader.load();
             homeView = homeLoader.getController();
@@ -73,28 +74,25 @@ public class CustomerNavigationManager {
     // ===== SECTION NAVIGATION METHODS =====
 
     /**
-     * Show Browse Movies view
+     * Show Browse Movies view - Uses MovieNavigationManager
      */
     public void showBrowseMoviesView() {
         if (browseMoviesPane == null) {
             try {
-                FXMLLoader loader = new FXMLLoader(
-                        getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/CustomerBrowseMovies.fxml")
-                );
-                browseMoviesPane = loader.load();
-                System.out.println("✅ Browse Movies view loaded");
+                // Initialize movie nav manager with proper MVC setup
+                movieNavManager = new MovieNavigationManager(customer);
+                browseMoviesPane = movieNavManager.getMovieBrowseView();
 
-                // Initialize movie nav manager if this section has sub-views
-                StackPane movieContainer = (StackPane) browseMoviesPane.lookup("#movieSubContainer");
-                if (movieContainer != null) {
-                    // TODO: Initialize CustomerMovieNavManager when implemented
-                    // movieNavManager = new CustomerMovieNavManager(movieContainer, customer);
+                if (browseMoviesPane == null) {
+                    System.err.println("ERROR: Movie Browse returned null pane!");
+                    browseMoviesPane = createPlaceholder("Browse Movies", "Error Loading");
+                } else {
+                    System.out.println("✅ Browse Movies loaded successfully with MVC wiring");
                 }
-
-            } catch (IOException e) {
-                System.err.println("⚠️ Browse Movies FXML not found, creating placeholder");
+            } catch (Exception e) {
+                System.err.println("❌ ERROR initializing Browse Movies:");
                 e.printStackTrace();
-                browseMoviesPane = createPlaceholder("Browse Movies", "Explore available films and showtimes");
+                browseMoviesPane = createPlaceholder("Browse Movies", "Error Loading");
             }
         }
         loadContentPane(browseMoviesPane);
@@ -111,13 +109,6 @@ public class CustomerNavigationManager {
                 );
                 myBookingsPane = loader.load();
                 System.out.println("✅ My Bookings view loaded");
-
-                // Initialize booking nav manager if this section has sub-views
-                StackPane bookingContainer = (StackPane) myBookingsPane.lookup("#bookingSubContainer");
-                if (bookingContainer != null) {
-                    // TODO: Initialize CustomerBookingNavManager when implemented
-                    // bookingNavManager = new CustomerBookingNavManager(bookingContainer, customer);
-                }
 
             } catch (IOException e) {
                 System.err.println("⚠️ My Bookings FXML not found, creating placeholder");
@@ -156,7 +147,7 @@ public class CustomerNavigationManager {
         if (myProfilePane == null) {
             try {
                 FXMLLoader loader = new FXMLLoader(
-                        getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/CustomerProfile.fxml")
+                        getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/Customer/CustomerProfile.fxml")
                 );
                 myProfilePane = loader.load();
                 System.out.println("✅ My Profile view loaded");
@@ -241,7 +232,7 @@ public class CustomerNavigationManager {
         descLabel.setLayoutY(100);
 
         // Coming Soon message
-        javafx.scene.control.Label statusLabel = new javafx.scene.control.Label("📝 Coming Soon...");
+        javafx.scene.control.Label statusLabel = new javafx.scene.control.Label("🔨 Coming Soon...");
         statusLabel.setStyle("-fx-text-fill: #CCCCCC; -fx-font-size: 14px; -fx-font-style: italic;");
         statusLabel.setLayoutX(50);
         statusLabel.setLayoutY(140);
@@ -262,5 +253,9 @@ public class CustomerNavigationManager {
 
     public CustomerHomeController getHomeController() {
         return homeController;
+    }
+
+    public MovieNavigationManager getMovieNavManager() {
+        return movieNavManager;
     }
 }

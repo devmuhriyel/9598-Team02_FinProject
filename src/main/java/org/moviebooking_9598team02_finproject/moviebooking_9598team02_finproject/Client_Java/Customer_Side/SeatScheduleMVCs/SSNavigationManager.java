@@ -34,7 +34,7 @@ public class SSNavigationManager {
 
         // Load FXML - View will be injected by FXML
         FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/CustomerSeatSelection.fxml")
+                getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/Customer/CustomerSeatSelection.fxml")
         );
 
         // Load the FXML (this will create and inject the View)
