@@ -23,7 +23,7 @@ public class AdminMMNavManager {
     }
 
     private void initializeMovieMgmtView() throws IOException {
-        System.out.println("🎬 Initializing Movie Management MVC...");
+        System.out.println("ðŸŽ¬ Initializing Movie Management MVC...");
 
         // 1. Load FXML FIRST (this creates the View)
         FXMLLoader loader = new FXMLLoader(
@@ -31,23 +31,23 @@ public class AdminMMNavManager {
         );
 
         movieMgmtPane = loader.load();
-        System.out.println("✅ FXML loaded");
+        System.out.println("âœ… FXML loaded");
 
         // 2. Get the View from FXML loader
         movieView = loader.getController();
-        System.out.println("✅ View obtained from FXML");
+        System.out.println("âœ… View obtained from FXML");
 
         // 3. Create Model
         movieModel = new MovieModel(adminService, currentAdminId);
-        System.out.println("✅ Model created");
+        System.out.println("âœ… Model created");
 
         // 4. Create Controller and pass View + Model
         movieController = new MovieController(movieModel, movieView, currentAdminId);
-        System.out.println("✅ Controller created");
+        System.out.println("âœ… Controller created");
 
         // 5. NOW initialize the controller (wires buttons + loads data)
         movieController.initialize();
-        System.out.println("✅ Controller initialized - all buttons wired!");
+        System.out.println("âœ… Controller initialized - all buttons wired!");
     }
 
     public Pane getMovieMgmtView() {
@@ -55,7 +55,7 @@ public class AdminMMNavManager {
             try {
                 initializeMovieMgmtView();
             } catch (IOException e) {
-                System.err.println("❌ ERROR loading Movie Management:");
+                System.err.println("âŒ ERROR loading Movie Management:");
                 e.printStackTrace();
                 movieMgmtPane = new Pane(new javafx.scene.control.Label("Error loading Movie Management View."));
             }

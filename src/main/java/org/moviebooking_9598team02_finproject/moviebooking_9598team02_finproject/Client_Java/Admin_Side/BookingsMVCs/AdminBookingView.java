@@ -4,6 +4,7 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Booking;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Movie;
 
 public class AdminBookingView {
 
@@ -18,7 +19,7 @@ public class AdminBookingView {
 
     @FXML private ComboBox<String> comboStatus;
     @FXML private ComboBox<String> comboSchedule;
-    @FXML private ComboBox<String> comboMovie;
+    @FXML private ComboBox<Movie> comboMovie;
     @FXML private Button btnClearFilters;
 
     public void setBookingList(ObservableList<Booking> list) {
@@ -45,6 +46,6 @@ public class AdminBookingView {
     public Button getBtnRefresh() { return btnRefresh; }
     public ComboBox<String> getComboStatus() { return comboStatus; }
     public ComboBox<String> getComboSchedule() { return comboSchedule; }
-    public ComboBox<String> getComboMovie() { return comboMovie; }
+    public ComboBox<Movie> getComboMovie() { return comboMovie; }
     public Button getBtnClearFilters() { return btnClearFilters; }
 }

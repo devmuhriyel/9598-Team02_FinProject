@@ -54,7 +54,7 @@ abstract public class MovieListHelper
 
   public static void write (org.omg.CORBA.portable.OutputStream ostream, Movie[] value)
   {
-      org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.MovieListHelper.write (ostream, value);
+    org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.MovieListHelper.write (ostream, value);
   }
 
 }

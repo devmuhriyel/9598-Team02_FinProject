@@ -44,6 +44,22 @@ public class MovieModel extends AdminParentModel {
     }
 
     /**
+     * Add a single genre to a movie
+     */
+    public void addGenreToMovie(int movieId, int genreId)
+            throws AuthenticationException, MovieNotFoundException {
+        adminService.addGenreToMovie(currentAdminId, movieId, genreId);
+    }
+
+    /**
+     * Remove a single genre from a movie
+     */
+    public void removeGenreFromMovie(int movieId, int genreId)
+            throws AuthenticationException, MovieNotFoundException {
+        adminService.removeGenreFromMovie(currentAdminId, movieId, genreId);
+    }
+
+    /**
      * Update movie description
      */
     public void updateMovieDescription(int movieId, String newDescription)
@@ -88,6 +104,38 @@ public class MovieModel extends AdminParentModel {
     public Genre[] getMovieGenres(int movieId)
             throws AuthenticationException, MovieNotFoundException {
         return adminService.getMovieGenres(currentAdminId, movieId);
+    }
+
+    // === SCHEDULE MANAGEMENT METHODS ===
+
+    /**
+     * Create a new movie schedule (screening time slot)
+     * @param screeningDate Date in format "yyyy-MM-dd"
+     * @param screeningTime Time in format "HH:mm"
+     * @return the newly created movie schedule ID
+     */
+    public int createMovieSchedule(String screeningDate, String screeningTime)
+            throws AuthenticationException, InvalidInputException {
+        return adminService.createMovieSchedule(currentAdminId, screeningDate, screeningTime);
+    }
+
+    /**
+     * Assign a movie to a schedule (creates Schedule entry)
+     * @param movieId The movie to assign
+     * @param movieScheduleId The schedule time slot
+     * @return the newly created schedule ID
+     */
+    public int assignMovieToSchedule(int movieId, int movieScheduleId)
+            throws AuthenticationException, MovieNotFoundException, ScheduleNotFoundException {
+        return adminService.assignMovieToSchedule(currentAdminId, movieId, movieScheduleId);
+    }
+
+    /**
+     * Get all schedules for a specific movie
+     */
+    public Schedule[] getSchedulesByMovie(int movieId)
+            throws AuthenticationException, MovieNotFoundException {
+        return adminService.getSchedulesByMovie(currentAdminId, movieId);
     }
 
     // === GENRE MANAGEMENT METHODS ===

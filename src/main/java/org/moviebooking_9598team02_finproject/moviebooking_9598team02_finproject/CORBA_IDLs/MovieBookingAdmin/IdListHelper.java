@@ -46,13 +46,13 @@ abstract public class IdListHelper
   public static int[] read (org.omg.CORBA.portable.InputStream istream)
   {
     int value[] = null;
-    value = IdListHelper.read (istream);
+    value = org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.IdListHelper.read (istream);
     return value;
   }
 
   public static void write (org.omg.CORBA.portable.OutputStream ostream, int[] value)
   {
-    IdListHelper.write (ostream, value);
+      org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.IdListHelper.write (ostream, value);
   }
 
 }

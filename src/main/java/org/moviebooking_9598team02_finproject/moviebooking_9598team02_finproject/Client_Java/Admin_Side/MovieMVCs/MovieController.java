@@ -1,21 +1,21 @@
 package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.MovieMVCs;
 
-import javafx.stage.FileChooser;
-import javafx.stage.Stage;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.*;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * MovieController - Controller for Movie Management
- * Handles all business logic and file uploads
+ * MovieController - NO JavaFX IMPORTS
+ * All JavaFX handling is done in View
  */
 public class MovieController {
 
@@ -30,7 +30,7 @@ public class MovieController {
     private List<Movie> filteredMoviesList = new ArrayList<>();
 
     // Pagination
-    private static final int MOVIES_PER_PAGE = 8; // 2 rows x 4 columns
+    private static final int MOVIES_PER_PAGE = 8;
     private int currentPage = 1;
     private int totalPages = 1;
 
@@ -38,103 +38,104 @@ public class MovieController {
     private Movie currentlySelectedMovie = null;
     private int selectedMovieId = -1;
 
-    // Image upload tracking
-    private String selectedImagePath = null;
-    private String uploadedImageURL = null;
-
     // View states
     private enum ViewState { GRID, ADD, EDIT }
     private ViewState currentViewState = ViewState.GRID;
 
     // Image storage directory
-    private static final String IMAGE_DIRECTORY = "resources/Images/MovieImage/";
-
-    // ===== CONSTRUCTOR =====
+    private static final String IMAGE_DIRECTORY = "Images/MovieImage/";
 
     public MovieController(MovieModel model, MovieView view, int adminId) {
         this.model = model;
         this.view = view;
         this.currentAdminId = adminId;
-
         System.out.println("🎬 MovieController created (admin ID: " + adminId + ")");
     }
 
-    // ===== PUBLIC INITIALIZATION METHOD =====
-
-    /**
-     * Called by AdminMMNavManager AFTER FXML is loaded
-     * This is when we wire up all the buttons
-     */
     public void initialize() {
-        System.out.println("🔧 MovieController.initialize() called - wiring buttons now");
+        System.out.println("🔧 MovieController.initialize() called");
 
-        // Verify FXML elements are loaded
         if (view.getBtnAddNewMovie() == null) {
             System.err.println("❌ CRITICAL ERROR: FXML elements not loaded!");
             return;
         }
 
-        initializeComboBoxes();
-        initializeButtons();
-        showGridViewInternal();
+        // IMPORTANT: Load data FIRST before showing views
         loadInitialData();
+
+        // Then setup UI
+        initializeButtons();
+        setupLiveSearch();
+        showGridViewInternal();
 
         System.out.println("✅ MovieController fully initialized");
     }
-
-    // ===== INITIALIZATION =====
 
     private void initializeButtons() {
         System.out.println("🔘 Wiring buttons...");
 
         // Navigation
         view.getBtnAddNewMovie().setOnAction(event -> handleAddNewMovieClick());
-        view.getBtnEdit().setOnAction(event -> handleEditClick());
         view.getBtnBackToGrid().setOnAction(event -> handleBackToGridClick());
         view.getBtnBackToGridFromEdit().setOnAction(event -> handleBackToGridFromEditClick());
-
-        // Search
-        view.getBtnSearch().setOnAction(event -> handleSearchClick());
-        view.getBtnFilter().setOnAction(event -> handleFilterClick());
 
         // Pagination
         view.getBtnPreviousPage().setOnAction(event -> handlePreviousPageClick());
         view.getBtnNextPage().setOnAction(event -> handleNextPageClick());
 
         // CRUD
-        view.getBtnSaveMovie().setOnAction(event -> handleSaveMovieClick());
+        if (view.getBtnAddMovie() != null) {
+            view.getBtnAddMovie().setOnAction(event -> handleAddMovieClick());
+        }
+
         view.getBtnUpdateMovie().setOnAction(event -> handleUpdateMovieClick());
         view.getBtnDeleteMovie().setOnAction(event -> handleDeleteMovieClick());
         view.getBtnClearFields().setOnAction(event -> handleClearFieldsClick());
 
-        // 🆕 Image Upload Button
-        if (view.getBtnBrowsePoster() != null) {
-            view.getBtnBrowsePoster().setOnAction(event -> handleBrowsePosterClick());
-            view.getBtnBrowsePoster().setVisible(true);
-            view.getBtnBrowsePoster().setManaged(true);
+        // Schedule management
+        if (view.getBtnManageSchedules() != null) {
+            view.getBtnManageSchedules().setOnAction(event -> handleManageSchedulesClick());
         }
 
         System.out.println("✅ All buttons wired successfully");
     }
 
-    private void initializeComboBoxes() {
-        if (view.getRatingComboBox() == null || view.getStatusComboBox() == null) {
-            System.err.println("❌ ERROR: ComboBoxes not loaded yet!");
+    /**
+     * Setup live search - filter while typing
+     */
+    private void setupLiveSearch() {
+        if (view.getSearchField() != null) {
+            view.getSearchField().textProperty().addListener((observable, oldValue, newValue) -> {
+                handleLiveSearch(newValue.trim());
+            });
+            System.out.println("✅ Live search configured");
+        }
+    }
+
+    private void handleLiveSearch(String searchTerm) {
+        if (searchTerm.isEmpty()) {
+            System.out.println("🔄 Search blank - refreshing from database");
+            loadAllMovies();
             return;
         }
 
-        // Rating 1-10
-        List<Integer> ratings = new ArrayList<>();
-        for (int i = 1; i <= 10; i++) {
-            ratings.add(i);
+        searchTerm = searchTerm.toLowerCase();
+        String finalSearchTerm = searchTerm;
+
+        filteredMoviesList = allMoviesList.stream()
+                .filter(movie ->
+                        movie.movieTitle.toLowerCase().contains(finalSearchTerm) ||
+                                String.valueOf(movie.movieId).contains(finalSearchTerm))
+                .collect(Collectors.toList());
+
+        currentPage = 1;
+        updateMovieGrid();
+
+        if (filteredMoviesList.isEmpty()) {
+            view.showStatusMessage("No movies found matching '" + finalSearchTerm + "'", false);
+        } else {
+            view.showStatusMessage("Found " + filteredMoviesList.size() + " movie(s)", false);
         }
-        view.getRatingComboBox().getItems().addAll(ratings);
-
-        // Status
-        List<String> statuses = Arrays.asList("Now Showing", "Coming Soon", "Ended");
-        view.getStatusComboBox().getItems().addAll(statuses);
-
-        System.out.println("✅ ComboBoxes initialized");
     }
 
     private void loadInitialData() {
@@ -151,8 +152,6 @@ public class MovieController {
         view.clearAllFields();
         currentlySelectedMovie = null;
         selectedMovieId = -1;
-        selectedImagePath = null;
-        uploadedImageURL = null;
         System.out.println("📊 Switched to Grid View");
     }
 
@@ -160,31 +159,24 @@ public class MovieController {
         currentViewState = ViewState.ADD;
         view.showAddView();
         view.clearAllFields();
-        currentlySelectedMovie = null;
-        selectedMovieId = -1;
-        selectedImagePath = null;
-        uploadedImageURL = null;
 
-        // Show browse button
-        if (view.getBtnBrowsePoster() != null) {
-            view.getBtnBrowsePoster().setVisible(true);
-            view.getBtnBrowsePoster().setManaged(true);
+        // IMPORTANT: Clear genre selections for ADD mode
+        view.clearGenreSelection();
+
+        // Reset schedule date to today
+        if (view.getScheduleDatePicker() != null) {
+            view.getScheduleDatePicker().setValue(LocalDate.now());
         }
 
-        System.out.println("➕ Switched to Add View");
+        currentlySelectedMovie = null;
+        selectedMovieId = -1;
+        System.out.println("➕ Switched to Add View - all genres unchecked");
     }
 
     private void showEditViewInternal(Movie movie) {
         currentViewState = ViewState.EDIT;
         view.showEditView();
         populateFieldsWithMovie(movie);
-
-        // Show browse button
-        if (view.getBtnBrowsePoster() != null) {
-            view.getBtnBrowsePoster().setVisible(true);
-            view.getBtnBrowsePoster().setManaged(true);
-        }
-
         System.out.println("✏️ Switched to Edit View - Movie ID: " + movie.movieId);
     }
 
@@ -194,7 +186,7 @@ public class MovieController {
         try {
             Genre[] allGenres = model.getAllGenres();
             if (allGenres == null || allGenres.length == 0) {
-                view.showStatusMessage("No genres found. Please add genres first.", true);
+                view.showWarningAlert("No Genres Found", "Please add genres first before creating movies.");
                 return;
             }
 
@@ -206,15 +198,15 @@ public class MovieController {
                 genreNames.add(genre.genreName);
             }
 
-            view.getGenreComboBox().getItems().clear();
-            view.getGenreComboBox().getItems().addAll(genreNames);
-            System.out.println("✅ Loaded " + allGenres.length + " genres");
+            view.populateGenreList(genreNames);
+
+            System.out.println("✅ Loaded " + allGenres.length + " genres: " + genreNames);
 
         } catch (AuthenticationException e) {
-            view.showStatusMessage("Error: Authentication failed. Please log in again.", true);
-            System.err.println("❌ Authentication error loading genres");
+            view.showErrorAlert("Authentication Error", "Session expired. Please log in again.");
+            e.printStackTrace();
         } catch (Exception e) {
-            view.showStatusMessage("Error loading genres: " + e.getMessage(), true);
+            view.showErrorAlert("Error Loading Genres", "Failed to load genres: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -226,82 +218,62 @@ public class MovieController {
                 allMoviesList.clear();
                 filteredMoviesList.clear();
                 updateMovieGrid();
-                view.showStatusMessage("No movies found in the system.", false);
+                view.showStatusMessage("No movies found. Click '+ Add Movie' to create one.", false);
                 return;
             }
 
-            movieDataMap.clear();
-            allMoviesList.clear();
-
-            for (Movie movie : allMovies) {
-                movieDataMap.put(movie.movieId, movie);
-                allMoviesList.add(movie);
-            }
-
+            allMoviesList = new ArrayList<>(Arrays.asList(allMovies));
             filteredMoviesList = new ArrayList<>(allMoviesList);
+
+            allMoviesList.forEach(movie -> movieDataMap.put(movie.movieId, movie));
+
             currentPage = 1;
             updateMovieGrid();
 
+            view.showStatusMessage("✅ Loaded " + allMovies.length + " movies", false);
             System.out.println("✅ Loaded " + allMovies.length + " movies");
 
         } catch (AuthenticationException e) {
-            view.showStatusMessage("Error: Authentication failed. Please log in again.", true);
-            System.err.println("❌ Authentication error loading movies");
+            view.showErrorAlert("Authentication Error", "Session expired. Please log in again.");
+            e.printStackTrace();
         } catch (Exception e) {
-            view.showStatusMessage("Error loading movies: " + e.getMessage(), true);
+            view.showErrorAlert("Error Loading Movies", "Failed to load movies: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
-    // ===== MOVIE GRID RENDERING =====
-
     private void updateMovieGrid() {
         view.clearMovieGrid();
 
-        // Calculate pagination
+        if (filteredMoviesList.isEmpty()) {
+            view.showStatusMessage("No movies to display.", false);
+            view.updatePageLabel(0);
+            view.setPaginationButtons(false, false);
+            return;
+        }
+
         totalPages = (int) Math.ceil((double) filteredMoviesList.size() / MOVIES_PER_PAGE);
-        if (totalPages == 0) totalPages = 1;
         if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
 
-        // Update page label
-        view.updatePageLabel(currentPage);
+        int startIdx = (currentPage - 1) * MOVIES_PER_PAGE;
+        int endIdx = Math.min(startIdx + MOVIES_PER_PAGE, filteredMoviesList.size());
 
-        // Enable/disable pagination buttons
-        view.setPaginationButtons(currentPage > 1, currentPage < totalPages);
+        int col = 0, row = 0;
+        for (int i = startIdx; i < endIdx; i++) {
+            Movie movie = filteredMoviesList.get(i);
+            String genres = getGenreNamesForMovie(movie.movieId);
 
-        // Get movies for current page
-        int startIndex = (currentPage - 1) * MOVIES_PER_PAGE;
-        int endIndex = Math.min(startIndex + MOVIES_PER_PAGE, filteredMoviesList.size());
-
-        List<Movie> moviesOnPage = filteredMoviesList.subList(startIndex, endIndex);
-
-        // Create cards (2 rows x 4 columns)
-        int row = 0;
-        int col = 0;
-
-        for (Movie movie : moviesOnPage) {
-            String genreNames = getGenreNamesForMovie(movie.movieId);
-
-            final int movieId = movie.movieId;
-            final Movie currentMovie = movie;
-
-            Runnable clickAction = () -> {
-                currentlySelectedMovie = currentMovie;
-                selectedMovieId = movieId;
-                showEditViewInternal(currentMovie);
-            };
-
-            // View creates and adds the card with poster image
-            view.createAndAddMovieCard(
-                    movie.movieId,
+            // Create card and add to grid (card is Object type to avoid JavaFX imports)
+            Object card = view.createMovieCard(
                     movie.movieTitle,
-                    genreNames,
+                    genres,
                     movie.movieRating,
-                    movie.moviePosterURL, // Pass poster URL
-                    clickAction,
-                    col,
-                    row
+                    movie.moviePosterURL,
+                    () -> handleMovieCardClick(movie)
             );
+
+            view.addCardToGrid(card, col, row);
 
             col++;
             if (col >= 4) {
@@ -310,74 +282,36 @@ public class MovieController {
             }
         }
 
-        System.out.println("📊 Grid updated: Page " + currentPage + "/" + totalPages +
-                " (" + moviesOnPage.size() + " movies)");
+        view.updatePageLabel(currentPage);
+        view.setPaginationButtons(currentPage > 1, currentPage < totalPages);
+
+        System.out.println("📊 Grid updated: Page " + currentPage + "/" + totalPages);
     }
 
     private String getGenreNamesForMovie(int movieId) {
         try {
             Genre[] genres = model.getMovieGenres(movieId);
-            if (genres == null || genres.length == 0) {
-                return "N/A";
-            }
+            if (genres == null || genres.length == 0) return "No genres";
+
             return Arrays.stream(genres)
                     .map(g -> g.genreName)
                     .collect(Collectors.joining(", "));
         } catch (Exception e) {
-            return "Error";
+            return "Unknown";
         }
     }
 
-    // ===== IMAGE UPLOAD HANDLING =====
-
-    private void handleBrowsePosterClick() {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Select Movie Poster");
-        fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif")
-        );
-
-        // Get current stage
-        Stage stage = (Stage) view.getPosterUrlInput().getScene().getWindow();
-        File selectedFile = fileChooser.showOpenDialog(stage);
-
-        if (selectedFile != null) {
-            selectedImagePath = selectedFile.getAbsolutePath();
-            view.getPosterUrlInput().setText(selectedFile.getName());
-            view.showStatusMessage("Image selected: " + selectedFile.getName(), false);
-            System.out.println("🖼️ Selected image: " + selectedImagePath);
-        }
-    }
-
-    private String uploadImage() throws IOException {
-        if (selectedImagePath == null || selectedImagePath.isEmpty()) {
-            return null;
-        }
-
-        // Create directory if it doesn't exist
-        File directory = new File(IMAGE_DIRECTORY);
-        if (!directory.exists()) {
-            directory.mkdirs();
-        }
-
-        // Generate unique filename
-        String extension = selectedImagePath.substring(selectedImagePath.lastIndexOf("."));
-        String newFileName = "movie_" + System.currentTimeMillis() + extension;
-        String destinationPath = IMAGE_DIRECTORY + newFileName;
-
-        // Copy file
-        Path source = Paths.get(selectedImagePath);
-        Path destination = Paths.get(destinationPath);
-        Files.copy(source, destination, StandardCopyOption.REPLACE_EXISTING);
-
-        System.out.println("✅ Image uploaded: " + destinationPath);
-        return destinationPath;
-    }
-
-    // ===== EVENT HANDLERS =====
+    // ===== BUTTON HANDLERS =====
 
     private void handleAddNewMovieClick() {
         showAddViewInternal();
+    }
+
+    private void handleMovieCardClick(Movie movie) {
+        currentlySelectedMovie = movie;
+        selectedMovieId = movie.movieId;
+        System.out.println("🎬 Movie card clicked: " + movie.movieTitle + " (ID: " + movie.movieId + ")");
+        showEditViewInternal(movie);
     }
 
     private void handleBackToGridClick() {
@@ -392,7 +326,6 @@ public class MovieController {
         if (currentPage > 1) {
             currentPage--;
             updateMovieGrid();
-            System.out.println("⬅️ Page " + currentPage);
         }
     }
 
@@ -400,210 +333,314 @@ public class MovieController {
         if (currentPage < totalPages) {
             currentPage++;
             updateMovieGrid();
-            System.out.println("➡️ Page " + currentPage);
         }
     }
 
-    private void handleSearchClick() {
-        String searchText = view.getSearchField().getText().trim();
+    private String uploadImage() throws IOException {
+        String selectedImagePath = view.getSelectedImagePath();
 
-        if (searchText.isEmpty()) {
-            filteredMoviesList = new ArrayList<>(allMoviesList);
-        } else {
-            filteredMoviesList = allMoviesList.stream()
-                    .filter(movie ->
-                            movie.movieTitle.toLowerCase().contains(searchText.toLowerCase()) ||
-                                    String.valueOf(movie.movieId).equals(searchText))
-                    .collect(Collectors.toList());
+        if (selectedImagePath == null || selectedImagePath.isEmpty()) {
+            return "";
         }
 
-        currentPage = 1;
-        updateMovieGrid();
+        Path sourcePath = Paths.get(selectedImagePath);
+        String fileName = System.currentTimeMillis() + "_" + sourcePath.getFileName().toString();
 
-        System.out.println("🔍 Search: '" + searchText + "' - Found " + filteredMoviesList.size() + " results");
+        Path targetDir = Paths.get("src/main/resources/" + IMAGE_DIRECTORY);
+        Files.createDirectories(targetDir);
+
+        Path targetPath = targetDir.resolve(fileName);
+        Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
+
+        return IMAGE_DIRECTORY + fileName;
     }
 
-    private void handleFilterClick() {
-        view.showStatusMessage("Filter feature coming soon!", false);
-        System.out.println("🔧 Filter button clicked (not implemented yet)");
-    }
-
-    private void handleEditClick() {
-        if (selectedMovieId == -1 || currentlySelectedMovie == null) {
-            view.showStatusMessage("Please select a movie card first.", true);
+    private void handleManageSchedulesClick() {
+        if (selectedMovieId == -1) {
+            view.showWarningAlert("No Movie Selected", "Please select a movie first.");
             return;
         }
-        showEditViewInternal(currentlySelectedMovie);
+
+        // Open schedule editor dialog
+        openScheduleEditor();
     }
 
-    private void handleSaveMovieClick() {
-        view.clearStatusMessage();
+    private void openScheduleEditor() {
+        try {
+            // Get existing schedules for this movie
+            Schedule[] schedules = model.getSchedulesByMovie(selectedMovieId);
 
-        // Validate
+            StringBuilder scheduleInfo = new StringBuilder();
+            scheduleInfo.append("Current Schedules for ").append(currentlySelectedMovie.movieTitle).append(":\n\n");
+
+            if (schedules == null || schedules.length == 0) {
+                scheduleInfo.append("No schedules found.\n\n");
+            } else {
+                for (Schedule schedule : schedules) {
+                    scheduleInfo.append("Schedule ID: ").append(schedule.scheduleId).append("\n");
+                    scheduleInfo.append("Movie Schedule ID: ").append(schedule.movieScheduleId).append("\n\n");
+                }
+            }
+
+            scheduleInfo.append("To edit schedules:\n");
+            scheduleInfo.append("1. Update the date and time fields below\n");
+            scheduleInfo.append("2. Click 'Update Movie' to save changes");
+
+            view.showInfoAlert("Schedule Management", scheduleInfo.toString());
+
+        } catch (Exception e) {
+            view.showErrorAlert("Error", "Failed to load schedules: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    // ===== CRUD OPERATIONS =====
+
+    private void handleAddMovieClick() {
+        System.out.println("🎬 === ADD MOVIE PROCESS STARTED ===");
+
+        // Validate inputs
         String title = view.getTitleInput().getText().trim();
-        String description = view.getDescriptionInput().getText().trim();
-        Integer rating = view.getRatingComboBox().getValue();
-        String selectedGenreName = view.getGenreComboBox().getValue();
-
         if (title.isEmpty()) {
-            view.showStatusMessage("Error: Movie title is required.", true);
+            view.showWarningAlert("Validation Error", "Please enter a movie title.");
             return;
         }
+
+        Integer rating = view.getRatingComboBox().getValue();
         if (rating == null) {
-            view.showStatusMessage("Error: Please select a rating.", true);
+            view.showWarningAlert("Validation Error", "Please select a rating.");
             return;
         }
-        if (selectedGenreName == null) {
-            view.showStatusMessage("Error: Please select at least one genre.", true);
+
+        List<String> selectedGenreNames = view.getSelectedGenres();
+        if (selectedGenreNames.isEmpty()) {
+            view.showWarningAlert("Validation Error", "Please select at least one genre.");
             return;
         }
+
+        String description = view.getDescriptionInput().getText().trim();
+
+        // Get schedule information
+        LocalDate scheduleDate = view.getScheduleDatePicker().getValue();
+        String scheduleTime = view.getScheduleTimeField().getText().trim();
 
         try {
             // Upload image if selected
             String posterURL = "";
-            if (selectedImagePath != null) {
+            String imagePath = view.getSelectedImagePath();
+            if (imagePath != null && !imagePath.isEmpty()) {
                 posterURL = uploadImage();
                 System.out.println("✅ Image uploaded to: " + posterURL);
             }
 
-            int genreId = findGenreIdByName(selectedGenreName);
-            if (genreId == -1) {
-                view.showStatusMessage("Error: Selected genre not found.", true);
+            // Convert genre names to IDs
+            int[] genreIds = selectedGenreNames.stream()
+                    .mapToInt(this::findGenreIdByName)
+                    .filter(id -> id != -1)
+                    .toArray();
+
+            if (genreIds.length == 0) {
+                view.showErrorAlert("Error", "Selected genres not found in database.");
                 return;
             }
 
-            int[] genreIds = new int[]{genreId};
+            // Add movie
             int newMovieId = model.addMovie(title, genreIds, description, rating, posterURL);
+            System.out.println("✅ Movie added successfully! New Movie ID: " + newMovieId);
 
-            view.showStatusMessage("Movie added successfully! ID: " + newMovieId, false);
+            // Create schedule if provided
+            if (scheduleDate != null && scheduleTime != null && !scheduleTime.isEmpty()) {
+                if (isValidTimeFormat(scheduleTime)) {
+                    String formattedDate = scheduleDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+
+                    try {
+                        int movieScheduleId = model.createMovieSchedule(formattedDate, scheduleTime);
+                        int scheduleId = model.assignMovieToSchedule(newMovieId, movieScheduleId);
+
+                        view.showInfoAlert("Success!",
+                                "✅ Movie added successfully!\n" +
+                                        "Movie ID: " + newMovieId + "\n" +
+                                        "Schedule ID: " + scheduleId + "\n" +
+                                        "Screening: " + formattedDate + " at " + scheduleTime);
+                    } catch (Exception e) {
+                        view.showWarningAlert("Partial Success",
+                                "Movie added (ID: " + newMovieId + ") but schedule creation failed: " + e.getMessage());
+                    }
+                } else {
+                    view.showInfoAlert("Success!",
+                            "Movie added (ID: " + newMovieId + ") but invalid time format. Use HH:mm format.");
+                }
+            } else {
+                view.showInfoAlert("Success!", "✅ Movie added successfully! ID: " + newMovieId);
+            }
+
             loadAllMovies();
             showGridViewInternal();
 
-            System.out.println("✅ Movie added: " + title + " (ID: " + newMovieId + ")");
-
         } catch (IOException e) {
-            view.showStatusMessage("Error uploading image: " + e.getMessage(), true);
+            view.showErrorAlert("Image Upload Error", "Failed to upload image: " + e.getMessage());
             e.printStackTrace();
         } catch (AuthenticationException e) {
-            view.showStatusMessage("Error: Authentication failed.", true);
-            System.err.println("❌ Authentication error");
-        } catch (InvalidInputException e) {
-            view.showStatusMessage("Error: Invalid input - " + e.message, true);
-        } catch (Exception e) {
-            view.showStatusMessage("Error adding movie: " + e.getMessage(), true);
+            view.showErrorAlert("Authentication Error", "Session expired: " + e.getMessage());
             e.printStackTrace();
+        } catch (InvalidInputException e) {
+            view.showErrorAlert("Invalid Input", e.message);
+            e.printStackTrace();
+        } catch (Exception e) {
+            view.showErrorAlert("Error", "Failed to add movie: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private boolean isValidTimeFormat(String time) {
+        try {
+            LocalTime.parse(time, DateTimeFormatter.ofPattern("HH:mm"));
+            return true;
+        } catch (Exception e) {
+            return false;
         }
     }
 
     private void handleUpdateMovieClick() {
         if (selectedMovieId == -1 || currentlySelectedMovie == null) {
-            view.showStatusMessage("Please select a movie to update.", true);
+            view.showWarningAlert("No Movie Selected", "Please select a movie to update.");
             return;
         }
 
+        System.out.println("✏️ === UPDATE MOVIE PROCESS STARTED ===");
+        boolean anyChanges = false;
+
         try {
-            String newTitle = view.getTitleInput().getText().trim();
+            // Update title (use EDIT view field)
+            String newTitle = view.getTitleInputEdit().getText().trim();
             if (!newTitle.isEmpty() && !newTitle.equals(currentlySelectedMovie.movieTitle)) {
                 model.updateMovieTitle(selectedMovieId, newTitle);
+                System.out.println("✅ Title updated to: " + newTitle);
+                anyChanges = true;
             }
 
-            String newDescription = view.getDescriptionInput().getText().trim();
+            // Update description (use EDIT view field)
+            String newDescription = view.getDescriptionInputEdit().getText().trim();
             if (!newDescription.equals(currentlySelectedMovie.movieDescription)) {
                 model.updateMovieDescription(selectedMovieId, newDescription);
+                System.out.println("✅ Description updated");
+                anyChanges = true;
             }
 
-            Integer newRating = view.getRatingComboBox().getValue();
+            // Update rating (use EDIT view field)
+            Integer newRating = view.getRatingComboBoxEdit().getValue();
             if (newRating != null && newRating != currentlySelectedMovie.movieRating) {
                 model.updateMovieRating(selectedMovieId, newRating);
+                System.out.println("✅ Rating updated to: " + newRating);
+                anyChanges = true;
             }
 
-            // Upload new image if selected
-            if (selectedImagePath != null) {
+            // Update poster
+            String imagePath = view.getSelectedImagePath();
+            if (imagePath != null && !imagePath.isEmpty()) {
                 String newPosterURL = uploadImage();
                 model.updateMoviePoster(selectedMovieId, newPosterURL);
                 System.out.println("✅ Poster updated: " + newPosterURL);
+                anyChanges = true;
             }
 
-            String selectedGenreName = view.getGenreComboBox().getValue();
-            if (selectedGenreName != null) {
-                int genreId = findGenreIdByName(selectedGenreName);
-                if (genreId != -1) {
-                    model.updateMovieGenres(selectedMovieId, new int[]{genreId});
+            // Update genres (getSelectedGenres automatically checks which view is visible)
+            List<String> newSelectedGenres = view.getSelectedGenres();
+            if (!newSelectedGenres.isEmpty()) {
+                Genre[] currentGenres = model.getMovieGenres(selectedMovieId);
+                Set<String> currentGenreNames = Arrays.stream(currentGenres)
+                        .map(g -> g.genreName)
+                        .collect(Collectors.toSet());
+
+                if (!currentGenreNames.equals(new HashSet<>(newSelectedGenres))) {
+                    int[] genreIds = newSelectedGenres.stream()
+                            .mapToInt(this::findGenreIdByName)
+                            .filter(id -> id != -1)
+                            .toArray();
+                    if (genreIds.length > 0) {
+                        model.updateMovieGenres(selectedMovieId, genreIds);
+                        System.out.println("✅ Genres updated");
+                        anyChanges = true;
+                    }
                 }
             }
 
-            view.showStatusMessage("Movie updated successfully!", false);
-            loadAllMovies();
-            showGridViewInternal();
+            if (anyChanges) {
+                view.showInfoAlert("Success!", "✅ Movie updated successfully!");
+                loadAllMovies();
+                showGridViewInternal();
+            } else {
+                view.showInfoAlert("No Changes", "No changes were made to the movie.");
+            }
 
-            System.out.println("✅ Movie updated: ID " + selectedMovieId);
-
-        } catch (IOException e) {
-            view.showStatusMessage("Error uploading image: " + e.getMessage(), true);
-            e.printStackTrace();
         } catch (Exception e) {
-            view.showStatusMessage("Error updating movie: " + e.getMessage(), true);
+            view.showErrorAlert("Update Error", "Failed to update movie: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
     private void handleDeleteMovieClick() {
         if (selectedMovieId == -1 || currentlySelectedMovie == null) {
-            view.showStatusMessage("Please select a movie to delete.", true);
+            view.showWarningAlert("No Movie Selected", "Please select a movie to delete.");
             return;
         }
 
         boolean confirmed = view.showConfirmationDialog(
                 "Delete Movie",
                 "Are you sure you want to delete '" + currentlySelectedMovie.movieTitle + "'?",
-                "This action cannot be undone."
+                "This action cannot be undone. All schedules and bookings associated with this movie will be affected."
         );
 
         if (!confirmed) {
-            System.out.println("🚫 Delete cancelled by user");
+            System.out.println("🚫 Delete cancelled");
             return;
         }
 
         try {
             model.deleteMovie(selectedMovieId);
-            view.showStatusMessage("Movie deleted successfully!", false);
+            view.showInfoAlert("Success!", "✅ Movie deleted successfully!");
             loadAllMovies();
             showGridViewInternal();
 
-            System.out.println("✅ Movie deleted: ID " + selectedMovieId);
-
         } catch (Exception e) {
-            view.showStatusMessage("Error deleting movie: " + e.getMessage(), true);
+            view.showErrorAlert("Delete Error", "Failed to delete movie: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
     private void handleClearFieldsClick() {
         view.clearAllFields();
-        selectedImagePath = null;
-        uploadedImageURL = null;
+
+        if (view.getScheduleDatePicker() != null) {
+            view.getScheduleDatePicker().setValue(LocalDate.now());
+        }
+
+        view.showStatusMessage("Fields cleared", false);
         System.out.println("🧹 Fields cleared");
     }
 
     // ===== HELPER METHODS =====
 
     private void populateFieldsWithMovie(Movie movie) {
-        view.getTitleInput().setText(movie.movieTitle);
-        view.getDescriptionInput().setText(movie.movieDescription);
-        view.getRatingComboBox().setValue(movie.movieRating);
+        // Use EDIT view fields
+        view.getTitleInputEdit().setText(movie.movieTitle);
+        view.getDescriptionInputEdit().setText(movie.movieDescription);
+        view.getRatingComboBoxEdit().setValue(movie.movieRating);
 
-        // Show current poster URL
         if (movie.moviePosterURL != null && !movie.moviePosterURL.isEmpty()) {
-            view.getPosterUrlInput().setText(movie.moviePosterURL);
+            view.updateSelectedImageLabelEdit("Current: " + movie.moviePosterURL);
         }
 
         try {
             Genre[] genres = model.getMovieGenres(movie.movieId);
             if (genres != null && genres.length > 0) {
-                view.getGenreComboBox().setValue(genres[0].genreName);
+                List<String> genreNames = Arrays.stream(genres)
+                        .map(g -> g.genreName)
+                        .collect(Collectors.toList());
+                view.selectGenres(genreNames);
             }
         } catch (Exception e) {
-            // Ignore
+            e.printStackTrace();
         }
 
         String details = String.format("Movie ID: %d | Rating: %d/10",
@@ -617,6 +654,7 @@ public class MovieController {
                 return genre.genreId;
             }
         }
+        System.err.println("⚠️ Genre not found: " + genreName);
         return -1;
     }
 }
