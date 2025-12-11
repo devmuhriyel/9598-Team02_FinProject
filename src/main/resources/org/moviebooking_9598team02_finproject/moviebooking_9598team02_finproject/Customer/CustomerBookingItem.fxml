@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<VBox fx:id="bookingItemRoot" prefWidth="1000.0" spacing="10.0" style="-fx-background-color: #292929; -fx-background-radius: 8;"
+      xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1">
+    <padding>
+        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+    </padding>
+    <children>
+        <HBox alignment="CENTER_LEFT" spacing="10.0">
+            <children>
+                <Label fx:id="lblMovieTitle" text="Movie Title Placeholder" textFill="WHITE">
+                    <font>
+                        <Font name="System Bold" size="18.0" />
+                    </font>
+                </Label>
+                <Region HBox.hgrow="ALWAYS" />
+                <Label fx:id="lblTimeStatus" text="UPCOMING" />
+                <Label fx:id="lblBookingStatus" text="CONFIRMED" />
+                <Label fx:id="lblPaymentStatus" text="PAID" />
+            </children>
+        </HBox>
+
+        <HBox alignment="CENTER_LEFT" spacing="30.0">
+            <VBox.margin>
+                <Insets top="10.0" />
+            </VBox.margin>
+            <children>
+                <VBox spacing="5.0">
+                    <children>
+                        <Label text="Booking Date:" textFill="#cccccc" />
+                        <Label fx:id="lblBookingDate" text="2025-12-01" textFill="WHITE">
+                            <font>
+                                <Font name="System Bold" size="14.0" />
+                            </font>
+                        </Label>
+                    </children>
+                </VBox>
+                <VBox spacing="5.0">
+                    <children>
+                        <Label text="Screening Date/Time:" textFill="#cccccc" />
+                        <Label fx:id="lblScreeningDateTime" text="2025-12-25 @ 19:00" textFill="WHITE">
+                            <font>
+                                <Font name="System Bold" size="14.0" />
+                            </font>
+                        </Label>
+                    </children>
+                </VBox>
+                <VBox spacing="5.0">
+                    <children>
+                        <Label text="Seats:" textFill="#cccccc" />
+                        <Label fx:id="lblSeats" text="G10, G11" textFill="WHITE">
+                            <font>
+                                <Font name="System Bold" size="14.0" />
+                            </font>
+                        </Label>
+                    </children>
+                </VBox>
+                <VBox spacing="5.0">
+                    <children>
+                        <Label text="Total Paid:" textFill="#cccccc" />
+                        <Label fx:id="lblTotalPaid" text="P 850.00" textFill="#FFD700">
+                            <font>
+                                <Font name="System Bold" size="14.0" />
+                            </font>
+                        </Label>
+                    </children>
+                </VBox>
+
+                <Region HBox.hgrow="ALWAYS" />
+
+                <Button fx:id="btnViewTicket" prefHeight="35.0" prefWidth="120.0" text="View E-Ticket"
+                        style="-fx-background-color: #FF6B6B; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5; -fx-cursor: hand;" />
+            </children>
+        </HBox>
+    </children>
+</VBox>

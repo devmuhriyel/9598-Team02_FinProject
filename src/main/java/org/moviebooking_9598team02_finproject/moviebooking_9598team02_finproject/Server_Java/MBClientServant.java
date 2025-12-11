@@ -1150,21 +1150,24 @@ public class MBClientServant extends ClientServicePOA {
             while (rs.next()) {
                 BookingDetails details = new BookingDetails();
                 details.bookingId = rs.getInt("booking_id");
-                details.bookingStatus = rs.getString("booking_status");
+
+                details.bookingStatus = safeString(rs.getString("booking_status"));
+                details.bookingDate = safeString(rs.getString("booking_date"));
+                details.cancellationReason = safeString(rs.getString("cancellation_reason"));
+                details.customerName = safeString(rs.getString("customer_name"));
+                details.customerEmail = safeString(rs.getString("customer_email"));
+                details.movieTitle = safeString(rs.getString("movie_title"));
+                details.screeningDate = safeString(rs.getString("screening_date"));
+                details.screeningTime = safeString(rs.getString("screening_time"));
+                details.seats = safeString(rs.getString("seats"));
+                details.createdAt = safeString(rs.getString("created_at"));
+                details.updatedAt = safeString(rs.getString("updated_at"));
+
                 details.totalPrice = rs.getDouble("total_price");
-                details.bookingDate = rs.getString("booking_date");
-                details.cancellationReason = rs.getString("cancellation_reason");
                 details.customerId = rs.getInt("customer_id");
-                details.customerName = rs.getString("customer_name");
-                details.customerEmail = rs.getString("customer_email");
                 details.scheduleId = rs.getInt("schedule_id");
                 details.movieId = rs.getInt("movie_id");
-                details.movieTitle = rs.getString("movie_title");
-                details.screeningDate = rs.getString("screening_date");
-                details.screeningTime = rs.getString("screening_time");
-                details.seats = rs.getString("seats");
-                details.createdAt = rs.getString("created_at");
-                details.updatedAt = rs.getString("updated_at");
+
                 detailsList.add(details);
             }
 
@@ -1509,5 +1512,9 @@ public class MBClientServant extends ClientServicePOA {
             return resultSet.wasNull() ? 0 : maxID;
         }
         return 0;
+    }
+
+    private String safeString(String input) {
+        return (input == null) ? "" : input;
     }
 }

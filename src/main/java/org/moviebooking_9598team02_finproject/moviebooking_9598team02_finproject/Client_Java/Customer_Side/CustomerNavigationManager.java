@@ -8,7 +8,7 @@ import javafx.stage.Stage;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Customer;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Customer_Side.AuthenticationMVCs.CustomerAuthNavManager;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Customer_Side.MovieMVCs.MovieNavigationManager;
-
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Customer_Side.BookingsMVCs.CustomerBookingNavManager;
 import java.io.IOException;
 
 /**
@@ -33,6 +33,7 @@ public class CustomerNavigationManager {
 
     // Sub-navigation managers
     private MovieNavigationManager movieNavManager;
+    private CustomerBookingNavManager bookingNavManager;
     // Add other nav managers as needed (BookingNavManager, etc.)
 
     public CustomerNavigationManager(Stage homeStage, CustomerAuthNavManager authNavManager, Customer customer) {
@@ -99,45 +100,33 @@ public class CustomerNavigationManager {
     }
 
     /**
-     * Show My Bookings view (active bookings)
+     * Switch to My Bookings view following the Movie style
      */
     public void showMyBookingsView() {
         if (myBookingsPane == null) {
             try {
-                FXMLLoader loader = new FXMLLoader(
-                        getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/CustomerMyBookings.fxml")
-                );
-                myBookingsPane = loader.load();
-                System.out.println("✅ My Bookings view loaded");
+                // Initialize booking nav manager with proper MVC setup
+                bookingNavManager = new CustomerBookingNavManager(customer);
+                myBookingsPane = bookingNavManager.getMyBookingsView();
 
-            } catch (IOException e) {
-                System.err.println("⚠️ My Bookings FXML not found, creating placeholder");
+                if (myBookingsPane == null) {
+                    System.err.println("ERROR: My Bookings returned null pane!");
+                    // Fixed method name: createPlaceholder instead of createPlaceholderPane
+                    myBookingsPane = createPlaceholder("My Bookings", "Error Loading View");
+                } else {
+                    System.out.println("✅ My Bookings loaded successfully");
+                }
+            } catch (Exception e) {
+                System.err.println("❌ ERROR initializing My Bookings:");
                 e.printStackTrace();
-                myBookingsPane = createPlaceholder("My Bookings", "View and manage your active bookings");
+                myBookingsPane = createPlaceholder("My Bookings", "Error: " + e.getMessage());
             }
         }
-        loadContentPane(myBookingsPane);
-    }
 
-    /**
-     * Show Booking History view (past bookings)
-     */
-    public void showBookingHistoryView() {
-        if (bookingHistoryPane == null) {
-            try {
-                FXMLLoader loader = new FXMLLoader(
-                        getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/CustomerBookingHistory.fxml")
-                );
-                bookingHistoryPane = loader.load();
-                System.out.println("✅ Booking History view loaded");
-
-            } catch (IOException e) {
-                System.err.println("⚠️ Booking History FXML not found, creating placeholder");
-                e.printStackTrace();
-                bookingHistoryPane = createPlaceholder("Booking History", "View your past bookings and transactions");
-            }
+        // Fixed variable: Use homeView.getPanesContainer() instead of panesContainer
+        if (homeView != null && homeView.getPanesContainer() != null) {
+            homeView.getPanesContainer().getChildren().setAll(myBookingsPane);
         }
-        loadContentPane(bookingHistoryPane);
     }
 
     /**
