@@ -1510,14 +1510,15 @@ public class MBAdminServant extends AdminServicePOA {
                 throw new MovieNotFoundException();
             }
 
-            // Get schedules for this movie
+            // ✅ JOIN with movie_schedules to get screening date and time
             String query = "SELECT s.schedule_id, s.movie_id, s.movie_schedule_id, " +
-                    "ms.screening_date, ms.screening_time, " +
+                    "ms.screening_date, ms.screening_time, ms.created_by_admin, " +
                     "s.created_at, s.updated_at " +
                     "FROM schedules s " +
                     "JOIN movie_schedules ms ON s.movie_schedule_id = ms.movie_schedule_id " +
                     "WHERE s.movie_id = ? " +
                     "ORDER BY ms.screening_date, ms.screening_time";
+
             PreparedStatement statement = connection.prepareStatement(query);
             statement.setInt(1, movieId);
             ResultSet rs = statement.executeQuery();
@@ -1528,6 +1529,16 @@ public class MBAdminServant extends AdminServicePOA {
                 schedule.scheduleId = rs.getInt("schedule_id");
                 schedule.movieId = rs.getInt("movie_id");
                 schedule.movieScheduleId = rs.getInt("movie_schedule_id");
+
+                // ✅ FIX: Populate the nested MovieSchedule object
+                MovieSchedule movieSchedule = new MovieSchedule();
+                movieSchedule.movieScheduleId = rs.getInt("movie_schedule_id");
+                movieSchedule.screeningDate = rs.getString("screening_date");
+                movieSchedule.screeningTime = rs.getString("screening_time");
+                movieSchedule.createdByAdmin = rs.getInt("created_by_admin");
+
+//                schedule.movieSchedule = movieSchedule;
+
                 schedule.createdAt = rs.getString("created_at");
                 schedule.updatedAt = rs.getString("updated_at");
                 scheduleList.add(schedule);
@@ -2019,25 +2030,6 @@ public class MBAdminServant extends AdminServicePOA {
     @Override
     public void deactivateCustomer(int adminId, int customerId, String reason) throws AuthenticationException {
 
-    }
-
-    // ===== HELPER METHOD: Get Customer Booking Count =====
-    public int getCustomerBookingCount(int customerId) throws SQLException {
-        try (Connection connection = DatabaseAccess.getConnection()) {
-            String query = "SELECT COUNT(*) as booking_count FROM bookings WHERE customer_id = ?";
-            PreparedStatement statement = connection.prepareStatement(query);
-            statement.setInt(1, customerId);
-            ResultSet rs = statement.executeQuery();
-
-            if (rs.next()) {
-                return rs.getInt("booking_count");
-            }
-            return 0;
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw e;
-        }
     }
 
     // ===== PAYMENT PROCESSING METHODS =====

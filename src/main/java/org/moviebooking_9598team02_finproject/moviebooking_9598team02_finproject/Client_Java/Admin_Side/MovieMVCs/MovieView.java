@@ -22,12 +22,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * MovieView - View component for Movie Management
- * Fixed issues:
- * - Image browsing now handled in view
- * - Rating dropdown properly populated
- * - Genre checkboxes working
- * - No JavaFX imports in controller
+ * MovieView - Complete View with Schedule Management UI
  */
 public class MovieView {
 
@@ -71,6 +66,8 @@ public class MovieView {
     // ===== SCHEDULE FIELDS =====
     @FXML private DatePicker scheduleDatePicker;
     @FXML private TextField scheduleTimeField;
+    @FXML private VBox scheduleListContainer;
+    @FXML private Button btnAddNewSchedule;
 
     // ===== ACTION BUTTONS =====
     @FXML private Button btnAddNewMovie;
@@ -78,10 +75,6 @@ public class MovieView {
     @FXML private Button btnUpdateMovie;
     @FXML private Button btnDeleteMovie;
     @FXML private Button btnClearFields;
-
-    // ===== SCHEDULE SECTION ======
-    @FXML private VBox scheduleListContainer;
-    @FXML private Button btnAddNewSchedule;
 
     // Genre tracking with checkbox state
     private final Map<String, BooleanProperty> genreCheckMap = new LinkedHashMap<>();
@@ -99,14 +92,6 @@ public class MovieView {
     @FXML
     public void initialize() {
         System.out.println("🎬 MovieView.initialize() called");
-        System.out.println("   ADD VIEW:");
-        System.out.println("   - ratingComboBox: " + (ratingComboBox != null ? "OK" : "NULL"));
-        System.out.println("   - genreListView: " + (genreListView != null ? "OK" : "NULL"));
-        System.out.println("   - btnBrowsePoster: " + (btnBrowsePoster != null ? "OK" : "NULL"));
-        System.out.println("   EDIT VIEW:");
-        System.out.println("   - ratingComboBoxEdit: " + (ratingComboBoxEdit != null ? "OK" : "NULL"));
-        System.out.println("   - genreListViewEdit: " + (genreListViewEdit != null ? "OK" : "NULL"));
-        System.out.println("   - btnBrowsePosterEdit: " + (btnBrowsePosterEdit != null ? "OK" : "NULL"));
 
         // Setup ADD view
         setupRatingComboBox();
@@ -121,9 +106,8 @@ public class MovieView {
         System.out.println("✅ MovieView initialization complete");
     }
 
-    /**
-     * Setup rating dropdown (1-10)
-     */
+    // ===== SETUP METHODS =====
+
     private void setupRatingComboBox() {
         if (ratingComboBox != null) {
             ratingComboBox.getItems().clear();
@@ -133,26 +117,18 @@ public class MovieView {
             }
             ratingComboBox.getItems().addAll(ratings);
             ratingComboBox.setPromptText("Select rating");
-            System.out.println("✅ Rating ComboBox populated with 1-10");
-        } else {
-            System.err.println("❌ ERROR: ratingComboBox is NULL!");
         }
     }
 
-    /**
-     * Setup ListView to display genres with checkboxes
-     */
     private void setupGenreListView() {
         if (genreListView != null) {
             genreListView.setItems(genreNames);
             genreListView.setPlaceholder(new Label("Loading genres..."));
 
-            // Create custom cell factory with checkboxes
             genreListView.setCellFactory(param -> new ListCell<String>() {
                 private final CheckBox checkBox = new CheckBox();
 
                 {
-                    // Style the checkbox for white text
                     checkBox.setStyle("-fx-text-fill: #FFFFFF; -fx-font-size: 13px;");
                     setStyle("-fx-background-color: transparent; -fx-padding: 5;");
                 }
@@ -166,53 +142,33 @@ public class MovieView {
                         setText(null);
                     } else {
                         checkBox.setText(item);
-
-                        // Get the property for this specific item in ADD view
                         BooleanProperty selectedProperty = genreCheckMap.get(item);
                         if (selectedProperty != null) {
-                            // Remove any existing listeners/bindings first
                             checkBox.setOnAction(null);
                             checkBox.setSelected(selectedProperty.get());
-
-                            // Add action listener instead of bidirectional binding
                             checkBox.setOnAction(e -> {
                                 selectedProperty.set(checkBox.isSelected());
-                                System.out.println("ADD: " + item + " = " + checkBox.isSelected());
                             });
                         }
-
                         setGraphic(checkBox);
                     }
                 }
             });
-
-            System.out.println("✅ Genre ListView configured with checkboxes");
-        } else {
-            System.err.println("❌ ERROR: genreListView is NULL!");
         }
     }
 
-    /**
-     * Setup image browsing functionality (stays in View, no controller dependency)
-     */
     private void setupImageBrowsing() {
         if (btnBrowsePoster != null) {
             btnBrowsePoster.setOnAction(event -> handleImageBrowsing());
         }
     }
 
-    /**
-     * Setup image browsing for EDIT view
-     */
     private void setupImageBrowsingEdit() {
         if (btnBrowsePosterEdit != null) {
             btnBrowsePosterEdit.setOnAction(event -> handleImageBrowsing());
         }
     }
 
-    /**
-     * Setup rating dropdown for EDIT view (1-10)
-     */
     private void setupRatingComboBoxEdit() {
         if (ratingComboBoxEdit != null) {
             ratingComboBoxEdit.getItems().clear();
@@ -222,26 +178,18 @@ public class MovieView {
             }
             ratingComboBoxEdit.getItems().addAll(ratings);
             ratingComboBoxEdit.setPromptText("Select rating");
-            System.out.println("✅ Rating ComboBoxEdit populated with 1-10");
-        } else {
-            System.err.println("❌ ERROR: ratingComboBoxEdit is NULL!");
         }
     }
 
-    /**
-     * Setup ListView for EDIT view to display genres with checkboxes
-     */
     private void setupGenreListViewEdit() {
         if (genreListViewEdit != null) {
             genreListViewEdit.setItems(genreNamesEdit);
             genreListViewEdit.setPlaceholder(new Label("Loading genres..."));
 
-            // Create custom cell factory with checkboxes
             genreListViewEdit.setCellFactory(param -> new ListCell<String>() {
                 private final CheckBox checkBox = new CheckBox();
 
                 {
-                    // Style the checkbox for white text
                     checkBox.setStyle("-fx-text-fill: #FFFFFF; -fx-font-size: 13px;");
                     setStyle("-fx-background-color: transparent; -fx-padding: 5;");
                 }
@@ -255,29 +203,18 @@ public class MovieView {
                         setText(null);
                     } else {
                         checkBox.setText(item);
-
-                        // Get the property for this specific item in EDIT view
                         BooleanProperty selectedProperty = genreCheckMapEdit.get(item);
                         if (selectedProperty != null) {
-                            // Remove any existing listeners/bindings first
                             checkBox.setOnAction(null);
                             checkBox.setSelected(selectedProperty.get());
-
-                            // Add action listener instead of bidirectional binding
                             checkBox.setOnAction(e -> {
                                 selectedProperty.set(checkBox.isSelected());
-                                System.out.println("EDIT: " + item + " = " + checkBox.isSelected());
                             });
                         }
-
                         setGraphic(checkBox);
                     }
                 }
             });
-
-            System.out.println("✅ Genre ListViewEdit configured with checkboxes");
-        } else {
-            System.err.println("❌ ERROR: genreListViewEdit is NULL!");
         }
     }
 
@@ -294,136 +231,245 @@ public class MovieView {
             String labelText = "Selected: " + selectedFile.getName();
             updateSelectedImageLabel(labelText);
             updateSelectedImageLabelEdit(labelText);
-            System.out.println("🖼️ Image selected: " + selectedImagePath);
         }
+    }
+
+    // ===== SCHEDULE CARD CREATION =====
+
+    /**
+     * Create a schedule card UI element
+     */
+    public VBox createScheduleCard(int scheduleId, int movieScheduleId, String date, String time, Runnable onSaveAction, Runnable onDeleteAction) {
+        VBox scheduleCard = new VBox(12);
+        scheduleCard.setStyle(
+                "-fx-background-color: #1A1A1A; " +
+                        "-fx-padding: 15; " +
+                        "-fx-background-radius: 5; " +
+                        "-fx-border-color: #404040; " +
+                        "-fx-border-width: 1; " +
+                        "-fx-border-radius: 5;"
+        );
+
+        // Header with Schedule ID
+        HBox header = new HBox(10);
+        header.setAlignment(Pos.CENTER_LEFT);
+
+        Label scheduleIdLabel = new Label("Schedule #" + scheduleId);
+        scheduleIdLabel.setStyle(
+                "-fx-text-fill: #ff2525; " +
+                        "-fx-font-size: 14px; " +
+                        "-fx-font-weight: bold;"
+        );
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        Label movieScheduleIdLabel = new Label("Time Slot ID: " + movieScheduleId);
+        movieScheduleIdLabel.setStyle(
+                "-fx-text-fill: #888888; " +
+                        "-fx-font-size: 11px;"
+        );
+
+        header.getChildren().addAll(scheduleIdLabel, spacer, movieScheduleIdLabel);
+
+        // Date Picker
+        VBox dateBox = new VBox(5);
+        Label dateLabel = new Label("📅 Screening Date");
+        dateLabel.setStyle("-fx-text-fill: #FFFFFF; -fx-font-size: 12px;");
+
+        DatePicker datePicker = new DatePicker();
+        datePicker.setMaxWidth(250);
+        datePicker.setStyle("-fx-background-color: #292929;");
+
+        try {
+            LocalDate localDate = LocalDate.parse(date);
+            datePicker.setValue(localDate);
+        } catch (Exception e) {
+            System.err.println("Invalid date format: " + date);
+        }
+
+        dateBox.getChildren().addAll(dateLabel, datePicker);
+
+        // Time Field
+        VBox timeBox = new VBox(5);
+        Label timeLabel = new Label("🕐 Screening Time");
+        timeLabel.setStyle("-fx-text-fill: #FFFFFF; -fx-font-size: 12px;");
+
+        TextField timeField = getTextField(time);
+
+        timeBox.getChildren().addAll(timeLabel, timeField);
+
+        // Action Buttons
+        HBox buttonBox = new HBox(10);
+        buttonBox.setAlignment(Pos.CENTER_RIGHT);
+
+        Button saveButton = new Button("✅ Save");
+        saveButton.setStyle(
+                "-fx-background-color: #00AA00; " +
+                        "-fx-text-fill: #FFFFFF; " +
+                        "-fx-font-size: 12px; " +
+                        "-fx-font-weight: bold; " +
+                        "-fx-padding: 8 20; " +
+                        "-fx-background-radius: 5; " +
+                        "-fx-cursor: hand;"
+        );
+
+        saveButton.setOnAction(e -> {
+            if (onSaveAction != null) {
+                String newDate = datePicker.getValue() != null ?
+                        datePicker.getValue().toString() : date;
+                String newTime = timeField.getText().trim();
+
+                // --- FIX START (Replace Map.of() with HashMap) ---
+                // Note: Using Map<String, Object> in case scheduleId is not a String (e.g., Integer)
+                Map<String, Object> userData = new HashMap<>();
+                userData.put("scheduleId", scheduleId);
+                userData.put("newDate", newDate);
+                userData.put("newTime", newTime);
+
+                scheduleCard.setUserData(userData);
+                // --- FIX END ---
+
+                onSaveAction.run();
+            }
+        });
+
+        Button deleteButton = getButton(scheduleId, onDeleteAction, scheduleCard);
+
+        buttonBox.getChildren().addAll(saveButton, deleteButton);
+
+        scheduleCard.getChildren().addAll(header, dateBox, timeBox, buttonBox);
+
+        return scheduleCard;
+    }
+
+    // ✅ NEW METHOD: Extract schedule data from card
+    public Map<String, Object> getScheduleCardData(Object card) {
+        if (card instanceof VBox) {
+            return (Map<String, Object>) ((VBox) card).getUserData();
+        }
+        return null;
+    }
+
+    /**
+     * Clear schedule container
+     */
+    public void clearScheduleContainer() {
+        if (scheduleListContainer != null) {
+            scheduleListContainer.getChildren().clear();
+        }
+    }
+
+    /**
+     * Add schedule card to container
+     */
+    public void addScheduleCardToContainer(Object card) {
+        if (scheduleListContainer != null && card instanceof VBox) {
+            scheduleListContainer.getChildren().add((VBox) card);
+        }
+    }
+
+    private static Button getButton(int scheduleId, Runnable onDeleteAction, VBox scheduleCard) {
+        Button deleteButton = new Button("🗑️ Delete");
+        deleteButton.setStyle(
+                "-fx-background-color: #8B0000; " +
+                        "-fx-text-fill: #FFFFFF; " +
+                        "-fx-font-size: 12px; " +
+                        "-fx-font-weight: bold; " +
+                        "-fx-padding: 8 20; " +
+                        "-fx-background-radius: 5; " +
+                        "-fx-cursor: hand;"
+        );
+
+        if (onDeleteAction != null) {
+            deleteButton.setOnAction(e -> {
+                // --- FIX START (Replace Map.of() with HashMap) ---
+                Map<String, Object> userData = new HashMap<>();
+                userData.put("scheduleId", scheduleId);
+
+                scheduleCard.setUserData(userData);
+                // --- FIX END ---
+
+                onDeleteAction.run();
+            });
+        }
+        return deleteButton;
+    }
+
+    private static TextField getTextField(String time) {
+        TextField timeField = new TextField(time);
+        timeField.setMaxWidth(250);
+        timeField.setPromptText("HH:mm (e.g., 14:30)");
+        timeField.setStyle(
+                "-fx-background-color: #292929; " +
+                        "-fx-text-fill: #FFFFFF; " +
+                        "-fx-prompt-text-fill: #888888; " +
+                        "-fx-font-size: 12px; " +
+                        "-fx-border-color: #404040; " +
+                        "-fx-border-width: 1; " +
+                        "-fx-border-radius: 5; " +
+                        "-fx-padding: 8 12;"
+        );
+        return timeField;
     }
 
     // ===== GENRE MANAGEMENT =====
 
-    /**
-     * Re-initialize rating ComboBox (public method for controller)
-     */
-    public void refreshRatingComboBox() {
-        setupRatingComboBox();
-    }
-
-    /**
-     * Populate the genre ListView with available genres (for both ADD and EDIT views)
-     */
     public void populateGenreList(List<String> genres) {
-        System.out.println("📋 Populating genre list with " + genres.size() + " genres");
-
-        // ADD view
         genreNames.clear();
         genreCheckMap.clear();
-
-        // EDIT view
         genreNamesEdit.clear();
         genreCheckMapEdit.clear();
 
         for (String genre : genres) {
-            // ADD view
             genreNames.add(genre);
             genreCheckMap.put(genre, new SimpleBooleanProperty(false));
-
-            // EDIT view
             genreNamesEdit.add(genre);
             genreCheckMapEdit.put(genre, new SimpleBooleanProperty(false));
         }
 
         genreListView.refresh();
         genreListViewEdit.refresh();
-        System.out.println("✅ Genre list populated for both views: " + genres);
     }
 
-    /**
-     * Get list of selected genre names (checks both ADD and EDIT views)
-     */
     public List<String> getSelectedGenres() {
-        // Check which view is visible
         if (editMovieView != null && editMovieView.isVisible()) {
-            // Use EDIT view genres
-            List<String> selected = genreCheckMapEdit.entrySet().stream()
+            return genreCheckMapEdit.entrySet().stream()
                     .filter(entry -> entry.getValue().get())
                     .map(Map.Entry::getKey)
                     .collect(Collectors.toList());
-            System.out.println("📋 Selected genres (EDIT): " + selected);
-            return selected;
         } else {
-            // Use ADD view genres
-            List<String> selected = genreCheckMap.entrySet().stream()
+            return genreCheckMap.entrySet().stream()
                     .filter(entry -> entry.getValue().get())
                     .map(Map.Entry::getKey)
                     .collect(Collectors.toList());
-            System.out.println("📋 Selected genres (ADD): " + selected);
-            return selected;
         }
     }
 
-    /**
-     * Select specific genres (for edit mode - sets both views)
-     */
     public void selectGenres(List<String> genresToSelect) {
-        System.out.println("📘 Selecting genres: " + genresToSelect);
-
-        // SET in EDIT view
         for (Map.Entry<String, BooleanProperty> entry : genreCheckMapEdit.entrySet()) {
-            boolean shouldSelect = genresToSelect.contains(entry.getKey());
-            entry.getValue().set(shouldSelect);
+            entry.getValue().set(genresToSelect.contains(entry.getKey()));
         }
-
-        // Also set in ADD view (for consistency)
         for (Map.Entry<String, BooleanProperty> entry : genreCheckMap.entrySet()) {
-            boolean shouldSelect = genresToSelect.contains(entry.getKey());
-            entry.getValue().set(shouldSelect);
+            entry.getValue().set(genresToSelect.contains(entry.getKey()));
         }
-
-        // Force refresh to update UI
-        if (genreListView != null) {
-            genreListView.refresh();
-        }
-        if (genreListViewEdit != null) {
-            genreListViewEdit.refresh();
-        }
+        if (genreListView != null) genreListView.refresh();
+        if (genreListViewEdit != null) genreListViewEdit.refresh();
     }
 
-    /**
-     * Clear all genre selections (both views)
-     */
     public void clearGenreSelection() {
-        System.out.println("🧹 Clearing genre selections");
-
-        // ADD view
         for (BooleanProperty property : genreCheckMap.values()) {
             property.set(false);
         }
-
-        // EDIT view
         for (BooleanProperty property : genreCheckMapEdit.values()) {
             property.set(false);
         }
-
-        // Force refresh to update UI
-        if (genreListView != null) {
-            genreListView.refresh();
-        }
-        if (genreListViewEdit != null) {
-            genreListViewEdit.refresh();
-        }
+        if (genreListView != null) genreListView.refresh();
+        if (genreListViewEdit != null) genreListViewEdit.refresh();
     }
 
     // ===== IMAGE MANAGEMENT =====
 
-    /**
-     * Get selected image path
-     */
-    public String getSelectedImagePath() {
-        return selectedImagePath;
-    }
-
-    /**
-     * Clear selected image
-     */
     public void clearSelectedImage() {
         selectedImagePath = null;
         clearSelectedImageLabel();
@@ -438,7 +484,6 @@ public class MovieView {
         addMovieView.setManaged(false);
         editMovieView.setVisible(false);
         editMovieView.setManaged(false);
-        System.out.println("📊 Showing Grid View");
     }
 
     public void showAddView() {
@@ -448,7 +493,6 @@ public class MovieView {
         addMovieView.setManaged(true);
         editMovieView.setVisible(false);
         editMovieView.setManaged(false);
-        System.out.println("➕ Showing Add View");
     }
 
     public void showEditView() {
@@ -458,17 +502,11 @@ public class MovieView {
         addMovieView.setManaged(false);
         editMovieView.setVisible(true);
         editMovieView.setManaged(true);
-        System.out.println("✏️ Showing Edit View");
     }
 
     // ===== MOVIE CARD CREATION =====
 
-    /**
-     * Creates a movie card with poster image covering the whole card
-     * and gradient overlay from middle to bottom
-     */
     public VBox createMovieCard(String title, String genres, int rating, String posterURL, Runnable onClickAction) {
-        // Main card container
         VBox card = new VBox();
         card.setAlignment(Pos.BOTTOM_CENTER);
         card.setPrefSize(180, 280);
@@ -481,7 +519,6 @@ public class MovieView {
                         "-fx-background-radius: 5; " +
                         "-fx-cursor: hand;");
 
-        // Hover effects
         card.setOnMouseEntered(e -> card.setStyle(
                 "-fx-border-color: #ff2525; " +
                         "-fx-border-width: 3; " +
@@ -501,20 +538,17 @@ public class MovieView {
             card.setOnMouseClicked(e -> onClickAction.run());
         }
 
-        // Create StackPane for poster + gradient overlay
         StackPane posterStack = new StackPane();
         posterStack.setPrefSize(180, 280);
         posterStack.setMinSize(180, 280);
         posterStack.setMaxSize(180, 280);
 
-        // Background poster image
         if (posterURL != null && !posterURL.isEmpty()) {
             ImageView posterView = createPosterImageView(posterURL);
             if (posterView != null) {
                 posterView.setFitWidth(180);
                 posterView.setFitHeight(280);
                 posterView.setPreserveRatio(false);
-                posterView.setStyle("-fx-background-radius: 5;");
                 posterStack.getChildren().add(posterView);
             } else {
                 posterStack.setStyle("-fx-background-color: #1A1A1A; -fx-background-radius: 5;");
@@ -527,7 +561,6 @@ public class MovieView {
             posterStack.getChildren().add(avatar);
         }
 
-        // Gradient overlay
         Region gradientOverlay = new Region();
         gradientOverlay.setPrefSize(180, 280);
         gradientOverlay.setStyle(
@@ -535,7 +568,6 @@ public class MovieView {
                         "-fx-background-radius: 5;");
         posterStack.getChildren().add(gradientOverlay);
 
-        // Text content on top of gradient
         VBox textBox = new VBox(5);
         textBox.setAlignment(Pos.BOTTOM_LEFT);
         textBox.setPadding(new Insets(10));
@@ -562,37 +594,16 @@ public class MovieView {
 
         return card;
     }
-// ONLY showing the FIXED createPosterImageView method
-// Replace this method in MovieView.java
 
     private ImageView createPosterImageView(String posterURL) {
         try {
-            // Try loading from file system first (for newly uploaded images)
-            File imageFile = new File("src/main/resources/" + posterURL);
-
-            Image image = null;
-
-            if (imageFile.exists()) {
-                // Load from file system
-                image = new Image(imageFile.toURI().toString(), 180, 280, false, true);
-                System.out.println("✅ Loaded image from file: " + imageFile.getAbsolutePath());
-            } else {
-                // Try loading from classpath (for packaged resources)
-                String resourcePath = posterURL.startsWith("/") ? posterURL : "/" + posterURL;
-                try {
-                    image = new Image(
-                            Objects.requireNonNull(getClass().getResourceAsStream(resourcePath)),
-                            180, 280, false, true
-                    );
-                    System.out.println("✅ Loaded image from classpath: " + resourcePath);
-                } catch (NullPointerException e) {
-                    System.err.println("⚠️ Image not found in classpath: " + resourcePath);
-                    return null;
-                }
-            }
+            String resourcePath = posterURL.startsWith("/") ? posterURL : "/" + posterURL;
+            Image image = new Image(
+                    Objects.requireNonNull(getClass().getResourceAsStream(resourcePath)),
+                    180, 280, false, true
+            );
 
             if (image.isError()) {
-                System.err.println("⚠️ Error loading image: " + image.getException());
                 return null;
             }
 
@@ -605,8 +616,6 @@ public class MovieView {
             return imageView;
 
         } catch (Exception e) {
-            System.err.println("⚠️ Exception loading image: " + e.getMessage());
-            e.printStackTrace();
             return null;
         }
     }
@@ -646,142 +655,6 @@ public class MovieView {
         if (btnNextPage != null) {
             btnNextPage.setDisable(!enableNext);
         }
-    }
-
-    // ===== SCHEDULE UI =====
-    /**
-     * Populate schedule list in edit view
-     */
-    public void populateScheduleList(java.util.List<java.util.Map<String, Object>> scheduleData,
-                                     java.util.function.BiConsumer<Integer, String[]> onSave,
-                                     java.util.function.Consumer<Integer> onDelete) {
-        if (scheduleListContainer == null) {
-            System.err.println("❌ ERROR: scheduleListContainer is NULL!");
-            return;
-        }
-
-        scheduleListContainer.getChildren().clear();
-
-        if (scheduleData.isEmpty()) {
-            Label emptyLabel = new Label("No schedules found for this movie.");
-            emptyLabel.setStyle("-fx-text-fill: #CCCCCC; -fx-font-size: 13px; -fx-padding: 20;");
-            scheduleListContainer.getChildren().add(emptyLabel);
-            return;
-        }
-
-        for (java.util.Map<String, Object> data : scheduleData) {
-            VBox scheduleCard = createScheduleCard(data, onSave, onDelete);
-            scheduleListContainer.getChildren().add(scheduleCard);
-        }
-
-        System.out.println("✅ Populated " + scheduleData.size() + " schedule(s)");
-    }
-
-    /**
-     * Create a single schedule card with date/time fields and action buttons
-     */
-    private VBox createScheduleCard(java.util.Map<String, Object> data,
-                                    java.util.function.BiConsumer<Integer, String[]> onSave,
-                                    java.util.function.Consumer<Integer> onDelete) {
-        int scheduleId = (Integer) data.get("scheduleId");
-        String screeningDate = (String) data.get("screeningDate");
-        String screeningTime = (String) data.get("screeningTime");
-
-        VBox card = new VBox(10);
-        card.setStyle("-fx-background-color: #1A1A1A; -fx-padding: 15; -fx-background-radius: 5; -fx-border-color: #404040; -fx-border-width: 1; -fx-border-radius: 5;");
-
-        // Header with schedule ID
-        Label headerLabel = new Label("Schedule ID: " + scheduleId);
-        headerLabel.setStyle("-fx-text-fill: #ff2525; -fx-font-size: 14px; -fx-font-weight: bold;");
-
-        // Date picker
-        HBox dateBox = new HBox(10);
-        dateBox.setAlignment(Pos.CENTER_LEFT);
-        Label dateLabel = new Label("Date:");
-        dateLabel.setStyle("-fx-text-fill: #FFFFFF; -fx-font-size: 13px; -fx-min-width: 60px;");
-        DatePicker datePicker = new DatePicker();
-        datePicker.setPrefWidth(200);
-        datePicker.setStyle("-fx-background-color: #292929; -fx-text-fill: #FFFFFF;");
-
-        // Parse and set date
-        try {
-            LocalDate date = LocalDate.parse(screeningDate);
-            datePicker.setValue(date);
-        } catch (Exception e) {
-            System.err.println("⚠️ Error parsing date: " + screeningDate);
-        }
-
-        dateBox.getChildren().addAll(dateLabel, datePicker);
-
-        // Time field
-        HBox timeBox = new HBox(10);
-        timeBox.setAlignment(Pos.CENTER_LEFT);
-        Label timeLabel = new Label("Time:");
-        timeLabel.setStyle("-fx-text-fill: #FFFFFF; -fx-font-size: 13px; -fx-min-width: 60px;");
-        TextField timeField = new TextField(screeningTime);
-        timeField.setPrefWidth(200);
-        timeField.setPromptText("HH:mm");
-        timeField.setStyle("-fx-background-color: #292929; -fx-text-fill: #FFFFFF; -fx-border-color: #404040; -fx-border-width: 1; -fx-border-radius: 5; -fx-padding: 8 12;");
-
-        timeBox.getChildren().addAll(timeLabel, timeField);
-
-        // Action buttons
-        HBox buttonBox = new HBox(10);
-        buttonBox.setAlignment(Pos.CENTER_LEFT);
-
-        Button saveButton = new Button("✅ Save");
-        saveButton.setStyle("-fx-background-color: #00CC66; -fx-text-fill: #FFFFFF; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 8 16; -fx-background-radius: 5; -fx-cursor: hand;");
-
-        Button deleteButton = new Button("🗑️ Delete");
-        deleteButton.setStyle("-fx-background-color: #8B0000; -fx-text-fill: #FFFFFF; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 8 16; -fx-background-radius: 5; -fx-cursor: hand;");
-
-        // Set actions
-        saveButton.setOnAction(e -> {
-            if (onSave != null) {
-                LocalDate newDate = datePicker.getValue();
-                String newTime = timeField.getText().trim();
-                String formattedDate = newDate != null ? newDate.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")) : "";
-                onSave.accept(scheduleId, new String[]{formattedDate, newTime});
-            }
-        });
-
-        deleteButton.setOnAction(e -> {
-            if (onDelete != null) {
-                onDelete.accept(scheduleId);
-            }
-        });
-
-        buttonBox.getChildren().addAll(saveButton, deleteButton);
-
-        card.getChildren().addAll(headerLabel, dateBox, timeBox, buttonBox);
-
-        return card;
-    }
-
-    /**
-     * Add new schedule button handler
-     */
-    public void setAddScheduleButtonAction(Runnable action) {
-        if (btnAddNewSchedule != null) {
-            btnAddNewSchedule.setOnAction(e -> {
-                if (action != null) {
-                    action.run();
-                }
-            });
-        }
-    }
-
-    /**
-     * Show input dialog
-     */
-    public String showInputDialog(String title, String header, String defaultValue) {
-        TextInputDialog dialog = new TextInputDialog(defaultValue);
-        dialog.setTitle(title);
-        dialog.setHeaderText(header);
-        dialog.setContentText("Value:");
-
-        Optional<String> result = dialog.showAndWait();
-        return result.orElse(null);
     }
 
     // ===== UI UPDATE METHODS =====
@@ -835,12 +708,9 @@ public class MovieView {
     }
 
     public void clearAllFields() {
-        // ADD view
         if (titleInput != null) titleInput.clear();
         if (ratingComboBox != null) ratingComboBox.getSelectionModel().clearSelection();
         if (descriptionInput != null) descriptionInput.clear();
-
-        // EDIT view
         if (titleInputEdit != null) titleInputEdit.clear();
         if (ratingComboBoxEdit != null) ratingComboBoxEdit.getSelectionModel().clearSelection();
         if (descriptionInputEdit != null) descriptionInputEdit.clear();
@@ -849,7 +719,6 @@ public class MovieView {
         clearSelectedImageLabel();
         clearSelectedImage();
 
-        // Clear schedule fields
         if (scheduleTimeField != null) scheduleTimeField.clear();
     }
 
@@ -889,39 +758,27 @@ public class MovieView {
 
     // ===== GETTERS =====
 
-    public StackPane getRootContentStack() { return rootContentStack; }
     public VBox getMovieView() { return movieView; }
-    public GridPane getMovieGridPane() { return movieGridPane; }
     public VBox getAddMovieView() { return addMovieView; }
     public VBox getEditMovieView() { return editMovieView; }
     public Button getBtnBackToGrid() { return btnBackToGrid; }
     public Button getBtnBackToGridFromEdit() { return btnBackToGridFromEdit; }
     public Button getBtnPreviousPage() { return btnPreviousPage; }
     public Button getBtnNextPage() { return btnNextPage; }
-    public Label getPageLabel() { return pageLabel; }
     public TextField getSearchField() { return searchField; }
-    public Label getStatusMessageLabel() { return statusMessageLabel; }
-    public Label getCurrentMovieDetailsLabel() { return currentMovieDetailsLabel; }
     public TextField getTitleInput() { return titleInput; }
-    public ListView<String> getGenreListView() { return genreListView; }
     public ComboBox<Integer> getRatingComboBox() { return ratingComboBox; }
     public TextArea getDescriptionInput() { return descriptionInput; }
-    public Button getBtnBrowsePoster() { return btnBrowsePoster; }
-    public Label getSelectedImageLabel() { return selectedImageLabel; }
     public Button getBtnAddNewMovie() { return btnAddNewMovie; }
     public Button getBtnAddMovie() { return btnAddMovie; }
     public Button getBtnUpdateMovie() { return btnUpdateMovie; }
     public Button getBtnDeleteMovie() { return btnDeleteMovie; }
     public Button getBtnClearFields() { return btnClearFields; }
-    public Button getBtnAddNewSchedule() { return btnAddNewSchedule; }
-
-    // Schedule field getters
     public DatePicker getScheduleDatePicker() { return scheduleDatePicker; }
     public TextField getScheduleTimeField() { return scheduleTimeField; }
-
-    // EDIT view field getters
     public TextField getTitleInputEdit() { return titleInputEdit; }
     public ComboBox<Integer> getRatingComboBoxEdit() { return ratingComboBoxEdit; }
     public TextArea getDescriptionInputEdit() { return descriptionInputEdit; }
-    public Label getSelectedImageLabelEdit() { return selectedImageLabelEdit; }
+    public String getSelectedImagePath() { return selectedImagePath; }
+    public Button getBtnAddNewSchedule() { return btnAddNewSchedule; }
 }

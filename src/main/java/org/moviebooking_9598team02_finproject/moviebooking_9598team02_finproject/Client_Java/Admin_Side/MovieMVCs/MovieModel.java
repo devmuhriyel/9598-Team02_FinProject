@@ -109,18 +109,41 @@ public class MovieModel extends AdminParentModel {
     // === SCHEDULE MANAGEMENT METHODS ===
 
     /**
-     * Get schedules for a specific movie
+     * Create a new movie schedule (screening time slot)
+     * @param screeningDate Date in format "yyyy-MM-dd"
+     * @param screeningTime Time in format "HH:mm"
+     * @return the newly created movie schedule ID
+     */
+    public int createMovieSchedule(String screeningDate, String screeningTime)
+            throws AuthenticationException, InvalidInputException {
+        return adminService.createMovieSchedule(currentAdminId, screeningDate, screeningTime);
+    }
+
+    /**
+     * Assign a movie to a schedule (creates Schedule entry)
+     * @param movieId The movie to assign
+     * @param movieScheduleId The schedule time slot
+     * @return the newly created schedule ID
+     */
+    public int assignMovieToSchedule(int movieId, int movieScheduleId)
+            throws AuthenticationException, MovieNotFoundException, ScheduleNotFoundException {
+        return adminService.assignMovieToSchedule(currentAdminId, movieId, movieScheduleId);
+    }
+
+    /**
+     * Get all schedules for a specific movie
      */
     public Schedule[] getSchedulesByMovie(int movieId)
             throws AuthenticationException, MovieNotFoundException {
         return adminService.getSchedulesByMovie(currentAdminId, movieId);
     }
 
-    /**
-     * Get all schedules
-     */
-    public Schedule[] getAllSchedules() throws AuthenticationException {
-        return adminService.getAllSchedules(currentAdminId);
+    // In MovieModel.java
+
+    public MovieSchedule getMovieScheduleDetails(int movieScheduleId)
+            throws AuthenticationException, ScheduleNotFoundException {
+        return commonServices.getMovieScheduleById(movieScheduleId);
+
     }
 
     /**
@@ -140,21 +163,10 @@ public class MovieModel extends AdminParentModel {
     }
 
     /**
-     * Create movie schedule and assign to movie
-     * Returns the new schedule ID
+     * Get all schedules
      */
-    public int createAndAssignSchedule(int movieId, String screeningDate, String screeningTime)
-            throws AuthenticationException, InvalidInputException, MovieNotFoundException, ScheduleNotFoundException {
-
-        // Create movie schedule
-        int movieScheduleId = adminService.createMovieSchedule(currentAdminId, screeningDate, screeningTime);
-
-        // Assign to movie
-        int scheduleId = adminService.assignMovieToSchedule(currentAdminId, movieId, movieScheduleId);
-
-        System.out.println("✅ Created and assigned schedule " + scheduleId + " to movie " + movieId);
-
-        return scheduleId;
+    public Schedule[] getAllSchedules() throws AuthenticationException {
+        return adminService.getAllSchedules(currentAdminId);
     }
 
     // === GENRE MANAGEMENT METHODS ===
