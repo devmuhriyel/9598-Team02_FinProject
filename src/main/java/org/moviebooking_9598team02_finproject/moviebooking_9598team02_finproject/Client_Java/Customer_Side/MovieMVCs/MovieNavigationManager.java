@@ -6,6 +6,9 @@ import javafx.scene.layout.Pane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Customer;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Customer_Side.PaymentMVCs.PaymentController;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Customer_Side.PaymentMVCs.PaymentModel;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Customer_Side.PaymentMVCs.PaymentView;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Customer_Side.SeatScheduleMVCs.CustomerSeatSelectionController;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Customer_Side.SeatScheduleMVCs.CustomerSeatSelectionModel;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Customer_Side.SeatScheduleMVCs.CustomerSeatSelectionView;
@@ -111,7 +114,7 @@ public class MovieNavigationManager {
             seatModel = new CustomerSeatSelectionModel(customer.customerId, scheduleId);
 
             // Create Controller (pass null for navigation manager since we're using modal window)
-            seatController = new CustomerSeatSelectionController(seatView, seatModel, null);
+            seatController = new CustomerSeatSelectionController(seatView, seatModel, this);
 
             // Initialize controller with schedule data
             seatController.init(scheduleId);
@@ -135,20 +138,32 @@ public class MovieNavigationManager {
     /**
      * Show payment window after booking
      */
+    /**
+     * Show payment window after booking
+     */
     public void showPayment(int bookingId, double totalAmount) {
         System.out.println("💳 Opening payment for booking ID: " + bookingId);
 
         try {
-            // Close seat selection window if open
             if (seatSelectionStage != null) {
                 seatSelectionStage.close();
             }
 
-            // TODO: Implement payment window
-            // For now, just show success message
-            if (movieView != null) {
-                movieView.showStatusMessage("Booking created! ID: " + bookingId + " | Amount: ₱" + totalAmount, false);
-            }
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/Customer/CustomerPayment.fxml"));
+            Pane paymentPane = loader.load();
+
+            PaymentView view = loader.getController();
+            PaymentModel model = new PaymentModel();
+            PaymentController controller = new PaymentController(view, model);
+
+            // ✅ FIXED: Passing 4 Arguments (Matches PaymentController)
+            controller.setPaymentData(customer.customerId, customer.fullName, bookingId, totalAmount);
+
+            Stage stage = new Stage();
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.setTitle("Payment - Booking #" + bookingId);
+            stage.setScene(new Scene(paymentPane));
+            stage.show();
 
         } catch (Exception e) {
             System.err.println("❌ ERROR opening payment:");
