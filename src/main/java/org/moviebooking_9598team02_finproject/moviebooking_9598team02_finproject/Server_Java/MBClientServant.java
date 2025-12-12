@@ -23,7 +23,7 @@ public class MBClientServant extends ClientServicePOA {
             int nextCustomerID = getLatestCustomerID() + 1;
             String hashedPassword = PasswordManager.hashPassword(password);
             LocalDateTime timeOfCreation = LocalDateTime.now();
-            String query = "INSERT INTO customers (customer_id, username, email, password, full_name, phone_number, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+            String query = "INSERT INTO customers (customer_id, username, email, password, phone_number, full_name, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
             PreparedStatement statement = connection.prepareStatement(query);
             statement.setInt(1, nextCustomerID);

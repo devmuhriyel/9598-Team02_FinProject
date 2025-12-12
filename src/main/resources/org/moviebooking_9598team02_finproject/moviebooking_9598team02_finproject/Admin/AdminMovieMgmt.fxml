@@ -204,23 +204,15 @@
                                     <DatePicker fx:id="scheduleDatePicker" maxWidth="300.0" prefWidth="300.0" style="-fx-background-color: #292929; -fx-text-fill: #FFFFFF;" />
                                 </VBox>
 
-                                <!-- Time Field -->
+                                <!-- Time Combo box -->
                                 <VBox spacing="5.0">
                                     <Label style="-fx-text-fill: #FFFFFF; -fx-font-size: 13px;" text="Screening Time">
                                         <font>
                                             <Font name="SansSerif Regular" size="13.0" />
                                         </font>
                                     </Label>
-                                    <TextField fx:id="scheduleTimeField" maxWidth="300.0" prefWidth="300.0" promptText="HH:mm (e.g., 14:30, 19:00)" style="-fx-background-color: #292929; -fx-text-fill: #FFFFFF; -fx-prompt-text-fill: #888888; -fx-font-size: 13px; -fx-border-color: #404040; -fx-border-width: 1; -fx-border-radius: 5; -fx-padding: 8 12;">
-                                        <font>
-                                            <Font name="SansSerif Regular" size="13.0" />
-                                        </font>
-                                    </TextField>
-                                    <Label style="-fx-text-fill: #888888; -fx-font-size: 11px; -fx-font-style: italic;" text="Use 24-hour format (00:00 - 23:59)">
-                                        <font>
-                                            <Font name="SansSerif Italic" size="11.0" />
-                                        </font>
-                                    </Label>
+
+                                    <ComboBox fx:id="scheduleTimeComboBox" maxWidth="300.0" prefWidth="300.0" promptText="Select Time" style="-fx-background-color: #292929; -fx-border-color: #404040; -fx-border-width: 1; -fx-border-radius: 5; -fx-text-fill: #FFFFFF; -fx-prompt-text-fill: #888888;" />
                                 </VBox>
                             </VBox>
                         </VBox>

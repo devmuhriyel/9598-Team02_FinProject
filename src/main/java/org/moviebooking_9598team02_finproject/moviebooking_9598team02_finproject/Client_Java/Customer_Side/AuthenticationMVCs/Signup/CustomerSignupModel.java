@@ -16,6 +16,7 @@ public class CustomerSignupModel extends CustomerParentModel {
                 throw new IllegalArgumentException("Email address is invalid");
             }
         }
-            return clientServices.registerCustomer(userName, emailAddress, password, fullName, phoneNumber);
+        // Fix: Pass parameters in correct order - fullName and phoneNumber were swapped
+        return clientServices.registerCustomer(userName, emailAddress, password, fullName, phoneNumber);
     }
 }

@@ -1,11 +1,14 @@
 package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.MovieMVCs;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
+import javafx.scene.control.cell.CheckBoxListCell;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
@@ -15,6 +18,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 import java.io.File;
 import java.time.LocalDate;
@@ -76,12 +80,17 @@ public class MovieView {
     @FXML private Button btnDeleteMovie;
     @FXML private Button btnClearFields;
 
+    // ===== COMBO BOXES =====
+    @FXML private ComboBox<String> scheduleTimeComboBox;
+
     // Genre tracking with checkbox state
+    private Timeline refreshTimer;
     private final Map<String, BooleanProperty> genreCheckMap = new LinkedHashMap<>();
     private final ObservableList<String> genreNames = FXCollections.observableArrayList();
 
     // Genre tracking for EDIT view
-    private final Map<String, BooleanProperty> genreCheckMapEdit = new LinkedHashMap<>();
+    private final Map<String, BooleanProperty> genreCheckMapAdd = new HashMap<>();
+    private final Map<String, BooleanProperty> genreCheckMapEdit = new HashMap<>();
     private final ObservableList<String> genreNamesEdit = FXCollections.observableArrayList();
 
     // Image selection tracking
@@ -91,22 +100,37 @@ public class MovieView {
 
     @FXML
     public void initialize() {
-        System.out.println("🎬 MovieView.initialize() called");
+        if (genreListView == null) {
+            System.err.println("❌ FATAL: genreListView is NULL! Java cannot find the FXML element.");
+        } else {
+            System.out.println("✅ genreListView is linked correctly.");
+        }
 
-        // Setup ADD view
-        setupRatingComboBox();
+        // 1. Setup UI Components
         setupGenreListView();
-        setupImageBrowsing();
-
-        // Setup EDIT view
-        setupRatingComboBoxEdit();
         setupGenreListViewEdit();
+        setupRatingComboBox();
+        setupRatingComboBoxEdit();
+        setupTimeComboBox();
+        setupImageBrowsing();
         setupImageBrowsingEdit();
 
-        System.out.println("✅ MovieView initialization complete");
+        // 2. Default Visibility State (Show Grid, Hide Forms)
+        showGridView();
     }
 
     // ===== SETUP METHODS =====
+    private void setupTimeComboBox() {
+        if (scheduleTimeComboBox != null) {
+            List<String> timeSlots = new ArrayList<>();
+            // Generate times from 08:00 to 23:30
+            for (int hour = 8; hour < 24; hour++) {
+                timeSlots.add(String.format("%02d:00", hour));
+                timeSlots.add(String.format("%02d:30", hour));
+            }
+            scheduleTimeComboBox.setItems(FXCollections.observableArrayList(timeSlots));
+        }
+    }
 
     private void setupRatingComboBox() {
         if (ratingComboBox != null) {
@@ -122,15 +146,20 @@ public class MovieView {
 
     private void setupGenreListView() {
         if (genreListView != null) {
-            genreListView.setItems(genreNames);
-            genreListView.setPlaceholder(new Label("Loading genres..."));
+            // 1. Force a Placeholder (so you know if it's empty vs invisible)
+            Label placeholder = new Label("No genres loaded");
+            placeholder.setStyle("-fx-text-fill: #888888; -fx-font-size: 14px;");
+            genreListView.setPlaceholder(placeholder);
 
+            // 2. Define the Cell Factory INLINE (Safest way)
             genreListView.setCellFactory(param -> new ListCell<String>() {
                 private final CheckBox checkBox = new CheckBox();
 
                 {
+                    // FORCE WHITE TEXT
                     checkBox.setStyle("-fx-text-fill: #FFFFFF; -fx-font-size: 13px;");
                     setStyle("-fx-background-color: transparent; -fx-padding: 5;");
+                    setTextFill(Color.WHITE); // Ensure cell text is also white
                 }
 
                 @Override
@@ -141,16 +170,26 @@ public class MovieView {
                         setGraphic(null);
                         setText(null);
                     } else {
+                        // Update Text
                         checkBox.setText(item);
-                        BooleanProperty selectedProperty = genreCheckMap.get(item);
-                        if (selectedProperty != null) {
-                            checkBox.setOnAction(null);
-                            checkBox.setSelected(selectedProperty.get());
-                            checkBox.setOnAction(e -> {
-                                selectedProperty.set(checkBox.isSelected());
-                            });
+
+                        // Handle Selection State
+                        checkBox.setOnAction(null); // Remove old listener
+
+                        // Check if map has this item
+                        if (genreCheckMapAdd.containsKey(item)) {
+                            BooleanProperty prop = genreCheckMapAdd.get(item);
+                            checkBox.setSelected(prop.get());
+
+                            // Add new listener
+                            checkBox.setOnAction(e -> prop.set(checkBox.isSelected()));
+
+                            setGraphic(checkBox);
+                        } else {
+                            // Fallback if map is missing data (Just show text)
+                            setText(item);
+                            setGraphic(null);
                         }
-                        setGraphic(checkBox);
                     }
                 }
             });
@@ -168,6 +207,7 @@ public class MovieView {
             btnBrowsePosterEdit.setOnAction(event -> handleImageBrowsing());
         }
     }
+
 
     private void setupRatingComboBoxEdit() {
         if (ratingComboBoxEdit != null) {
@@ -255,20 +295,13 @@ public class MovieView {
         header.setAlignment(Pos.CENTER_LEFT);
 
         Label scheduleIdLabel = new Label("Schedule #" + scheduleId);
-        scheduleIdLabel.setStyle(
-                "-fx-text-fill: #ff2525; " +
-                        "-fx-font-size: 14px; " +
-                        "-fx-font-weight: bold;"
-        );
+        scheduleIdLabel.setStyle("-fx-text-fill: #ff2525; -fx-font-size: 14px; -fx-font-weight: bold;");
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
         Label movieScheduleIdLabel = new Label("Time Slot ID: " + movieScheduleId);
-        movieScheduleIdLabel.setStyle(
-                "-fx-text-fill: #888888; " +
-                        "-fx-font-size: 11px;"
-        );
+        movieScheduleIdLabel.setStyle("-fx-text-fill: #888888; -fx-font-size: 11px;");
 
         header.getChildren().addAll(scheduleIdLabel, spacer, movieScheduleIdLabel);
 
@@ -290,16 +323,37 @@ public class MovieView {
 
         dateBox.getChildren().addAll(dateLabel, datePicker);
 
-        // Time Field
+        // --- CHANGED: Time Field to ComboBox ---
         VBox timeBox = new VBox(5);
         Label timeLabel = new Label("🕐 Screening Time");
         timeLabel.setStyle("-fx-text-fill: #FFFFFF; -fx-font-size: 12px;");
 
-        TextField timeField = getTextField(time);
+        ComboBox<String> timeComboBox = new ComboBox<>();
+        timeComboBox.setMaxWidth(250);
 
-        timeBox.getChildren().addAll(timeLabel, timeField);
+        // CHANGED: Added -fx-text-fill and -fx-prompt-text-fill
+        timeComboBox.setStyle(
+                "-fx-background-color: #292929; " +
+                        "-fx-border-color: #404040; " +
+                        "-fx-border-width: 1; " +
+                        "-fx-border-radius: 5; " +
+                        "-fx-text-fill: #FFFFFF; " +
+                        "-fx-prompt-text-fill: #888888;"
+        );
 
-        // Action Buttons
+        // Populate Time Slots
+        List<String> timeSlots = new ArrayList<>();
+        for (int hour = 8; hour < 24; hour++) {
+            timeSlots.add(String.format("%02d:00", hour));
+            timeSlots.add(String.format("%02d:30", hour));
+        }
+        timeComboBox.setItems(FXCollections.observableArrayList(timeSlots));
+
+        // Set Current Value
+        timeComboBox.setValue(time);
+
+        timeBox.getChildren().addAll(timeLabel, timeComboBox);
+        // ----------------------------------------
         HBox buttonBox = new HBox(10);
         buttonBox.setAlignment(Pos.CENTER_RIGHT);
 
@@ -318,26 +372,22 @@ public class MovieView {
             if (onSaveAction != null) {
                 String newDate = datePicker.getValue() != null ?
                         datePicker.getValue().toString() : date;
-                String newTime = timeField.getText().trim();
 
-                // --- FIX START (Replace Map.of() with HashMap) ---
-                // Note: Using Map<String, Object> in case scheduleId is not a String (e.g., Integer)
+                String newTime = timeComboBox.getValue();
+
                 Map<String, Object> userData = new HashMap<>();
                 userData.put("scheduleId", scheduleId);
                 userData.put("newDate", newDate);
                 userData.put("newTime", newTime);
 
                 scheduleCard.setUserData(userData);
-                // --- FIX END ---
 
                 onSaveAction.run();
             }
         });
 
         Button deleteButton = getButton(scheduleId, onDeleteAction, scheduleCard);
-
         buttonBox.getChildren().addAll(saveButton, deleteButton);
-
         scheduleCard.getChildren().addAll(header, dateBox, timeBox, buttonBox);
 
         return scheduleCard;
@@ -396,23 +446,6 @@ public class MovieView {
         return deleteButton;
     }
 
-    private static TextField getTextField(String time) {
-        TextField timeField = new TextField(time);
-        timeField.setMaxWidth(250);
-        timeField.setPromptText("HH:mm (e.g., 14:30)");
-        timeField.setStyle(
-                "-fx-background-color: #292929; " +
-                        "-fx-text-fill: #FFFFFF; " +
-                        "-fx-prompt-text-fill: #888888; " +
-                        "-fx-font-size: 12px; " +
-                        "-fx-border-color: #404040; " +
-                        "-fx-border-width: 1; " +
-                        "-fx-border-radius: 5; " +
-                        "-fx-padding: 8 12;"
-        );
-        return timeField;
-    }
-
     // ===== GENRE MANAGEMENT =====
 
     public void populateGenreList(List<String> genres) {
@@ -468,6 +501,38 @@ public class MovieView {
         if (genreListViewEdit != null) genreListViewEdit.refresh();
     }
 
+    public void updateGenreOptions(List<String> genreNames) {
+        if (genreNames == null) return;
+        System.out.println("📥 Updating Genre List with " + genreNames.size() + " items");
+
+        ObservableList<String> genres = FXCollections.observableArrayList(genreNames);
+
+        // --- CRITICAL STEP: POPULATE THE MAPS ---
+        // If we don't do this, the checkboxes will be null/broken
+
+        // A. Reset ADD Map
+        genreCheckMapAdd.clear();
+        for (String g : genreNames) {
+            genreCheckMapAdd.put(g, new SimpleBooleanProperty(false));
+        }
+
+        // B. Reset EDIT Map
+        genreCheckMapEdit.clear();
+        for (String g : genreNames) {
+            genreCheckMapEdit.put(g, new SimpleBooleanProperty(false));
+        }
+
+        // --- PUSH TO UI ---
+        if (genreListView != null) {
+            genreListView.setItems(genres);
+            genreListView.refresh(); // Force redraw
+        }
+
+        if (genreListViewEdit != null) {
+            genreListViewEdit.setItems(genres);
+            genreListViewEdit.refresh();
+        }
+    }
     // ===== IMAGE MANAGEMENT =====
 
     public void clearSelectedImage() {
@@ -477,35 +542,68 @@ public class MovieView {
 
     // ===== VIEW SWITCHING METHODS =====
 
+    // === VIEW SWITCHING METHODS (Add these to MovieView) ===
     public void showGridView() {
-        movieView.setVisible(true);
-        movieView.setManaged(true);
-        addMovieView.setVisible(false);
-        addMovieView.setManaged(false);
-        editMovieView.setVisible(false);
-        editMovieView.setManaged(false);
+        // Show Main View
+        if (movieView != null) {
+            movieView.setVisible(true);
+            movieView.setManaged(true);
+            movieView.toFront();
+        }
+        // Hide Forms (collapse space)
+        if (addMovieView != null) {
+            addMovieView.setVisible(false);
+            addMovieView.setManaged(false);
+        }
+        if (editMovieView != null) {
+            editMovieView.setVisible(false);
+            editMovieView.setManaged(false);
+        }
     }
 
     public void showAddView() {
-        movieView.setVisible(false);
-        movieView.setManaged(false);
-        addMovieView.setVisible(true);
-        addMovieView.setManaged(true);
-        editMovieView.setVisible(false);
-        editMovieView.setManaged(false);
+        // Hide Main View
+        if (movieView != null) {
+            movieView.setVisible(false);
+            movieView.setManaged(false);
+        }
+        // Hide Edit View
+        if (editMovieView != null) {
+            editMovieView.setVisible(false);
+            editMovieView.setManaged(false);
+        }
+        // Show Add View
+        if (addMovieView != null) {
+            addMovieView.setVisible(true);
+            addMovieView.setManaged(true);
+            addMovieView.toFront();
+        } else {
+            System.err.println("❌ ERROR: addMovieView is NULL. Check FXML fx:id!");
+        }
     }
 
     public void showEditView() {
-        movieView.setVisible(false);
-        movieView.setManaged(false);
-        addMovieView.setVisible(false);
-        addMovieView.setManaged(false);
-        editMovieView.setVisible(true);
-        editMovieView.setManaged(true);
+        // Hide Main View
+        if (movieView != null) {
+            movieView.setVisible(false);
+            movieView.setManaged(false);
+        }
+        // Hide Add View
+        if (addMovieView != null) {
+            addMovieView.setVisible(false);
+            addMovieView.setManaged(false);
+        }
+        // Show Edit View
+        if (editMovieView != null) {
+            editMovieView.setVisible(true);
+            editMovieView.setManaged(true);
+            editMovieView.toFront();
+        } else {
+            System.err.println("❌ ERROR: editMovieView is NULL. Check FXML fx:id!");
+        }
     }
 
     // ===== MOVIE CARD CREATION =====
-
     public VBox createMovieCard(String title, String genres, int rating, String posterURL, Runnable onClickAction) {
         VBox card = new VBox();
         card.setAlignment(Pos.BOTTOM_CENTER);
@@ -756,6 +854,111 @@ public class MovieView {
         showAlert(title, content, Alert.AlertType.ERROR);
     }
 
+    // ===== HELPER CLASSES =====
+    private static class CheckBoxListCell extends ListCell<String> {
+        private final CheckBox checkBox = new CheckBox();
+        private final Map<String, BooleanProperty> checkMap;
+
+        public CheckBoxListCell(Map<String, BooleanProperty> checkMap) {
+            this.checkMap = checkMap;
+            checkBox.setStyle("-fx-text-fill: #FFFFFF; -fx-font-size: 13px;");
+        }
+
+        @Override
+        protected void updateItem(String item, boolean empty) {
+            super.updateItem(item, empty);
+            if (empty || item == null) {
+                setGraphic(null);
+                setText(null);
+            } else {
+                checkBox.setText(item);
+                // Unbind previous to prevent errors
+                checkBox.selectedProperty().unbind();
+
+                // Get the property for this genre
+                BooleanProperty property = checkMap.get(item);
+                if (property != null) {
+                    // Bind the checkbox to the map state
+                    checkBox.selectedProperty().bindBidirectional(property);
+                }
+                setGraphic(checkBox);
+            }
+        }
+    }
+
+    /**
+     * Programmatically check boxes for the Edit screen (when loading a movie).
+     */
+    public void selectGenresForEdit(List<String> genresToSelect) {
+        // 1. Uncheck all first
+        for (BooleanProperty prop : genreCheckMapEdit.values()) {
+            prop.set(false);
+        }
+
+        // 2. Check the matching ones
+        if (genresToSelect != null) {
+            for (String g : genresToSelect) {
+                if (genreCheckMapEdit.containsKey(g)) {
+                    genreCheckMapEdit.get(g).set(true);
+                }
+            }
+        }
+        // Refresh list to show changes
+        if (genreListViewEdit != null) genreListViewEdit.refresh();
+    }
+
+    /**
+     * Get list of selected genres from ADD screen
+     */
+    public List<String> getSelectedGenresAdd() {
+        List<String> selected = new ArrayList<>();
+        for (Map.Entry<String, BooleanProperty> entry : genreCheckMapAdd.entrySet()) {
+            if (entry.getValue().get()) {
+                selected.add(entry.getKey());
+            }
+        }
+        return selected;
+    }
+
+    public List<String> getSelectedGenresEdit() {
+        List<String> selected = new ArrayList<>();
+        for (Map.Entry<String, BooleanProperty> entry : genreCheckMapEdit.entrySet()) {
+            if (entry.getValue().get()) {
+                selected.add(entry.getKey());
+            }
+        }
+        return selected;
+    }
+    // ===== TIMERS =====
+    /**
+     * Starts a timer that runs the given action every 10 seconds.
+     */
+    public void startAutoRefresh(Runnable action) {
+        // Stop existing timer if running
+        if (refreshTimer != null) {
+            refreshTimer.stop();
+        }
+
+        // Create new timer
+        refreshTimer = new Timeline(new KeyFrame(Duration.seconds(10), event -> {
+            if (action != null) {
+                action.run(); // Run the logic passed from Controller
+            }
+        }));
+
+        refreshTimer.setCycleCount(Timeline.INDEFINITE);
+        refreshTimer.play();
+    }
+
+    /**
+     * Stops the timer (good for cleanup).
+     */
+    public void stopAutoRefresh() {
+        if (refreshTimer != null) {
+            refreshTimer.stop();
+        }
+    }
+
     // ===== GETTERS =====
 
     public VBox getMovieView() { return movieView; }
@@ -781,4 +984,7 @@ public class MovieView {
     public TextArea getDescriptionInputEdit() { return descriptionInputEdit; }
     public String getSelectedImagePath() { return selectedImagePath; }
     public Button getBtnAddNewSchedule() { return btnAddNewSchedule; }
+    public ComboBox<String> getScheduleTimeComboBox() {
+        return scheduleTimeComboBox;
+    }
 }

@@ -4,9 +4,6 @@ import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.AuthenticationException;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.InvalidInputException;
 
-/**
- * AdminMgmtController - Pure business logic, no JavaFX imports
- */
 public class AdminMgmtController {
     private AdminMgmtModel model;
     private AdminMgmtView view;
@@ -21,61 +18,66 @@ public class AdminMgmtController {
 
     // ===== BUTTON INITIALIZATION =====
     private void initializeButtons() {
-        // List Panel Buttons
         view.getCreateButton().setOnAction(event -> view.showCreatePanel());
         view.getSearchButton().setOnAction(event -> handleSearchButtonClick());
         view.getRefreshButton().setOnAction(event -> handleRefreshButtonClick());
-
-        // Detail Panel - Basic Info
         view.getSaveButton().setOnAction(event -> handleSaveProfileButtonClick());
         view.getBackToListButton().setOnAction(event -> {
             view.showListPanel();
             view.clearDetailMessage();
         });
-
-        // Detail Panel - Change Email Form
         view.getSubmitEmailButton().setOnAction(event -> handleSubmitEmailButtonClick());
-
-        // Detail Panel - Change Password Form
         view.getSubmitPasswordButton().setOnAction(event -> handleSubmitPasswordButtonClick());
-
-        // Detail Panel - Delete
         view.getDeleteButton().setOnAction(event -> handleDeleteButtonClick());
-
-        // Create Panel Buttons
         view.getCreateSaveButton().setOnAction(event -> handleCreateSaveButtonClick());
         view.getCreateCancelButton().setOnAction(event -> view.showListPanel());
     }
 
     // ===== LIST PANEL HANDLERS =====
+
     private void handleSearchButtonClick() {
         String searchText = view.getSearchField().getText();
+
+        // Handle empty search - just refresh the list
         if (searchText == null || searchText.trim().isEmpty()) {
-            view.showListMessage("Please enter a search term");
+            try {
+                loadAllAdmins();
+                view.showListMessage("✅ Showing all admins");
+            } catch (AuthenticationException e) {
+                view.showListMessage("❌ " + e.getMessage());
+            }
+            return;
+        }
+
+        // ✅ VALIDATE using model
+        String error = model.validateSearchQuery(searchText);
+        if (error != null) {
+            view.showListMessage("❌ " + error);
             return;
         }
 
         try {
             view.clearListMessage();
+            String trimmed = searchText.trim();
 
-            if (searchText.matches("\\d+")) {
-                Admin admin = model.getAdminById(searchText);
+            if (trimmed.matches("\\d+")) {
+                Admin admin = model.getAdminById(trimmed);
                 if (admin != null) {
                     Admin[] result = new Admin[1];
                     result[0] = admin;
                     view.displayAdminList(result);
-                    view.showListMessage("Found 1 admin");
+                    view.showListMessage("✅ Found 1 admin");
                 } else {
                     view.displayAdminList(new Admin[0]);
-                    view.showListMessage("No admin found with ID: " + searchText);
+                    view.showListMessage("❌ No admin found with ID: " + trimmed);
                 }
             } else {
-                Admin[] results = model.searchAdmins(searchText);
+                Admin[] results = model.searchAdmins(trimmed);
                 view.displayAdminList(results);
-                view.showListMessage("Found " + results.length + " admin(s)");
+                view.showListMessage("✅ Found " + results.length + " admin(s)");
             }
         } catch (AuthenticationException e) {
-            view.showListMessage("Error: " + e.getMessage());
+            view.showListMessage("❌ " + e.getMessage());
         }
     }
 
@@ -83,228 +85,193 @@ public class AdminMgmtController {
         try {
             view.clearListMessage();
             loadAllAdmins();
-            view.showListMessage("Admin list refreshed");
+            view.showListMessage("✅ Admin list refreshed");
         } catch (AuthenticationException e) {
-            view.showListMessage("Error: " + e.getMessage());
+            view.showListMessage("❌ " + e.getMessage());
         }
     }
 
     // ===== DETAIL PANEL - SAVE PROFILE =====
+
     private void handleSaveProfileButtonClick() {
         try {
             String adminIdText = view.getDetailAdminIdLabel().getText();
             int targetAdminId = Integer.parseInt(adminIdText);
-
             String fullName = view.getDetailFullNameField().getText();
             String phoneNumber = view.getDetailPhoneField().getText();
 
-            if (fullName == null || fullName.trim().isEmpty()) {
-                view.showDetailMessage("Full name cannot be empty");
+            // ✅ VALIDATE using model
+            String error = model.validateProfileUpdate(fullName, phoneNumber);
+            if (error != null) {
+                view.showDetailMessage("❌ " + error);
                 return;
             }
 
             view.clearDetailMessage();
             model.updateAdminProfile(targetAdminId, fullName, phoneNumber);
-            view.showDetailMessage("✓ Profile updated successfully!");
-
-            try {
-                loadAllAdmins();
-            } catch (AuthenticationException e) {
-                e.printStackTrace();
-            }
+            view.showDetailMessage("✅ Profile updated successfully!");
+            loadAllAdmins();
 
         } catch (NumberFormatException e) {
-            view.showDetailMessage("Error: Invalid admin ID");
+            view.showDetailMessage("❌ Invalid admin ID");
         } catch (AuthenticationException e) {
-            view.showDetailMessage("Error: " + e.getMessage());
+            view.showDetailMessage("❌ " + e.getMessage());
         }
     }
 
-    // ===== DETAIL PANEL - CHANGE EMAIL FORM =====
+    // ===== DETAIL PANEL - CHANGE EMAIL =====
+
     private void handleSubmitEmailButtonClick() {
         try {
             String adminIdText = view.getDetailAdminIdLabel().getText();
             int targetAdminId = Integer.parseInt(adminIdText);
-
             String newEmail = view.getNewEmailField().getText();
             String password = view.getEmailPasswordField().getText();
 
-            // Validate inputs
-            if (newEmail == null || newEmail.trim().isEmpty()) {
-                view.showDetailMessage("Email cannot be empty");
-                return;
-            }
-
-            if (!newEmail.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
-                view.showDetailMessage("Invalid email format");
-                return;
-            }
-
-            if (password == null || password.trim().isEmpty()) {
-                view.showDetailMessage("This admin's password is required to change their email");
+            // ✅ VALIDATE using model
+            String error = model.validateEmailChange(newEmail, password);
+            if (error != null) {
+                view.showDetailMessage("❌ " + error);
                 return;
             }
 
             view.clearDetailMessage();
             model.updateAdminEmail(targetAdminId, newEmail, password);
-
-            // Update the email label
-            view.getDetailEmailLabel().setText(newEmail);
-
-            // Clear the form
+            view.getDetailEmailLabel().setText(newEmail.trim());
             view.getNewEmailField().clear();
             view.getEmailPasswordField().clear();
-
-            view.showDetailMessage("Email updated successfully!");
-
-            try {
-                loadAllAdmins();
-            } catch (AuthenticationException e) {
-                e.printStackTrace();
-            }
+            view.showDetailMessage("✅ Email updated successfully!");
+            loadAllAdmins();
 
         } catch (NumberFormatException e) {
-            view.showDetailMessage("Error: Invalid admin ID");
+            view.showDetailMessage("❌ Invalid admin ID");
         } catch (AuthenticationException e) {
             if (e.getMessage().contains("Incorrect password")) {
-                view.showDetailMessage("Incorrect password for this admin account");
+                view.showDetailMessage("❌ Incorrect password");
             } else {
-                view.showDetailMessage("Error: " + e.getMessage());
+                view.showDetailMessage("❌ " + e.getMessage());
             }
         } catch (InvalidInputException e) {
             if (e.getMessage().contains("Email already exists")) {
-                view.showDetailMessage("This email is already in use");
+                view.showDetailMessage("❌ This email is already in use");
             } else {
-                view.showDetailMessage("Error: " + e.getMessage());
+                view.showDetailMessage("❌ " + e.getMessage());
             }
         }
     }
 
-    // ===== DETAIL PANEL - CHANGE PASSWORD FORM =====
+    // ===== DETAIL PANEL - CHANGE PASSWORD =====
+
     private void handleSubmitPasswordButtonClick() {
         try {
             String adminIdText = view.getDetailAdminIdLabel().getText();
             int targetAdminId = Integer.parseInt(adminIdText);
-
             String oldPassword = view.getOldPasswordField().getText();
             String newPassword = view.getNewPasswordField().getText();
             String confirmPassword = view.getConfirmPasswordField().getText();
 
-            // Validate inputs
-            if (oldPassword == null || oldPassword.trim().isEmpty()) {
-                view.showDetailMessage("Current password is required");
-                return;
-            }
-
-            if (newPassword == null || newPassword.trim().isEmpty()) {
-                view.showDetailMessage("New password is required");
-                return;
-            }
-
-            if (newPassword.length() < 6) {
-                view.showDetailMessage("Password must be at least 6 characters");
-                return;
-            }
-
+            // ✅ VALIDATE password match first
             if (!newPassword.equals(confirmPassword)) {
-                view.showDetailMessage("Passwords do not match");
+                view.showDetailMessage("❌ Passwords do not match");
+                return;
+            }
+
+            // ✅ VALIDATE using model
+            String error = model.validatePasswordChange(oldPassword, newPassword);
+            if (error != null) {
+                view.showDetailMessage("❌ " + error);
                 return;
             }
 
             view.clearDetailMessage();
             model.changeAdminPassword(targetAdminId, oldPassword, newPassword);
-
-            // Clear the form
             view.getOldPasswordField().clear();
             view.getNewPasswordField().clear();
             view.getConfirmPasswordField().clear();
-
-            view.showDetailMessage("✓ Password changed successfully!");
+            view.showDetailMessage("✅ Password changed successfully!");
 
         } catch (NumberFormatException e) {
-            view.showDetailMessage("Error: Invalid admin ID");
+            view.showDetailMessage("❌ Invalid admin ID");
         } catch (AuthenticationException e) {
-            view.showDetailMessage("Error: " + e.getMessage());
+            if (e.getMessage().contains("Incorrect")) {
+                view.showDetailMessage("❌ Incorrect current password");
+            } else {
+                view.showDetailMessage("❌ " + e.getMessage());
+            }
         }
     }
 
     // ===== DETAIL PANEL - DELETE =====
+
     private void handleDeleteButtonClick() {
         try {
             String adminIdText = view.getDetailAdminIdLabel().getText();
             int targetAdminId = Integer.parseInt(adminIdText);
             String username = view.getDetailUsernameLabel().getText();
 
-            // Show confirmation dialog via view
             boolean confirmed = view.showDeleteConfirmation(username);
-
             if (confirmed) {
                 view.clearDetailMessage();
                 model.deleteAdmin(targetAdminId);
                 view.showListPanel();
                 loadAllAdmins();
+                view.showListMessage("✅ Admin '" + username + "' deleted successfully");
             }
 
         } catch (NumberFormatException e) {
-            view.showDetailMessage("Error: Invalid admin ID");
+            view.showDetailMessage("❌ Invalid admin ID");
         } catch (AuthenticationException e) {
-            view.showDetailMessage("Error: " + e.getMessage());
+            if (e.getMessage().contains("Cannot delete")) {
+                view.showDetailMessage("❌ You cannot delete your own account");
+            } else {
+                view.showDetailMessage("❌ " + e.getMessage());
+            }
         }
     }
 
-    // ===== CREATE PANEL HANDLERS =====
+    // ===== CREATE PANEL =====
+
     private void handleCreateSaveButtonClick() {
+        String username = view.getCreateUsernameField().getText();
+        String email = view.getCreateEmailField().getText();
+        String password = view.getCreatePasswordField().getText();
+        String confirmPassword = view.getCreateConfirmPasswordField().getText();
+        String fullName = view.getCreateFullNameField().getText();
+        String phoneNumber = view.getCreatePhoneField().getText();
+
+        // ✅ VALIDATE password match first
+        if (!password.equals(confirmPassword)) {
+            view.showCreateMessage("❌ Passwords do not match");
+            return;
+        }
+
+        // ✅ VALIDATE all fields using model
+        String error = model.validateAdminCreation(username, email, password, fullName, phoneNumber);
+        if (error != null) {
+            view.showCreateMessage("❌ " + error);
+            return;
+        }
+
         try {
-            String username = view.getCreateUsernameField().getText();
-            String email = view.getCreateEmailField().getText();
-            String password = view.getCreatePasswordField().getText();
-            String confirmPassword = view.getCreateConfirmPasswordField().getText();
-            String fullName = view.getCreateFullNameField().getText();
-            String phoneNumber = view.getCreatePhoneField().getText();
-
-            if (username == null || username.trim().isEmpty()) {
-                view.showCreateMessage("Username is required");
-                return;
-            }
-            if (email == null || email.trim().isEmpty()) {
-                view.showCreateMessage("Email is required");
-                return;
-            }
-            if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
-                view.showCreateMessage("Invalid email format");
-                return;
-            }
-            if (password == null || password.trim().isEmpty()) {
-                view.showCreateMessage("Password is required");
-                return;
-            }
-            if (password.length() < 6) {
-                view.showCreateMessage("Password must be at least 6 characters");
-                return;
-            }
-            if (!password.equals(confirmPassword)) {
-                view.showCreateMessage("Passwords do not match");
-                return;
-            }
-
             view.clearCreateMessage();
-
             int newAdminId = model.createAdmin(username, email, password, fullName, phoneNumber);
-
-            // Show success message via view
-            view.showSuccessAlert("Admin Created", "Admin account created successfully!\nAdmin ID: " + newAdminId);
-
+            view.showSuccessAlert("Admin Created", "✅ Admin account created successfully!\nAdmin ID: " + newAdminId);
             view.showListPanel();
             loadAllAdmins();
 
         } catch (AuthenticationException e) {
-            view.showCreateMessage("Error: " + e.getMessage());
+            view.showCreateMessage("❌ " + e.getMessage());
         } catch (InvalidInputException e) {
-            view.showCreateMessage("Error: " + e.getMessage());
+            if (e.getMessage().contains("already exists")) {
+                view.showCreateMessage("❌ Username or email already exists");
+            } else {
+                view.showCreateMessage("❌ " + e.getMessage());
+            }
         }
     }
 
     // ===== DATA LOADING =====
+
     public void loadAllAdmins() throws AuthenticationException {
         adminArrays = model.loadAllAdmins();
         view.displayAdminList(adminArrays);

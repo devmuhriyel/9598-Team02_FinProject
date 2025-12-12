@@ -39,8 +39,8 @@ public class MovieController {
     private int selectedMovieId = -1;
 
     // View states
-    private enum ViewState { GRID, ADD, EDIT }
     private ViewState currentViewState = ViewState.GRID;
+
 
     // Image storage directory
     private static final String IMAGE_DIRECTORY = "Images/MovieImage/";
@@ -53,34 +53,49 @@ public class MovieController {
     }
 
     public void initialize() {
-        System.out.println("🔧 MovieController.initialize() called");
-
-        if (view.getBtnAddNewMovie() == null) {
-            System.err.println("❌ CRITICAL ERROR: FXML elements not loaded!");
-            return;
-        }
-
         loadInitialData();
         initializeButtons();
         setupLiveSearch();
         showGridViewInternal();
+        // timer
+        view.startAutoRefresh(() -> {
+            // This code runs every 10 seconds
+            if (currentViewState == ViewState.GRID) {
+                System.out.println("🔄 Auto-refreshing genres...");
+                loadAllGenres();
+            }
+        });
 
-        System.out.println("✅ MovieController fully initialized");
+    }
+    // Add this Enum inside the MovieController class (or at the bottom of the file)
+    private enum ViewState {
+        GRID,
+        ADD,
+        EDIT
     }
 
     private void initializeButtons() {
         // Navigation
-        view.getBtnAddNewMovie().setOnAction(event -> handleAddNewMovieClick());
-        view.getBtnBackToGrid().setOnAction(event -> handleBackToGridClick());
+        view.getBtnAddNewSchedule().setOnAction(e -> handleAddNewScheduleClick());
+        view.getBtnAddNewMovie().setOnAction(e -> handleAddNewMovieClick());
         view.getBtnBackToGridFromEdit().setOnAction(event -> handleBackToGridFromEditClick());
-
+        view.getBtnBackToGrid().setOnAction(e -> handleBackToGridClick());
         // Pagination
         view.getBtnPreviousPage().setOnAction(event -> handlePreviousPageClick());
         view.getBtnNextPage().setOnAction(event -> handleNextPageClick());
 
         // CRUD
-        if (view.getBtnAddMovie() != null) {
-            view.getBtnAddMovie().setOnAction(event -> handleAddMovieClick());
+        // Add Movie Button (on Grid)
+        if (view.getBtnAddNewMovie() != null) {
+            view.getBtnAddNewMovie().setOnAction(e -> handleAddNewMovieClick());
+        }
+
+        // Back Buttons
+        if (view.getBtnBackToGrid() != null) {
+            view.getBtnBackToGrid().setOnAction(e -> handleBackToGridClick());
+        }
+        if (view.getBtnBackToGridFromEdit() != null) {
+            view.getBtnBackToGridFromEdit().setOnAction(e -> handleBackToGridFromEditClick()); // or handleBackToGridClick
         }
 
         view.getBtnUpdateMovie().setOnAction(event -> handleUpdateMovieClick());
@@ -136,12 +151,13 @@ public class MovieController {
 
     // ===== VIEW SWITCHING =====
 
+    // Update showGridViewInternal
     private void showGridViewInternal() {
-        currentViewState = ViewState.GRID;
-        view.showGridView();
-        view.clearAllFields();
+        currentViewState = ViewState.GRID; // <--- Update State
         currentlySelectedMovie = null;
         selectedMovieId = -1;
+        view.showGridView();
+        view.clearAllFields();
     }
 
     private void showAddViewInternal() {
@@ -158,43 +174,44 @@ public class MovieController {
         selectedMovieId = -1;
     }
 
+    // Inside MovieController.java
+
+    // Update showEditViewInternal
     private void showEditViewInternal(Movie movie) {
+        if (movie == null) return;
         currentViewState = ViewState.EDIT;
-        view.showEditView();
+        loadAllGenres();
+        selectedMovieId = movie.movieId;
+        currentlySelectedMovie = movie;
         populateFieldsWithMovie(movie);
-
-        // ✅ Load schedules for this movie
         loadSchedulesForMovie(movie.movieId);
-
-        System.out.println("✏️ Switched to Edit View - Movie ID: " + movie.movieId);
+        view.showEditView();
     }
-
     // ===== DATA LOADING =====
 
     private void loadAllGenres() {
         try {
-            Genre[] allGenres = model.getAllGenres();
-            if (allGenres == null || allGenres.length == 0) {
-                view.showWarningAlert("No Genres Found", "Please add genres first before creating movies.");
-                return;
-            }
+            // 1. Fetch from Database
+            Genre[] genres = model.getAllGenres();
 
-            genreDataMap.clear();
+            // 2. Clear Lists
             List<String> genreNames = new ArrayList<>();
+            genreDataMap.clear();
 
-            for (Genre genre : allGenres) {
-                genreDataMap.put(genre.genreId, genre);
-                genreNames.add(genre.genreName);
+            // 3. Populate
+            if (genres != null) {
+                for (Genre g : genres) {
+                    genreDataMap.put(g.genreId, g);
+                    genreNames.add(g.genreName);
+                }
             }
 
-            view.populateGenreList(genreNames);
+            // 4. Update View
+            Collections.sort(genreNames);
+            view.updateGenreOptions(genreNames);
 
-        } catch (AuthenticationException e) {
-            view.showErrorAlert("Authentication Error", "Session expired. Please log in again.");
-            e.printStackTrace();
         } catch (Exception e) {
-            view.showErrorAlert("Error Loading Genres", "Failed to load genres: " + e.getMessage());
-            e.printStackTrace();
+            view.showErrorAlert("Data Error", "Failed to load genres: " + e.getMessage());
         }
     }
 
@@ -347,56 +364,41 @@ public class MovieController {
     }
 
     /**
-     * Handle adding a new schedule
+     * Handle adding a new schedule (inside the Edit Movie screen)
      */
     private void handleAddNewScheduleClick() {
-        if (selectedMovieId == -1) {
-            view.showWarningAlert("No Movie Selected", "Please select a movie first.");
-            return;
-        }
-
-        // Get date and time from input fields
-        LocalDate scheduleDate = view.getScheduleDatePicker().getValue();
-        String scheduleTime = view.getScheduleTimeField().getText().trim();
-
-        if (scheduleDate == null) {
-            view.showWarningAlert("Missing Date", "Please select a screening date.");
-            return;
-        }
-
-        if (scheduleTime.isEmpty()) {
-            view.showWarningAlert("Missing Time", "Please enter a screening time (HH:mm).");
-            return;
-        }
-
-        if (!isValidTimeFormat(scheduleTime)) {
-            view.showWarningAlert("Invalid Time", "Please use HH:mm format (e.g., 14:30).");
-            return;
-        }
-
         try {
-            String formattedDate = scheduleDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            // 1. Validate Movie Selection
+            if (selectedMovieId == -1) {
+                view.showWarningAlert("Error", "No movie selected.");
+                return;
+            }
 
-            // Create movie schedule
-            int movieScheduleId = model.createMovieSchedule(formattedDate, scheduleTime);
+            // 2. Get Data (Date + Dropdown Time)
+            LocalDate date = view.getScheduleDatePicker().getValue();
+            String time = view.getScheduleTimeComboBox().getValue(); // <--- Get from ComboBox
 
-            // Assign movie to schedule
-            int scheduleId = model.assignMovieToSchedule(selectedMovieId, movieScheduleId);
+            if (date == null || time == null || time.isEmpty()) {
+                view.showWarningAlert("Validation Error", "Please select both a date and a time.");
+                return;
+            }
 
-            view.showInfoAlert("Success!",
-                    "✅ Schedule added successfully!\n" +
-                            "Schedule ID: " + scheduleId + "\n" +
-                            "Screening: " + formattedDate + " at " + scheduleTime);
+            // 3. Format
+            String scheduleDate = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 
-            // Reload schedules
+            // 4. Call Model
+            System.out.println("Adding Schedule: " + scheduleDate + " @ " + time);
+            int movieScheduleId = model.createMovieSchedule(scheduleDate, time);
+            model.assignMovieToSchedule(selectedMovieId, movieScheduleId);
+
+            // 5. Refresh
+            view.showInfoAlert("Success", "✅ Schedule added!");
             loadSchedulesForMovie(selectedMovieId);
 
-            // Clear fields
+            // 6. Reset Fields
             view.getScheduleDatePicker().setValue(LocalDate.now());
-            view.getScheduleTimeField().clear();
+            view.getScheduleTimeComboBox().getSelectionModel().clearSelection();
 
-        } catch (InvalidInputException e) {
-            view.showErrorAlert("Invalid Input", e.message);
         } catch (Exception e) {
             view.showErrorAlert("Error", "Failed to add schedule: " + e.getMessage());
             e.printStackTrace();
@@ -488,13 +490,17 @@ public class MovieController {
 
     // ===== BUTTON HANDLERS =====
 
+    // Update handleAddNewMovieClick
     private void handleAddNewMovieClick() {
-        showAddViewInternal();
+        currentViewState = ViewState.ADD;
+        loadAllGenres();
+        view.clearAllFields();
+        view.showAddView();
     }
 
+    // Inside MovieController.java
     private void handleMovieCardClick(Movie movie) {
-        currentlySelectedMovie = movie;
-        selectedMovieId = movie.movieId;
+        System.out.println("Clicked movie: " + movie.movieTitle);
         showEditViewInternal(movie);
     }
 
@@ -539,96 +545,66 @@ public class MovieController {
         return IMAGE_DIRECTORY + fileName;
     }
 
+    // Inside MovieController.java
     private void handleAddMovieClick() {
         System.out.println("🎬 === ADD MOVIE PROCESS STARTED ===");
 
-        String title = view.getTitleInput().getText().trim();
-        if (title.isEmpty()) {
-            view.showWarningAlert("Validation Error", "Please enter a movie title.");
-            return;
-        }
-
-        Integer rating = view.getRatingComboBox().getValue();
-        if (rating == null) {
-            view.showWarningAlert("Validation Error", "Please select a rating.");
-            return;
-        }
-
-        List<String> selectedGenreNames = view.getSelectedGenres();
-        if (selectedGenreNames.isEmpty()) {
-            view.showWarningAlert("Validation Error", "Please select at least one genre.");
-            return;
-        }
-
-        String description = view.getDescriptionInput().getText().trim();
-        LocalDate scheduleDate = view.getScheduleDatePicker().getValue();
-        String scheduleTime = view.getScheduleTimeField().getText().trim();
-
         try {
-            String posterURL = "";
+            // 1. Gather Inputs
+            String title = view.getTitleInput().getText().trim();
+            String description = view.getDescriptionInput().getText().trim();
+            Integer rating = view.getRatingComboBox().getValue();
+
+            // GENRES: Get from the ADD checkboxes
+            List<String> selectedGenres = view.getSelectedGenresAdd();
+            int[] genreIds = getGenreIdsFromNames(selectedGenres);
+
+            // IMAGE
+            String posterUrl = "";
             String imagePath = view.getSelectedImagePath();
             if (imagePath != null && !imagePath.isEmpty()) {
-                posterURL = uploadImage();
+                posterUrl = uploadImage(); // Assuming you have this helper
             }
 
-            int[] genreIds = selectedGenreNames.stream()
-                    .mapToInt(this::findGenreIdByName)
-                    .filter(id -> id != -1)
-                    .toArray();
-
+            // 2. Validate
+            if (title.isEmpty()) {
+                view.showWarningAlert("Validation Error", "Please enter a movie title.");
+                return;
+            }
+            if (description.isEmpty()) {
+                view.showWarningAlert("Validation Error", "Please enter a description.");
+                return;
+            }
+            if (rating == null) {
+                view.showWarningAlert("Validation Error", "Please select a rating.");
+                return;
+            }
             if (genreIds.length == 0) {
-                view.showErrorAlert("Error", "Selected genres not found in database.");
+                view.showWarningAlert("Validation Error", "Please select at least one genre.");
                 return;
             }
 
-            int newMovieId = model.addMovie(title, genreIds, description, rating, posterURL);
+            // 3. Call Model (The Model has one method for adding everything)
+            // Check Model signature: addMovie(title, genreIds, description, rating, posterUrl)
+            int newMovieId = model.addMovie(title, genreIds, description, rating, posterUrl);
 
-            if (scheduleDate != null && scheduleTime != null && !scheduleTime.isEmpty()) {
-                if (isValidTimeFormat(scheduleTime)) {
-                    String formattedDate = scheduleDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            // 4. Success
+            view.showInfoAlert("Success", "✅ Movie added successfully! ID: " + newMovieId);
 
-                    try {
-                        int movieScheduleId = model.createMovieSchedule(formattedDate, scheduleTime);
-                        int scheduleId = model.assignMovieToSchedule(newMovieId, movieScheduleId);
+            loadAllMovies(); // Refresh data
+            showGridViewInternal(); // Go back to grid
 
-                        view.showInfoAlert("Success!",
-                                "✅ Movie added successfully!\n" +
-                                        "Movie ID: " + newMovieId + "\n" +
-                                        "Schedule ID: " + scheduleId + "\n" +
-                                        "Screening: " + formattedDate + " at " + scheduleTime);
-                    } catch (Exception e) {
-                        view.showWarningAlert("Partial Success",
-                                "Movie added (ID: " + newMovieId + ") but schedule creation failed: " + e.getMessage());
-                    }
-                } else {
-                    view.showInfoAlert("Success!",
-                            "Movie added (ID: " + newMovieId + ") but invalid time format. Use HH:mm format.");
-                }
-            } else {
-                view.showInfoAlert("Success!", "✅ Movie added successfully! ID: " + newMovieId);
-            }
-
-            loadAllMovies();
-            showGridViewInternal();
-
-        } catch (IOException e) {
-            view.showErrorAlert("Image Upload Error", "Failed to upload image: " + e.getMessage());
-            e.printStackTrace();
-        } catch (AuthenticationException e) {
-            view.showErrorAlert("Authentication Error", "Session expired: " + e.getMessage());
-            e.printStackTrace();
-        } catch (InvalidInputException e) {
-            view.showErrorAlert("Invalid Input", e.message);
-            e.printStackTrace();
         } catch (Exception e) {
             view.showErrorAlert("Error", "Failed to add movie: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
+    // Inside MovieController.java
     private void handleUpdateMovieClick() {
+        // 1. Safety Checks
         if (selectedMovieId == -1 || currentlySelectedMovie == null) {
-            view.showWarningAlert("No Movie Selected", "Please select a movie to update.");
+            view.showWarningAlert("Selection Error", "No movie selected.");
             return;
         }
 
@@ -636,56 +612,58 @@ public class MovieController {
         boolean anyChanges = false;
 
         try {
+            // --- TITLE UPDATE ---
             String newTitle = view.getTitleInputEdit().getText().trim();
             if (!newTitle.isEmpty() && !newTitle.equals(currentlySelectedMovie.movieTitle)) {
-                model.updateMovieTitle(selectedMovieId, newTitle);
+                model.updateMovieTitle(selectedMovieId, newTitle); //
                 anyChanges = true;
             }
 
-            String newDescription = view.getDescriptionInputEdit().getText().trim();
-            if (!newDescription.equals(currentlySelectedMovie.movieDescription)) {
-                model.updateMovieDescription(selectedMovieId, newDescription);
+            // --- DESCRIPTION UPDATE ---
+            String newDesc = view.getDescriptionInputEdit().getText().trim();
+            if (!newDesc.equals(currentlySelectedMovie.movieDescription)) {
+                model.updateMovieDescription(selectedMovieId, newDesc); //
                 anyChanges = true;
             }
 
+            // --- RATING UPDATE ---
             Integer newRating = view.getRatingComboBoxEdit().getValue();
             if (newRating != null && newRating != currentlySelectedMovie.movieRating) {
-                model.updateMovieRating(selectedMovieId, newRating);
+                model.updateMovieRating(selectedMovieId, newRating); //
                 anyChanges = true;
             }
 
+            // --- GENRE UPDATE ---
+            // Get genres from the EDIT checkboxes
+            List<String> newSelectedGenres = view.getSelectedGenresEdit();
+            int[] newGenreIds = getGenreIdsFromNames(newSelectedGenres);
+
+            // Simple check: if list size is different or content differs, update.
+            // (For a perfect check, we'd compare the sets of IDs, but strictly updating is safer here)
+            if (newGenreIds.length > 0) {
+                // We just update them to be safe. The backend usually handles if they are identical.
+                model.updateMovieGenres(selectedMovieId, newGenreIds); //
+                anyChanges = true;
+            } else {
+                view.showWarningAlert("Warning", "A movie must have at least one genre.");
+                return;
+            }
+
+            // --- IMAGE UPDATE ---
             String imagePath = view.getSelectedImagePath();
             if (imagePath != null && !imagePath.isEmpty()) {
-                String newPosterURL = uploadImage();
-                model.updateMoviePoster(selectedMovieId, newPosterURL);
+                String newPosterUrl = uploadImage(); // Helper method
+                model.updateMoviePoster(selectedMovieId, newPosterUrl); //
                 anyChanges = true;
             }
 
-            List<String> newSelectedGenres = view.getSelectedGenres();
-            if (!newSelectedGenres.isEmpty()) {
-                Genre[] currentGenres = model.getMovieGenres(selectedMovieId);
-                Set<String> currentGenreNames = Arrays.stream(currentGenres)
-                        .map(g -> g.genreName)
-                        .collect(Collectors.toSet());
-
-                if (!currentGenreNames.equals(new HashSet<>(newSelectedGenres))) {
-                    int[] genreIds = newSelectedGenres.stream()
-                            .mapToInt(this::findGenreIdByName)
-                            .filter(id -> id != -1)
-                            .toArray();
-                    if (genreIds.length > 0) {
-                        model.updateMovieGenres(selectedMovieId, genreIds);
-                        anyChanges = true;
-                    }
-                }
-            }
-
+            // --- FINISH ---
             if (anyChanges) {
-                view.showInfoAlert("Success!", "✅ Movie updated successfully!");
-                loadAllMovies();
+                view.showInfoAlert("Success", "✅ Movie updated successfully!");
+                loadAllMovies(); // Reload from DB to see changes
                 showGridViewInternal();
             } else {
-                view.showInfoAlert("No Changes", "No changes were made to the movie.");
+                view.showInfoAlert("No Changes", "No fields were modified.");
             }
 
         } catch (Exception e) {
@@ -743,13 +721,16 @@ public class MovieController {
             view.updateSelectedImageLabelEdit("Current: " + movie.moviePosterURL);
         }
 
+        // Inside populateFieldsWithMovie(...)
         try {
             Genre[] genres = model.getMovieGenres(movie.movieId);
-            if (genres != null && genres.length > 0) {
+            if (genres != null) {
                 List<String> genreNames = Arrays.stream(genres)
                         .map(g -> g.genreName)
                         .collect(Collectors.toList());
-                view.selectGenres(genreNames);
+
+                // NEW: Use the method we just created
+                view.selectGenresForEdit(genreNames);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -777,4 +758,15 @@ public class MovieController {
             return false;
         }
     }
+
+    // Helper method to get IDs from names
+    private int[] getGenreIdsFromNames(List<String> names) {
+        return names.stream()
+                .mapToInt(this::findGenreIdByName) // Uses your existing findGenreIdByName
+                .filter(id -> id != -1)
+                .toArray();
+    }
+
+
 }
+
