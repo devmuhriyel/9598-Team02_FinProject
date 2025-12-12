@@ -994,16 +994,17 @@ public class MBClientServant extends ClientServicePOA {
         }
 
         List<Booking> bookingList = new ArrayList<>();
-        try (Connection connection = DatabaseAccess.getConnection()) {
-            String query = "SELECT b.*, GROUP_CONCAT(sls.schedule_list_seat_id) as seat_ids " +
-                    "FROM bookings b " +
-                    "LEFT JOIN schedule_list_seats sls ON b.booking_id = sls.booking_id " +
-                    "WHERE b.customer_id = ? AND b.booking_status IN ('confirmed', 'cancelled') " +
-                    "GROUP BY b.booking_id, b.customer_id, b.schedule_id, b.booking_status, " +
-                    "b.total_price, b.booking_date, b.cancellation_reason, b.created_at, b.updated_at " +
-                    "ORDER BY b.booking_date DESC";
+        String query = "SELECT b.*, GROUP_CONCAT(sls.schedule_list_seat_id) as seat_ids " +
+                "FROM bookings b " +
+                "LEFT JOIN schedule_list_seats sls ON b.booking_id = sls.booking_id " +
+                "WHERE b.customer_id = ? AND b.booking_status IN ('confirmed', 'cancelled') " +
+                "GROUP BY b.booking_id, b.customer_id, b.schedule_id, b.booking_status, " +
+                "b.total_price, b.booking_date, b.cancellation_reason, b.created_at, b.updated_at " +
+                "ORDER BY b.booking_date DESC";
 
-            PreparedStatement statement = connection.prepareStatement(query);
+        try (Connection connection = DatabaseAccess.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+
             statement.setInt(1, customerId);
             ResultSet rs = statement.executeQuery();
 
@@ -1012,19 +1013,24 @@ public class MBClientServant extends ClientServicePOA {
                 booking.bookingId = rs.getInt("booking_id");
                 booking.customerId = rs.getInt("customer_id");
                 booking.scheduleId = rs.getInt("schedule_id");
-                booking.bookingStatus = rs.getString("booking_status");
                 booking.totalPrice = rs.getDouble("total_price");
-                booking.bookingDate = rs.getString("booking_date");
-                booking.cancellationReason = rs.getString("cancellation_reason");
-                booking.createdAt = rs.getString("created_at");
-                booking.updatedAt = rs.getString("updated_at");
+
+                booking.bookingStatus = safeString(rs.getString("booking_status"));
+                booking.bookingDate = safeString(rs.getString("booking_date"));
+
+                booking.cancellationReason = safeString(rs.getString("cancellation_reason"));
+
+                booking.createdAt = safeString(rs.getString("created_at"));
+                booking.updatedAt = safeString(rs.getString("updated_at"));
 
                 String seatIdsStr = rs.getString("seat_ids");
                 if (seatIdsStr != null && !seatIdsStr.isEmpty()) {
                     String[] seatIdArray = seatIdsStr.split(",");
                     int[] seatIds = new int[seatIdArray.length];
                     for (int i = 0; i < seatIdArray.length; i++) {
-                        seatIds[i] = Integer.parseInt(seatIdArray[i].trim());
+                        try {
+                            seatIds[i] = Integer.parseInt(seatIdArray[i].trim());
+                        } catch (NumberFormatException e) { seatIds[i] = 0; }
                     }
                     booking.scheduleListSeatIds = seatIds;
                 } else {
@@ -1047,16 +1053,18 @@ public class MBClientServant extends ClientServicePOA {
         }
 
         List<Booking> bookingList = new ArrayList<>();
-        try (Connection connection = DatabaseAccess.getConnection()) {
-            String query = "SELECT b.*, GROUP_CONCAT(sls.schedule_list_seat_id) as seat_ids " +
-                    "FROM bookings b " +
-                    "LEFT JOIN schedule_list_seats sls ON b.booking_id = sls.booking_id " +
-                    "WHERE b.customer_id = ? AND b.booking_status = 'pending' " +
-                    "GROUP BY b.booking_id, b.customer_id, b.schedule_id, b.booking_status, " +
-                    "b.total_price, b.booking_date, b.cancellation_reason, b.created_at, b.updated_at " +
-                    "ORDER BY b.booking_date DESC";
+        // Note: Active bookings are 'pending'
+        String query = "SELECT b.*, GROUP_CONCAT(sls.schedule_list_seat_id) as seat_ids " +
+                "FROM bookings b " +
+                "LEFT JOIN schedule_list_seats sls ON b.booking_id = sls.booking_id " +
+                "WHERE b.customer_id = ? AND b.booking_status = 'pending' " +
+                "GROUP BY b.booking_id, b.customer_id, b.schedule_id, b.booking_status, " +
+                "b.total_price, b.booking_date, b.cancellation_reason, b.created_at, b.updated_at " +
+                "ORDER BY b.booking_date DESC";
 
-            PreparedStatement statement = connection.prepareStatement(query);
+        try (Connection connection = DatabaseAccess.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+
             statement.setInt(1, customerId);
             ResultSet rs = statement.executeQuery();
 
@@ -1065,19 +1073,24 @@ public class MBClientServant extends ClientServicePOA {
                 booking.bookingId = rs.getInt("booking_id");
                 booking.customerId = rs.getInt("customer_id");
                 booking.scheduleId = rs.getInt("schedule_id");
-                booking.bookingStatus = rs.getString("booking_status");
                 booking.totalPrice = rs.getDouble("total_price");
-                booking.bookingDate = rs.getString("booking_date");
-                booking.cancellationReason = rs.getString("cancellation_reason");
-                booking.createdAt = rs.getString("created_at");
-                booking.updatedAt = rs.getString("updated_at");
 
+                // --- CRITICAL FIX: WRAP EVERYTHING IN safeString() ---
+                booking.bookingStatus = safeString(rs.getString("booking_status"));
+                booking.bookingDate = safeString(rs.getString("booking_date"));
+                booking.cancellationReason = safeString(rs.getString("cancellation_reason"));
+                booking.createdAt = safeString(rs.getString("created_at"));
+                booking.updatedAt = safeString(rs.getString("updated_at"));
+
+                // Handle Seats
                 String seatIdsStr = rs.getString("seat_ids");
                 if (seatIdsStr != null && !seatIdsStr.isEmpty()) {
                     String[] seatIdArray = seatIdsStr.split(",");
                     int[] seatIds = new int[seatIdArray.length];
                     for (int i = 0; i < seatIdArray.length; i++) {
-                        seatIds[i] = Integer.parseInt(seatIdArray[i].trim());
+                        try {
+                            seatIds[i] = Integer.parseInt(seatIdArray[i].trim());
+                        } catch (NumberFormatException e) { seatIds[i] = 0; }
                     }
                     booking.scheduleListSeatIds = seatIds;
                 } else {
@@ -1144,6 +1157,7 @@ public class MBClientServant extends ClientServicePOA {
 
         List<BookingDetails> detailsList = new ArrayList<>();
         try (Connection connection = DatabaseAccess.getConnection()) {
+
             String query = "SELECT * FROM v_booking_details WHERE customer_id = ? ORDER BY booking_date DESC";
             PreparedStatement statement = connection.prepareStatement(query);
             statement.setInt(1, customerId);
@@ -1152,7 +1166,12 @@ public class MBClientServant extends ClientServicePOA {
             while (rs.next()) {
                 BookingDetails details = new BookingDetails();
                 details.bookingId = rs.getInt("booking_id");
+                details.totalPrice = rs.getDouble("total_price");
+                details.customerId = rs.getInt("customer_id");
+                details.scheduleId = rs.getInt("schedule_id");
+                details.movieId = rs.getInt("movie_id");
 
+                // --- THE CRASH FIX: Wrap ALL strings ---
                 details.bookingStatus = safeString(rs.getString("booking_status"));
                 details.bookingDate = safeString(rs.getString("booking_date"));
                 details.cancellationReason = safeString(rs.getString("cancellation_reason"));
@@ -1165,11 +1184,6 @@ public class MBClientServant extends ClientServicePOA {
                 details.createdAt = safeString(rs.getString("created_at"));
                 details.updatedAt = safeString(rs.getString("updated_at"));
 
-                details.totalPrice = rs.getDouble("total_price");
-                details.customerId = rs.getInt("customer_id");
-                details.scheduleId = rs.getInt("schedule_id");
-                details.movieId = rs.getInt("movie_id");
-
                 detailsList.add(details);
             }
 
@@ -1180,7 +1194,6 @@ public class MBClientServant extends ClientServicePOA {
     }
 
     // ===== PAYMENT METHODS =====
-    // REPLACE the processPayment method in MBClientServant.java (around line 1100)
     @Override
     public int processPayment(int customerId, int bookingId, double amount, String paymentMethod, String transactionId)
             throws AuthenticationException, BookingException, PaymentException {
@@ -1209,9 +1222,10 @@ public class MBClientServant extends ClientServicePOA {
             String status = rs.getString("booking_status");
             double bookingTotal = rs.getDouble("total_price");
 
+            // Allow payment only if status is pending (or whatever your initial state is)
             if (!"pending".equals(status)) {
                 connection.rollback();
-                throw new PaymentException("Booking is not pending payment", 400);
+                throw new PaymentException("Booking is already processed or cancelled", 400);
             }
 
             if (Math.abs(amount - bookingTotal) > 0.01) {
@@ -1222,7 +1236,8 @@ public class MBClientServant extends ClientServicePOA {
             // 2. Get next payment ID
             int nextPaymentId = getLatestPaymentID(connection) + 1;
 
-            // 3. Insert payment record with PENDING status
+            // 3. Insert payment record (Status: PENDING)
+            // This record tells the Admin: "Money has been sent, please check."
             String insertPayment = "INSERT INTO payments (payment_id, booking_id, amount, payment_method, " +
                     "payment_status, payment_date, transaction_id, created_at, updated_at) " +
                     "VALUES (?, ?, ?, ?, 'pending', ?, ?, ?, ?)";
@@ -1244,8 +1259,8 @@ public class MBClientServant extends ClientServicePOA {
                 throw new PaymentException("Failed to process payment", 500);
             }
 
-            // 4. Update booking status to 'confirmed' (payment is pending, but booking is confirmed)
-            String updateBooking = "UPDATE bookings SET booking_status = 'confirmed', updated_at = ? WHERE booking_id = ?";
+            String updateBooking = "UPDATE bookings SET booking_status = 'pending', updated_at = ? WHERE booking_id = ?";
+
             PreparedStatement updateStmt = connection.prepareStatement(updateBooking);
             updateStmt.setString(1, now.toString());
             updateStmt.setInt(2, bookingId);
@@ -1253,8 +1268,8 @@ public class MBClientServant extends ClientServicePOA {
 
             // Commit transaction
             connection.commit();
-            System.out.println("✅ Payment processed successfully! ID: " + nextPaymentId +
-                    " | Booking: " + bookingId + " | Amount: ₱" + amount + " | Status: PENDING");
+            System.out.println("✅ Payment Submitted! ID: " + nextPaymentId +
+                    " | Booking: " + bookingId + " | Status: PENDING ADMIN APPROVAL");
 
             return nextPaymentId;
 
