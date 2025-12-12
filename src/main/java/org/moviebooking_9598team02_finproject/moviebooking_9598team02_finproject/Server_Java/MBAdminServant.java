@@ -2146,6 +2146,7 @@ public class MBAdminServant extends AdminServicePOA {
         return "";
     }
 
+    // In MBAdminServant.java
     @Override
     public double getMovieRevenue(int adminId, int movieId) throws AuthenticationException, MovieNotFoundException {
         if (!SessionManager.isAdminLoggedIn(adminId)) {
@@ -2154,29 +2155,36 @@ public class MBAdminServant extends AdminServicePOA {
         if (movieId == 0) {
             return getTotalSystemRevenue(adminId);
         }
-        try (Connection connection = DatabaseAccess.getConnection()) {
-            String query = "SELECT SUM(p.amount) AS MovieRevenue FROM payments p " +
-                    "JOIN bookings b ON p.booking_id = b.booking_id " +
-                    "JOIN schedules s ON b.schedule_id = s.schedule_id " +
-                    "WHERE s.movie_id = ? AND p.payment_status = 'completed'";
-            PreparedStatement statement = connection.prepareStatement(query);
-            statement.setInt(1, movieId);
-            ResultSet rs = statement.executeQuery();
 
-            if (rs.next()) {
-                double revenue = rs.getDouble("MovieRevenue");
-                if (rs.wasNull()) {
-                    return 0.0;
-                }
-                return revenue;
-            }
+        try (Connection connection = DatabaseAccess.getConnection()) {
+            // Step 1: Check if the movie exists (if it doesn't, we throw MovieNotFoundException)
             String checkMovieQuery = "SELECT movie_id FROM movies WHERE movie_id = ?";
             PreparedStatement checkMovieStatement = connection.prepareStatement(checkMovieQuery);
             checkMovieStatement.setInt(1, movieId);
             if (!checkMovieStatement.executeQuery().next()) {
                 throw new MovieNotFoundException();
             }
+
+            // Step 2: Calculate Revenue
+            String query = "SELECT COALESCE(SUM(p.amount), 0.0) AS CalculatedRevenue FROM payments p " + // 🆕 Use COALESCE for guaranteed non-null result
+                    "JOIN bookings b ON p.booking_id = b.booking_id " +
+                    "JOIN schedules s ON b.schedule_id = s.schedule_id " +
+                    "WHERE s.movie_id = ? AND p.payment_status = 'completed'";
+
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1, movieId);
+
+            ResultSet rs = statement.executeQuery();
+
+            if (rs.next()) {
+                // 🆕 Use the new robust alias "CalculatedRevenue"
+                double revenue = rs.getDouble("CalculatedRevenue");
+                return revenue;
+            }
+
+            // This line should technically never be hit due to COALESCE, but kept for safety
             return 0.0;
+
         } catch (SQLException e) {
             e.printStackTrace();
             throw new AuthenticationException("Database error: " + e.getMessage());
