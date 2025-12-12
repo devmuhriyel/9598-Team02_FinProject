@@ -103,10 +103,6 @@ public class CustomerHomeView {
         return navBookings;
     }
 
-    public Label getNavHistory() {
-        return navHistory;
-    }
-
     public Label getNavProfile() {
         return navProfile;
     }
