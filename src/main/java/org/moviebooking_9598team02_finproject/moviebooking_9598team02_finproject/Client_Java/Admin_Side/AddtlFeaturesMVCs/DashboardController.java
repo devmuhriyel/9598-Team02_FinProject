@@ -28,6 +28,7 @@ public class DashboardController {
     }
 
     public void initializeDashboard() {
+        cachedAllMovies = new Movie[0];
         loadGenres();
         loadTotalRevenue();
         loadAllMovieData(null);

@@ -68,6 +68,7 @@ public class AdminNavigationManager {
         startSessionValidation();
 
         initializeHomeView();
+        showDashboardView(); // To load the dashboard directly
 
         // 🆕 HANDLE WINDOW CLOSE
         homeStage.setOnCloseRequest(event -> {
