@@ -28,9 +28,6 @@ public class CustomerHomeView {
     private Label navBookings;  // Was: navBooking
 
     @FXML
-    private Label navHistory;  // NEW
-
-    @FXML
     private Label navProfile;  // Was: navCustomer
 
     @FXML
@@ -49,7 +46,6 @@ public class CustomerHomeView {
         // Map navigation labels for easy access
         labelMap.put("navBrowse", navBrowse);
         labelMap.put("navBookings", navBookings);
-        labelMap.put("navHistory", navHistory);
         labelMap.put("navProfile", navProfile);
         labelMap.put("navSettings", navSettings);
     }

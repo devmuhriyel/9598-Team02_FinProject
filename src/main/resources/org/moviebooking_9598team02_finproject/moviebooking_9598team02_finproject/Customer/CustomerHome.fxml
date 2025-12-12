@@ -55,13 +55,6 @@
                     </font>
                 </Label>
 
-                <!-- Booking History -->
-                <Label fx:id="navHistory" style="-fx-padding: 8 10; -fx-cursor: hand; -fx-font-size: 13px;" text="📋  Booking History" textFill="#FFFFFF">
-                    <font>
-                        <Font name="System Bold" size="13.0" />
-                    </font>
-                </Label>
-
                 <!-- My Profile -->
                 <Label fx:id="navProfile" style="-fx-padding: 8 10; -fx-cursor: hand; -fx-font-size: 13px;" text="👤  My Profile" textFill="#FFFFFF">
                     <font>
