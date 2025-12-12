@@ -169,22 +169,20 @@ public class AdminNavigationManager {
     }
 
     public void showBookingMgmtView() {
-        if (bookingMgmtPane == null) {
-            try {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/Admin/AdminBookingMgmt.fxml"));
-                bookingMgmtPane = loader.load();
-
-                StackPane bookingContainer = (StackPane) bookingMgmtPane.lookup("#bookingSubContainer");
-                if (bookingContainer != null) {
-                    // Put stack pane of Booking MVCs here
-                }
-
-            } catch (IOException e) {
-                e.printStackTrace();
-                bookingMgmtPane = createPlaceholder("Booking Management");
-            }
+        // Use the existing bookingNavManager instead of manually loading FXML
+        // This ensures the Controller and Model are wired correctly!
+        if (bookingNavManager == null) {
+            bookingNavManager = new AdminBookingNavManager(admin);
         }
-        loadContentPane(bookingMgmtPane);
+
+        Pane bookingViewContent = bookingNavManager.getBookingMgmtView();
+
+        if (bookingViewContent == null) {
+            System.err.println("ERROR: Booking Mgmt View returned null!");
+            bookingViewContent = createPlaceholder("Booking Management - Error Loading");
+        }
+
+        loadContentPane(bookingViewContent);
     }
 
     public void showCustomerMgmtView() {
