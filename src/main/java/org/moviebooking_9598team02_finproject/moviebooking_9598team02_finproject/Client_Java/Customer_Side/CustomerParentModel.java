@@ -3,6 +3,8 @@ package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finprojec
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingClient.ClientService;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingClient.ClientServiceHelper;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.AuthenticationException;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.CommonService;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.CommonServiceHelper;
 import org.omg.CORBA.ORB;
 import org.omg.CosNaming.NamingContextExt;
 import org.omg.CosNaming.NamingContextExtHelper;
@@ -16,6 +18,7 @@ import java.util.Properties;
 public abstract class CustomerParentModel {
 
     protected static ClientService clientServices;
+    protected static CommonService commonServices;
     private static String hostIP;
     private static int hostPort;
 
@@ -33,6 +36,9 @@ public abstract class CustomerParentModel {
 
             // Resolve ClientService
             clientServices = ClientServiceHelper.narrow(ncRef.resolve_str("ClientService"));
+
+            String commonName = "CommonService";
+            commonServices = CommonServiceHelper.narrow(ncRef.resolve_str(commonName));
 
         } catch (Exception e) {
             System.err.println("❌ Failed to initialize ClientService: " + e.getMessage());
