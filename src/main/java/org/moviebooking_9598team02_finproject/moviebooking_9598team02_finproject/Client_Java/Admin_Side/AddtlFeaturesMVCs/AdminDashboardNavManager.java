@@ -16,39 +16,34 @@ public class AdminDashboardNavManager {
 
     public AdminDashboardNavManager(Admin admin) {
         this.currentAdminId = admin.adminId;
+        try {
+            initializeDashboardView(); // Initialize immediately
+        } catch (IOException e) {
+            e.printStackTrace();
+            dashboardPane = new Pane(new Label("Error loading Dashboard View: " + e.getMessage()));
+        }
     }
 
     private void initializeDashboardView() throws IOException {
         // Initialize model
         dashboardModel = new DashboardModel(currentAdminId);
-
         // Load FXML
         FXMLLoader loader = new FXMLLoader(
                 getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/Admin/AdminDashboard.fxml")
         );
         dashboardPane = loader.load();
         dashboardView = loader.getController();
-
         // Initialize controller
         dashboardController = new DashboardController(
                 currentAdminId,
                 dashboardModel,
                 dashboardView
         );
-
         // Initialize the dashboard
         dashboardController.initializeDashboard();
     }
 
     public Pane getDashboardView() {
-        if (dashboardPane == null) {
-            try {
-                initializeDashboardView();
-            } catch (IOException e) {
-                e.printStackTrace();
-                dashboardPane = new Pane(new Label("Error loading Dashboard View: " + e.getMessage()));
-            }
-        }
         return dashboardPane;
     }
 }

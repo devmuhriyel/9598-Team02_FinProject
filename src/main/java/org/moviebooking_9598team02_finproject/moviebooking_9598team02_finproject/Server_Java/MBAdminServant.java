@@ -4,6 +4,7 @@ import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.*;
 import org.omg.CORBA.ORB;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -709,14 +710,17 @@ public class MBAdminServant extends AdminServicePOA {
             int nextMovieId = getLatestMovieId() + 1;
             LocalDateTime timeOfCreation = LocalDateTime.now();
 
-            // Insert new movie
+            // ✅ PROCESS IMAGE - extract and save
+            String dbPosterPath = processAndSaveImage(moviePosterURL);
+
+            // Insert new movie with ONLY the path
             String query = "INSERT INTO movies (movie_id, movie_title, movie_description, movie_rating, movie_poster_url, created_by_admin, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
             PreparedStatement statement = connection.prepareStatement(query);
             statement.setInt(1, nextMovieId);
             statement.setString(2, movieTitle.trim());
             statement.setString(3, movieDescription != null ? movieDescription.trim() : "");
             statement.setInt(4, movieRating);
-            statement.setString(5, moviePosterURL != null ? moviePosterURL.trim() : "");
+            statement.setString(5, dbPosterPath); // ✅ Store ONLY path in DB
             statement.setInt(6, adminId);
             statement.setString(7, timeOfCreation.toString());
             statement.setString(8, timeOfCreation.toString());
@@ -745,6 +749,8 @@ public class MBAdminServant extends AdminServicePOA {
         } catch (SQLException e) {
             e.printStackTrace();
             throw new InvalidInputException("Database Error", "Failed to create movie: " + e.getMessage());
+        } catch (IOException e) {
+            throw new InvalidInputException("Image Processing Error", "Failed to save movie poster: " + e.getMessage());
         }
     }
 
@@ -1189,9 +1195,12 @@ public class MBAdminServant extends AdminServicePOA {
                 movie.movieTitle = rs.getString("movie_title");
                 movie.movieDescription = rs.getString("movie_description");
                 movie.movieRating = rs.getInt("movie_rating");
-                movie.moviePosterURL = rs.getString("movie_poster_url");
+                movie.moviePosterURL = rs.getString("movie_poster_url"); // Path from DB
                 movie.createdAt = rs.getString("created_at");
                 movie.updatedAt = rs.getString("updated_at");
+
+                // ✅ ATTACH IMAGE DATA before sending to client
+                movie = attachImageDataToMovie(movie);
 
                 movieList.add(movie);
             }
@@ -2146,6 +2155,7 @@ public class MBAdminServant extends AdminServicePOA {
         return "";
     }
 
+    // In MBAdminServant.java
     @Override
     public double getMovieRevenue(int adminId, int movieId) throws AuthenticationException, MovieNotFoundException {
         if (!SessionManager.isAdminLoggedIn(adminId)) {
@@ -2154,29 +2164,36 @@ public class MBAdminServant extends AdminServicePOA {
         if (movieId == 0) {
             return getTotalSystemRevenue(adminId);
         }
-        try (Connection connection = DatabaseAccess.getConnection()) {
-            String query = "SELECT SUM(p.amount) AS MovieRevenue FROM payments p " +
-                    "JOIN bookings b ON p.booking_id = b.booking_id " +
-                    "JOIN schedules s ON b.schedule_id = s.schedule_id " +
-                    "WHERE s.movie_id = ? AND p.payment_status = 'completed'";
-            PreparedStatement statement = connection.prepareStatement(query);
-            statement.setInt(1, movieId);
-            ResultSet rs = statement.executeQuery();
 
-            if (rs.next()) {
-                double revenue = rs.getDouble("MovieRevenue");
-                if (rs.wasNull()) {
-                    return 0.0;
-                }
-                return revenue;
-            }
+        try (Connection connection = DatabaseAccess.getConnection()) {
+            // Step 1: Check if the movie exists (if it doesn't, we throw MovieNotFoundException)
             String checkMovieQuery = "SELECT movie_id FROM movies WHERE movie_id = ?";
             PreparedStatement checkMovieStatement = connection.prepareStatement(checkMovieQuery);
             checkMovieStatement.setInt(1, movieId);
             if (!checkMovieStatement.executeQuery().next()) {
                 throw new MovieNotFoundException();
             }
+
+            // Step 2: Calculate Revenue
+            String query = "SELECT COALESCE(SUM(p.amount), 0.0) AS CalculatedRevenue FROM payments p " + // 🆕 Use COALESCE for guaranteed non-null result
+                    "JOIN bookings b ON p.booking_id = b.booking_id " +
+                    "JOIN schedules s ON b.schedule_id = s.schedule_id " +
+                    "WHERE s.movie_id = ? AND p.payment_status = 'completed'";
+
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1, movieId);
+
+            ResultSet rs = statement.executeQuery();
+
+            if (rs.next()) {
+                // 🆕 Use the new robust alias "CalculatedRevenue"
+                double revenue = rs.getDouble("CalculatedRevenue");
+                return revenue;
+            }
+
+            // This line should technically never be hit due to COALESCE, but kept for safety
             return 0.0;
+
         } catch (SQLException e) {
             e.printStackTrace();
             throw new AuthenticationException("Database error: " + e.getMessage());
@@ -2301,27 +2318,12 @@ public class MBAdminServant extends AdminServicePOA {
 
         b.scheduleListSeatIds = new int[0];
 
-        b.bookingStatus = "Unknown";
-        b.bookingDate = "N/A";
-        b.cancellationReason = "";
-        b.createdAt = "N/A";
-        b.updatedAt = "N/A";
-
-        String status = rs.getString("booking_status");
-        if (status != null) b.bookingStatus = status;
-        String created = rs.getString("created_at");
-        if (created != null) {
-            b.createdAt = created;
-            b.bookingDate = created;
-        }
-
-        String updated = rs.getString("updated_at");
-        if (updated != null) b.updatedAt = updated;
-        try {
-            String reason = rs.getString("cancellation_reason");
-            if (reason != null) b.cancellationReason = reason;
-        } catch (SQLException e) {
-        }
+        // ✅ CRITICAL: Use safeString helper
+        b.bookingStatus = safeString(rs.getString("booking_status"));
+        b.bookingDate = safeString(rs.getString("booking_date"));
+        b.cancellationReason = safeString(rs.getString("cancellation_reason"));
+        b.createdAt = safeString(rs.getString("created_at"));
+        b.updatedAt = safeString(rs.getString("updated_at"));
 
         return b;
     }
@@ -2352,5 +2354,74 @@ public class MBAdminServant extends AdminServicePOA {
         bd.bookingDate = (created != null) ? created : "N/A";
 
         return bd;
+    }
+
+    private String processAndSaveImage(String concatenatedPosterURL) throws IOException {
+        if (concatenatedPosterURL == null || concatenatedPosterURL.isEmpty()) {
+            return "";
+        }
+
+        // Check if it contains image data
+        if (!concatenatedPosterURL.contains("|||IMAGE_DATA|||")) {
+            // Already a path (for updates without new image)
+            return concatenatedPosterURL;
+        }
+
+        // Split the concatenated string
+        String[] parts = concatenatedPosterURL.split("\\|\\|\\|IMAGE_DATA\\|\\|\\|");
+        if (parts.length != 2) {
+            throw new IOException("Invalid image data format");
+        }
+
+        String targetPath = parts[0]; // e.g., "Images/MovieImage/1234567890_poster.jpg"
+        String base64Data = parts[1];
+
+        // Decode Base64
+        byte[] imageBytes = java.util.Base64.getDecoder().decode(base64Data);
+
+        // Create directory if it doesn't exist
+        java.nio.file.Path dirPath = java.nio.file.Paths.get("Images/MovieImage");
+        java.nio.file.Files.createDirectories(dirPath);
+
+        // Save file
+        java.nio.file.Path filePath = java.nio.file.Paths.get(targetPath);
+        java.nio.file.Files.write(filePath, imageBytes);
+
+        System.out.println("✅ Image saved to: " + targetPath);
+        return targetPath; // Return ONLY the path for DB storage
+    }
+
+    // Add this helper to MBAdminServant if it doesn't exist
+    private String safeString(String input) {
+        return (input == null) ? "" : input;
+    }
+
+    private Movie attachImageDataToMovie(Movie movie) {
+        if (movie.moviePosterURL == null || movie.moviePosterURL.isEmpty()) {
+            return movie;
+        }
+
+        try {
+            // Read image file
+            java.nio.file.Path imagePath = java.nio.file.Paths.get(movie.moviePosterURL);
+
+            if (!java.nio.file.Files.exists(imagePath)) {
+                System.err.println("⚠️ Image file not found: " + movie.moviePosterURL);
+                return movie;
+            }
+
+            byte[] imageBytes = java.nio.file.Files.readAllBytes(imagePath);
+            String base64Image = java.util.Base64.getEncoder().encodeToString(imageBytes);
+
+            // Concatenate: path|||IMAGE_DATA|||base64data
+            movie.moviePosterURL = movie.moviePosterURL + "|||IMAGE_DATA|||" + base64Image;
+
+            System.out.println("✅ Attached image data for movie " + movie.movieId);
+
+        } catch (IOException e) {
+            System.err.println("❌ Error attaching image data: " + e.getMessage());
+        }
+
+        return movie;
     }
 }

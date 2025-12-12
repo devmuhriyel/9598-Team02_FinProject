@@ -2,6 +2,7 @@ package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finprojec
 
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingAdmin.AdminService;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingAdmin.AdminServiceHelper;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.AuthenticationException;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.CommonService;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.CommonServiceHelper;
 import org.omg.CORBA.ORB;
@@ -42,6 +43,7 @@ public abstract class AdminParentModel {
             commonServices = null;
         }
     }
+
     public boolean isConnected(){
         return adminServices != null && commonServices != null;
     }
@@ -52,5 +54,39 @@ public abstract class AdminParentModel {
 
     public void setHostPort(int port){
         hostPort = port;
+    }
+
+    // 🆕 ADD THIS METHOD - Session validation
+    /**
+     * Validate if the admin session is still active
+     * This is called by SessionValidator every 5 seconds
+     *
+     * @param adminId The admin ID to validate
+     * @return true if session is valid, false if invalidated (concurrent login)
+     */
+    public boolean validateSession(int adminId) {
+        try {
+            // Check if we have a connection first
+            if (adminServices == null) {
+                System.err.println("⚠️ AdminServices not initialized");
+                return false;
+            }
+
+            // Try to get admin info - if session is invalid, this will throw exception
+            // This is a lightweight call to check session validity
+            adminServices.getAdminById(adminId, adminId);
+            return true;
+
+        } catch (AuthenticationException e) {
+            // Session is no longer valid (concurrent login detected)
+            System.out.println("⚠️ Session validation failed for admin " + adminId + ": " + e.message);
+            return false;
+
+        } catch (Exception e) {
+            // Network error or other issue - treat as session still valid
+            // Don't logout on network glitches
+            System.err.println("⚠️ Session validation error (network?): " + e.getMessage());
+            return true;
+        }
     }
 }

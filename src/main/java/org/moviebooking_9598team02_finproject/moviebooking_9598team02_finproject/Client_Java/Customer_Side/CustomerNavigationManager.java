@@ -7,8 +7,10 @@ import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Customer;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Customer_Side.AuthenticationMVCs.CustomerAuthNavManager;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Customer_Side.AuthenticationMVCs.Login.CustomerLoginModel;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Customer_Side.MovieMVCs.MovieNavigationManager;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Customer_Side.BookingsMVCs.CustomerBookingNavManager;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.SessionValidator;
 import java.io.IOException;
 
 /**
@@ -30,6 +32,7 @@ public class CustomerNavigationManager {
     private Pane bookingHistoryPane;
     private Pane myProfilePane;
     private Pane settingsPane;
+    private SessionValidator sessionValidator;
 
     // Sub-navigation managers
     private MovieNavigationManager movieNavManager;
@@ -45,6 +48,10 @@ public class CustomerNavigationManager {
         CustomerParentModel.initializeCORBAConnection(new String[]{});
 
         initializeHomeView();
+        startSessionValidation();
+        homeStage.setOnCloseRequest(event -> {
+            cleanup();
+        });
     }
 
     // ===== INITIALIZE HOME VIEW =====
@@ -191,6 +198,7 @@ public class CustomerNavigationManager {
      * Logout and return to authentication screen
      */
     public void logoutAndReturnToAuth() {
+        cleanup(); // 🆕 ADD THIS LINE
         try {
             homeStage.close();
             authNavManager.reopenAuthStage();
@@ -228,6 +236,42 @@ public class CustomerNavigationManager {
 
         placeholder.getChildren().addAll(titleLabel, descLabel, statusLabel);
         return placeholder;
+    }
+
+    private void startSessionValidation() {
+        sessionValidator = new SessionValidator(
+                customer.customerId,
+                "customer",
+                new SessionValidator.SessionValidationCallback() {
+                    @Override
+                    public boolean validateSession() {
+                        // Create a temporary instance since CustomerParentModel is abstract
+                        CustomerParentModel tempModel = new CustomerLoginModel(); // or any concrete subclass
+                        return tempModel.validateSession(customer.customerId);
+                    }
+
+                    @Override
+                    public void onSessionInvalidated() {
+                        handleConcurrentLogin();
+                    }
+                }
+        );
+
+        sessionValidator.start();
+        System.out.println("✅ Session validation started for customer: " + customer.customerId);
+    }
+
+    private void handleConcurrentLogin() {
+        System.out.println("⚠️ Customer session invalidated (concurrent login): " + customer.customerId);
+        cleanup();
+        logoutAndReturnToAuth(); // or whatever your logout method is called
+    }
+
+    private void cleanup() {
+        if (sessionValidator != null && sessionValidator.isRunning()) {
+            sessionValidator.stop();
+            System.out.println("🛑 Session validator stopped for customer: " + customer.customerId);
+        }
     }
 
     // ===== GETTERS =====

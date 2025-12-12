@@ -17,15 +17,20 @@ public class PaymentController {
     }
 
     private void initializeListeners() {
-        view.setConfirmButtonAction(() -> handleConfirm());
-        view.setCancelButtonAction(() -> handleCancel());
-        view.setPaymentMethodChangeAction(() -> handleMethodChange());
+        view.setConfirmButtonAction(this::handleConfirm);
+        view.setCancelButtonAction(this::handleCancel);
+        view.setPaymentMethodChangeAction(this::handleMethodChange);
     }
 
-    public void setPaymentData(int custId, int bookId, double amount) {
+    // ✅ FIXED: Accepts 4 arguments (Name included)
+    public void setPaymentData(int custId, String custName, int bookId, double amount) {
         this.customerId = custId;
         this.bookingId = bookId;
         this.totalAmount = amount;
+
+        // ✅ FIXED: Calls valid methods in PaymentView
+        view.setCustomerDetails(custName, String.valueOf(bookId));
+        view.setFinancials(amount);
     }
 
     private void handleMethodChange() {
@@ -33,14 +38,11 @@ public class PaymentController {
         if (method == null) return;
 
         if (method.equals("cash") || method.equals("online")) {
-            // Generate fake transaction ID for cash/online payments
             String prefix = (method.equals("cash") ? "CASH-" : "GW-");
             String fakeID = prefix + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
-
             view.setTransactionId(fakeID);
             view.setTransactionFieldEditable(false);
         } else {
-            // Credit Card - user must enter card number
             view.setTransactionId("");
             view.setTransactionFieldPrompt("Enter 16-digit Card Number");
             view.setTransactionFieldEditable(true);
@@ -51,34 +53,24 @@ public class PaymentController {
         String method = view.getSelectedMethod();
         String txnId = view.getTransactionId();
 
-        // Validation
         if (method == null || txnId == null || txnId.trim().isEmpty()) {
             view.showStatus("Please select a payment method.", true);
             return;
         }
 
-        // Disable UI to prevent double-clicks
         view.setConfirmButtonEnabled(false);
         view.showStatus("Processing Payment...", false);
 
-        // Run Database Call in background thread to prevent UI freeze
         new Thread(() -> {
             try {
-                // CORBA call to process payment
                 int paymentId = model.processPayment(customerId, bookingId, totalAmount, method, txnId);
-
-                // If success, update UI on JavaFX thread
                 view.runOnUIThread(() -> {
                     view.showStatus("SUCCESS! Payment ID: " + paymentId + " (Status: PENDING)", false);
                     view.setCancelButtonText("Close Receipt");
                     view.setConfirmButtonVisible(false);
-
-                    // Auto close after 3 seconds
                     startAutoClose(3000);
                 });
-
             } catch (Exception e) {
-                // Failure handler
                 view.runOnUIThread(() -> {
                     e.printStackTrace();
                     view.showStatus("Transaction Failed: " + e.getMessage(), true);
@@ -88,18 +80,12 @@ public class PaymentController {
         }).start();
     }
 
-    private void handleCancel() {
-        view.closeWindow();
-    }
+    private void handleCancel() { view.closeWindow(); }
 
     private void startAutoClose(long delayMillis) {
         new Thread(() -> {
-            try {
-                Thread.sleep(delayMillis);
-                view.runOnUIThread(() -> view.closeWindow());
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            try { Thread.sleep(delayMillis); view.runOnUIThread(view::closeWindow); }
+            catch (InterruptedException e) { e.printStackTrace(); }
         }).start();
     }
 }

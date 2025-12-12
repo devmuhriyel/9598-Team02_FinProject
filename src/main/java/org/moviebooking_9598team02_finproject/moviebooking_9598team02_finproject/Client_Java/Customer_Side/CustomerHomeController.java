@@ -110,6 +110,10 @@ public class CustomerHomeController {
     }
 
     /**
+     * Switch to Booking History view
+     */
+
+    /**
      * Switch to My Profile view
      */
     public void switchToMyProfile() {

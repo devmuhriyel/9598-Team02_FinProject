@@ -695,13 +695,20 @@ public class MovieView {
 
     private ImageView createPosterImageView(String posterURL) {
         try {
-            String resourcePath = posterURL.startsWith("/") ? posterURL : "/" + posterURL;
+            // Clean the path - remove leading slash if present
+            String cleanPath = posterURL.startsWith("/") ? posterURL.substring(1) : posterURL;
+
+            // Try to load from classpath
             Image image = new Image(
-                    Objects.requireNonNull(getClass().getResourceAsStream(resourcePath)),
+                    Objects.requireNonNull(
+                            getClass().getClassLoader().getResourceAsStream(cleanPath)
+                    ),
                     180, 280, false, true
             );
 
             if (image.isError()) {
+                System.err.println("❌ Image error for: " + cleanPath);
+                System.err.println("Error: " + image.getException());
                 return null;
             }
 
@@ -711,9 +718,12 @@ public class MovieView {
             imageView.setPreserveRatio(false);
             imageView.setSmooth(true);
 
+            System.out.println("✅ Successfully loaded image: " + cleanPath);
             return imageView;
 
         } catch (Exception e) {
+            System.err.println("❌ Exception loading poster: " + posterURL);
+            e.printStackTrace();
             return null;
         }
     }
