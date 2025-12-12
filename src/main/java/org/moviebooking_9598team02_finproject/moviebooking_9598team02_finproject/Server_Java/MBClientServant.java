@@ -763,12 +763,14 @@ public class MBClientServant extends ClientServicePOA {
                 booking.bookingId = rs.getInt("booking_id");
                 booking.customerId = rs.getInt("customer_id");
                 booking.scheduleId = rs.getInt("schedule_id");
-                booking.bookingStatus = rs.getString("booking_status");
+
+                // ✅ FIX: Wrap ALL strings in safeString()
+                booking.bookingStatus = safeString(rs.getString("booking_status"));
                 booking.totalPrice = rs.getDouble("total_price");
-                booking.bookingDate = rs.getString("booking_date");
-                booking.cancellationReason = rs.getString("cancellation_reason");
-                booking.createdAt = rs.getString("created_at");
-                booking.updatedAt = rs.getString("updated_at");
+                booking.bookingDate = safeString(rs.getString("booking_date"));
+                booking.cancellationReason = safeString(rs.getString("cancellation_reason"));
+                booking.createdAt = safeString(rs.getString("created_at"));
+                booking.updatedAt = safeString(rs.getString("updated_at"));
 
                 // Parse seat IDs
                 String seatIdsStr = rs.getString("seat_ids");

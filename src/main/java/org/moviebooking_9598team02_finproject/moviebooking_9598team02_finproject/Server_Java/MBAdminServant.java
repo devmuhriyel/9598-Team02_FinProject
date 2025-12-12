@@ -2309,27 +2309,12 @@ public class MBAdminServant extends AdminServicePOA {
 
         b.scheduleListSeatIds = new int[0];
 
-        b.bookingStatus = "Unknown";
-        b.bookingDate = "N/A";
-        b.cancellationReason = "";
-        b.createdAt = "N/A";
-        b.updatedAt = "N/A";
-
-        String status = rs.getString("booking_status");
-        if (status != null) b.bookingStatus = status;
-        String created = rs.getString("created_at");
-        if (created != null) {
-            b.createdAt = created;
-            b.bookingDate = created;
-        }
-
-        String updated = rs.getString("updated_at");
-        if (updated != null) b.updatedAt = updated;
-        try {
-            String reason = rs.getString("cancellation_reason");
-            if (reason != null) b.cancellationReason = reason;
-        } catch (SQLException e) {
-        }
+        // ✅ CRITICAL: Use safeString helper
+        b.bookingStatus = safeString(rs.getString("booking_status"));
+        b.bookingDate = safeString(rs.getString("booking_date"));
+        b.cancellationReason = safeString(rs.getString("cancellation_reason"));
+        b.createdAt = safeString(rs.getString("created_at"));
+        b.updatedAt = safeString(rs.getString("updated_at"));
 
         return b;
     }
@@ -2360,5 +2345,12 @@ public class MBAdminServant extends AdminServicePOA {
         bd.bookingDate = (created != null) ? created : "N/A";
 
         return bd;
+    }
+
+
+
+    // Add this helper to MBAdminServant if it doesn't exist
+    private String safeString(String input) {
+        return (input == null) ? "" : input;
     }
 }
