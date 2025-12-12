@@ -264,15 +264,22 @@ public class CustomerMovieView {
 
     private ImageView createPosterImageView(String posterURL, int width, int height) {
         try {
-            String resourcePath = posterURL.startsWith("/") ? posterURL : "/" + posterURL;
+            // Clean the path - remove leading slash if present
+            String cleanPath = posterURL.startsWith("/") ? posterURL.substring(1) : posterURL;
 
+            System.out.println("🔍 Attempting to load image: " + cleanPath);
+
+            // Try to load from classpath using ClassLoader
             Image image = new Image(
-                    Objects.requireNonNull(getClass().getResourceAsStream(resourcePath)),
+                    Objects.requireNonNull(
+                            getClass().getClassLoader().getResourceAsStream(cleanPath)
+                    ),
                     width, height, true, true
             );
 
             if (image.isError()) {
-                System.err.println("⚠️ Error loading image: " + image.getException());
+                System.err.println("❌ Image error for: " + cleanPath);
+                System.err.println("Error: " + image.getException());
                 return null;
             }
 
@@ -282,10 +289,12 @@ public class CustomerMovieView {
             imageView.setPreserveRatio(true);
             imageView.setSmooth(true);
 
+            System.out.println("✅ Successfully loaded image: " + cleanPath);
             return imageView;
 
         } catch (Exception e) {
-            System.err.println("⚠️ Exception loading image: " + e.getMessage());
+            System.err.println("❌ Exception loading poster: " + posterURL);
+            e.printStackTrace();
             return null;
         }
     }
@@ -299,15 +308,21 @@ public class CustomerMovieView {
         }
 
         try {
-            String resourcePath = posterURL.startsWith("/") ? posterURL : "/" + posterURL;
+            // Clean the path - remove leading slash if present
+            String cleanPath = posterURL.startsWith("/") ? posterURL.substring(1) : posterURL;
+
+            System.out.println("🔍 Attempting to load poster: " + cleanPath);
 
             Image image = new Image(
-                    Objects.requireNonNull(getClass().getResourceAsStream(resourcePath)),
+                    Objects.requireNonNull(
+                            getClass().getClassLoader().getResourceAsStream(cleanPath)
+                    ),
                     300, 400, true, true
             );
 
             if (!image.isError() && moviePosterImageView != null) {
                 moviePosterImageView.setImage(image);
+                System.out.println("✅ Successfully loaded poster: " + cleanPath);
             } else {
                 System.err.println("⚠️ Error loading poster: " + (image.isError() ? image.getException() : "ImageView is null"));
                 if (moviePosterImageView != null) {
@@ -317,6 +332,7 @@ public class CustomerMovieView {
 
         } catch (Exception e) {
             System.err.println("⚠️ Exception loading poster: " + e.getMessage());
+            e.printStackTrace();
             if (moviePosterImageView != null) {
                 moviePosterImageView.setImage(null);
             }
