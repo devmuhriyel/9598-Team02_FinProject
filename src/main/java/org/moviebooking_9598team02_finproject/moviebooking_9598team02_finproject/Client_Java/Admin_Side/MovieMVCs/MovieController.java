@@ -39,7 +39,6 @@ public class MovieController {
     private int selectedMovieId = -1;
 
     // View states
-    private enum ViewState { GRID, ADD, EDIT }
     private ViewState currentViewState = ViewState.GRID;
 
 
@@ -83,9 +82,12 @@ public class MovieController {
     }
 
     private void initializeButtons() {
+
+        view.getBtnAddMovie().setOnAction(e ->handleAddMovieClick());
         // Navigation
         view.getBtnAddNewSchedule().setOnAction(e -> handleAddNewScheduleClick());
         view.getBtnAddNewMovie().setOnAction(e -> handleAddNewMovieClick());
+
         view.getBtnBackToGridFromEdit().setOnAction(event -> handleBackToGridFromEditClick());
         view.getBtnBackToGrid().setOnAction(e -> handleBackToGridClick());
         // Pagination
@@ -569,7 +571,13 @@ public class MovieController {
             String posterUrl = "";
             String imagePath = view.getSelectedImagePath();
             if (imagePath != null && !imagePath.isEmpty()) {
-                posterUrl = uploadImage(); // Assuming you have this helper
+                Path sourceImagePath = Paths.get(imagePath);
+                byte[] imageBytes = Files.readAllBytes(sourceImagePath);
+                String base64Image = Base64.getEncoder().encodeToString(imageBytes);
+                String filename = System.currentTimeMillis() + "_" + sourceImagePath.getFileName().toString();
+
+                String targetPath = IMAGE_DIRECTORY + filename;
+                posterUrl = targetPath + "|||IMAGE_DATA|||" + base64Image;
             }
 
             // 2. Validate
@@ -584,46 +592,6 @@ public class MovieController {
             if (rating == null) {
                 view.showWarningAlert("Validation Error", "Please select a rating.");
                 return;
-        String title = view.getTitleInput().getText().trim();
-        if (title.isEmpty()) {
-            view.showWarningAlert("Validation Error", "Please enter a movie title.");
-            return;
-        }
-
-        Integer rating = view.getRatingComboBox().getValue();
-        if (rating == null) {
-            view.showWarningAlert("Validation Error", "Please select a rating.");
-            return;
-        }
-
-        List<String> selectedGenreNames = view.getSelectedGenres();
-        if (selectedGenreNames.isEmpty()) {
-            view.showWarningAlert("Validation Error", "Please select at least one genre.");
-            return;
-        }
-
-        String description = view.getDescriptionInput().getText().trim();
-        LocalDate scheduleDate = view.getScheduleDatePicker().getValue();
-        String scheduleTime = view.getScheduleTimeField().getText().trim();
-
-        try {
-            String posterURL = "";
-            String imagePath = view.getSelectedImagePath();
-
-            if (imagePath != null && !imagePath.isEmpty()) {
-                // Convert image to Base64
-                Path sourceImagePath = Paths.get(imagePath);
-                byte[] imageBytes = Files.readAllBytes(sourceImagePath);
-                String base64Image = Base64.getEncoder().encodeToString(imageBytes);
-
-                // Create filename with timestamp
-                String fileName = System.currentTimeMillis() + "_" + sourceImagePath.getFileName().toString();
-                String targetPath = IMAGE_DIRECTORY + fileName;
-
-                // Concatenate: path|||IMAGE_DATA|||base64data
-                posterURL = targetPath + "|||IMAGE_DATA|||" + base64Image;
-
-                System.out.println("✅ Image converted to Base64, size: " + base64Image.length() + " chars");
             }
             if (genreIds.length == 0) {
                 view.showWarningAlert("Validation Error", "Please select at least one genre.");
@@ -640,208 +608,176 @@ public class MovieController {
             loadAllMovies(); // Refresh data
             showGridViewInternal(); // Go back to grid
 
-            loadAllMovies();
-            showGridViewInternal();
-
-        } catch (IOException e) {
-            view.showErrorAlert("Image Upload Error", "Failed to upload image: " + e.getMessage());
-            e.printStackTrace();
-        } catch (AuthenticationException e) {
-            view.showErrorAlert("Authentication Error", "Session expired: " + e.getMessage());
-            e.printStackTrace();
-        } catch (InvalidInputException e) {
-            view.showErrorAlert("Invalid Input", e.message);
-            e.printStackTrace();
         } catch (Exception e) {
             view.showErrorAlert("Error", "Failed to add movie: " + e.getMessage());
             e.printStackTrace();
         }
     }
+            // Inside MovieController.java
+            private void handleUpdateMovieClick() {
+                // 1. Safety Checks
+                if (selectedMovieId == -1 || currentlySelectedMovie == null) {
+                    view.showWarningAlert("Selection Error", "No movie selected.");
+                    return;
+                }
 
-    // Inside MovieController.java
-    private void handleUpdateMovieClick() {
-        // 1. Safety Checks
-        if (selectedMovieId == -1 || currentlySelectedMovie == null) {
-            view.showWarningAlert("Selection Error", "No movie selected.");
-            return;
-        }
+                System.out.println("✏️ === UPDATE MOVIE PROCESS STARTED ===");
+                boolean anyChanges = false;
 
-        System.out.println("✏️ === UPDATE MOVIE PROCESS STARTED ===");
-        boolean anyChanges = false;
-
-        try {
-            // --- TITLE UPDATE ---
-            String newTitle = view.getTitleInputEdit().getText().trim();
-            if (!newTitle.isEmpty() && !newTitle.equals(currentlySelectedMovie.movieTitle)) {
-                model.updateMovieTitle(selectedMovieId, newTitle); //
-                anyChanges = true;
-            }
-
-            // --- DESCRIPTION UPDATE ---
-            String newDesc = view.getDescriptionInputEdit().getText().trim();
-            if (!newDesc.equals(currentlySelectedMovie.movieDescription)) {
-                model.updateMovieDescription(selectedMovieId, newDesc); //
-                anyChanges = true;
-            }
-
-            // --- RATING UPDATE ---
-            Integer newRating = view.getRatingComboBoxEdit().getValue();
-            if (newRating != null && newRating != currentlySelectedMovie.movieRating) {
-                model.updateMovieRating(selectedMovieId, newRating); //
-                anyChanges = true;
-            }
-
-            // --- GENRE UPDATE ---
-            // Get genres from the EDIT checkboxes
-            List<String> newSelectedGenres = view.getSelectedGenresEdit();
-            int[] newGenreIds = getGenreIdsFromNames(newSelectedGenres);
-
-            // Simple check: if list size is different or content differs, update.
-            // (For a perfect check, we'd compare the sets of IDs, but strictly updating is safer here)
-            if (newGenreIds.length > 0) {
-                // We just update them to be safe. The backend usually handles if they are identical.
-                model.updateMovieGenres(selectedMovieId, newGenreIds); //
-                anyChanges = true;
-            } else {
-                view.showWarningAlert("Warning", "A movie must have at least one genre.");
-                return;
-            }
-
-            // --- IMAGE UPDATE ---
-            String imagePath = view.getSelectedImagePath();
-            if (imagePath != null && !imagePath.isEmpty()) {
-                String newPosterUrl = uploadImage(); // Helper method
-                model.updateMoviePoster(selectedMovieId, newPosterUrl); //
-                anyChanges = true;
-            }
-
-            List<String> newSelectedGenres = view.getSelectedGenres();
-            if (!newSelectedGenres.isEmpty()) {
-                Genre[] currentGenres = model.getMovieGenres(selectedMovieId);
-                Set<String> currentGenreNames = Arrays.stream(currentGenres)
-                        .map(g -> g.genreName)
-                        .collect(Collectors.toSet());
-
-                if (!currentGenreNames.equals(new HashSet<>(newSelectedGenres))) {
-                    int[] genreIds = newSelectedGenres.stream()
-                            .mapToInt(this::findGenreIdByName)
-                            .filter(id -> id != -1)
-                            .toArray();
-                    if (genreIds.length > 0) {
-                        model.updateMovieGenres(selectedMovieId, genreIds);
+                try {
+                    // --- TITLE UPDATE ---
+                    String newTitle = view.getTitleInputEdit().getText().trim();
+                    if (!newTitle.isEmpty() && !newTitle.equals(currentlySelectedMovie.movieTitle)) {
+                        model.updateMovieTitle(selectedMovieId, newTitle); //
                         anyChanges = true;
                     }
+
+                    // --- DESCRIPTION UPDATE ---
+                    String newDesc = view.getDescriptionInputEdit().getText().trim();
+                    if (!newDesc.equals(currentlySelectedMovie.movieDescription)) {
+                        model.updateMovieDescription(selectedMovieId, newDesc); //
+                        anyChanges = true;
+                    }
+
+                    // --- RATING UPDATE ---
+                    Integer newRating = view.getRatingComboBoxEdit().getValue();
+                    if (newRating != null && newRating != currentlySelectedMovie.movieRating) {
+                        model.updateMovieRating(selectedMovieId, newRating); //
+                        anyChanges = true;
+                    }
+
+                    // --- GENRE UPDATE ---
+                    // Get genres from the EDIT checkboxes
+                    List<String> newSelectedGenres = view.getSelectedGenresEdit();
+                    int[] newGenreIds = getGenreIdsFromNames(newSelectedGenres);
+
+                    // Simple check: if list size is different or content differs, update.
+                    // (For a perfect check, we'd compare the sets of IDs, but strictly updating is safer here)
+                    if (newGenreIds.length > 0) {
+                        // We just update them to be safe. The backend usually handles if they are identical.
+                        model.updateMovieGenres(selectedMovieId, newGenreIds); //
+                        anyChanges = true;
+                    } else {
+                        view.showWarningAlert("Warning", "A movie must have at least one genre.");
+                        return;
+                    }
+
+                    // --- IMAGE UPDATE ---
+                    String imagePath = view.getSelectedImagePath();
+                    if (imagePath != null && !imagePath.isEmpty()) {
+                        String newPosterUrl = uploadImage(); // Helper method
+                        model.updateMoviePoster(selectedMovieId, newPosterUrl); //
+                        anyChanges = true;
+                    }
+
+                    // --- FINISH ---
+                    if (anyChanges) {
+                        view.showInfoAlert("Success", "✅ Movie updated successfully!");
+                        loadAllMovies(); // Reload from DB to see changes
+                        showGridViewInternal();
+                    } else {
+                        view.showInfoAlert("No Changes", "No fields were modified.");
+                    }
+
+                } catch (Exception e) {
+                    view.showErrorAlert("Update Error", "Failed to update movie: " + e.getMessage());
+                    e.printStackTrace();
                 }
             }
 
-            // --- FINISH ---
-            if (anyChanges) {
-                view.showInfoAlert("Success", "✅ Movie updated successfully!");
-                loadAllMovies(); // Reload from DB to see changes
-                showGridViewInternal();
-            } else {
-                view.showInfoAlert("No Changes", "No fields were modified.");
+            private void handleDeleteMovieClick () {
+                if (selectedMovieId == -1 || currentlySelectedMovie == null) {
+                    view.showWarningAlert("No Movie Selected", "Please select a movie to delete.");
+                    return;
+                }
+
+                boolean confirmed = view.showConfirmationDialog(
+                        "Delete Movie",
+                        "Are you sure you want to delete '" + currentlySelectedMovie.movieTitle + "'?",
+                        "This action cannot be undone. All schedules and bookings associated with this movie will be affected."
+                );
+
+                if (!confirmed) {
+                    return;
+                }
+
+                try {
+                    model.deleteMovie(selectedMovieId);
+                    view.showInfoAlert("Success!", "✅ Movie deleted successfully!");
+                    loadAllMovies();
+                    showGridViewInternal();
+
+                } catch (Exception e) {
+                    view.showErrorAlert("Delete Error", "Failed to delete movie: " + e.getMessage());
+                    e.printStackTrace();
+                }
             }
 
-        } catch (Exception e) {
-            view.showErrorAlert("Update Error", "Failed to update movie: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
+            private void handleClearFieldsClick () {
+                view.clearAllFields();
 
-    private void handleDeleteMovieClick() {
-        if (selectedMovieId == -1 || currentlySelectedMovie == null) {
-            view.showWarningAlert("No Movie Selected", "Please select a movie to delete.");
-            return;
-        }
+                if (view.getScheduleDatePicker() != null) {
+                    view.getScheduleDatePicker().setValue(LocalDate.now());
+                }
 
-        boolean confirmed = view.showConfirmationDialog(
-                "Delete Movie",
-                "Are you sure you want to delete '" + currentlySelectedMovie.movieTitle + "'?",
-                "This action cannot be undone. All schedules and bookings associated with this movie will be affected."
-        );
-
-        if (!confirmed) {
-            return;
-        }
-
-        try {
-            model.deleteMovie(selectedMovieId);
-            view.showInfoAlert("Success!", "✅ Movie deleted successfully!");
-            loadAllMovies();
-            showGridViewInternal();
-
-        } catch (Exception e) {
-            view.showErrorAlert("Delete Error", "Failed to delete movie: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
-    private void handleClearFieldsClick() {
-        view.clearAllFields();
-
-        if (view.getScheduleDatePicker() != null) {
-            view.getScheduleDatePicker().setValue(LocalDate.now());
-        }
-
-        view.showStatusMessage("Fields cleared", false);
-    }
-
-    // ===== HELPER METHODS =====
-
-    private void populateFieldsWithMovie(Movie movie) {
-        view.getTitleInputEdit().setText(movie.movieTitle);
-        view.getDescriptionInputEdit().setText(movie.movieDescription);
-        view.getRatingComboBoxEdit().setValue(movie.movieRating);
-
-        if (movie.moviePosterURL != null && !movie.moviePosterURL.isEmpty()) {
-            view.updateSelectedImageLabelEdit("Current: " + movie.moviePosterURL);
-        }
-
-        // Inside populateFieldsWithMovie(...)
-        try {
-            Genre[] genres = model.getMovieGenres(movie.movieId);
-            if (genres != null) {
-                List<String> genreNames = Arrays.stream(genres)
-                        .map(g -> g.genreName)
-                        .collect(Collectors.toList());
-
-                // NEW: Use the method we just created
-                view.selectGenresForEdit(genreNames);
+                view.showStatusMessage("Fields cleared", false);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
 
-        String details = String.format("Movie ID: %d | Rating: %d/10",
-                movie.movieId, movie.movieRating);
-        view.updateMovieDetailsLabel(details);
-    }
+            // ===== HELPER METHODS =====
 
-    private int findGenreIdByName(String genreName) {
-        for (Genre genre : genreDataMap.values()) {
-            if (genre.genreName.equals(genreName)) {
-                return genre.genreId;
+            private void populateFieldsWithMovie (Movie movie){
+                view.getTitleInputEdit().setText(movie.movieTitle);
+                view.getDescriptionInputEdit().setText(movie.movieDescription);
+                view.getRatingComboBoxEdit().setValue(movie.movieRating);
+
+                if (movie.moviePosterURL != null && !movie.moviePosterURL.isEmpty()) {
+                    view.updateSelectedImageLabelEdit("Current: " + movie.moviePosterURL);
+                }
+
+                // Inside populateFieldsWithMovie(...)
+                try {
+                    Genre[] genres = model.getMovieGenres(movie.movieId);
+                    if (genres != null) {
+                        List<String> genreNames = Arrays.stream(genres)
+                                .map(g -> g.genreName)
+                                .collect(Collectors.toList());
+
+                        // NEW: Use the method we just created
+                        view.selectGenresForEdit(genreNames);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                String details = String.format("Movie ID: %d | Rating: %d/10",
+                        movie.movieId, movie.movieRating);
+                view.updateMovieDetailsLabel(details);
             }
-        }
-        return -1;
-    }
 
-    private boolean isValidTimeFormat(String time) {
-        try {
-            LocalTime.parse(time, DateTimeFormatter.ofPattern("HH:mm"));
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
-    }
+            private int findGenreIdByName (String genreName){
+                for (Genre genre : genreDataMap.values()) {
+                    if (genre.genreName.equals(genreName)) {
+                        return genre.genreId;
+                    }
+                }
+                return -1;
+            }
 
-    // Helper method to get IDs from names
-    private int[] getGenreIdsFromNames(List<String> names) {
-        return names.stream()
-                .mapToInt(this::findGenreIdByName) // Uses your existing findGenreIdByName
-                .filter(id -> id != -1)
-                .toArray();
+            private boolean isValidTimeFormat (String time){
+                try {
+                    LocalTime.parse(time, DateTimeFormatter.ofPattern("HH:mm"));
+                    return true;
+                } catch (Exception e) {
+                    return false;
+                }
+            }
+
+            // Helper method to get IDs from names
+            private int[] getGenreIdsFromNames (List < String > names) {
+                return names.stream()
+                        .mapToInt(this::findGenreIdByName) // Uses your existing findGenreIdByName
+                        .filter(id -> id != -1)
+                        .toArray();
     }
 
 

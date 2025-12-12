@@ -73,7 +73,7 @@
             </VBox>
 
             <!-- ADD MOVIE VIEW -->
-            <VBox fx:id="addMovieView" managed="false" spacing="20.0" style="-fx-background-color: #292929;" visible="false">
+            <VBox fx:id="addMovieView" managed="false" spacing="20.0" style="-fx-background-color: #292929;">
                 <padding>
                     <Insets bottom="25.0" left="25.0" right="25.0" top="25.0" />
                 </padding>
