@@ -18,7 +18,7 @@ import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingAdmin.AdminService;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.PaymentMVCs.AdminPaymentNavManager;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.GenreMgmtMVCs.AdminGenreManager;
-
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.SessionValidator; // 🆕 ADD THIS
 
 import java.io.IOException;
 
@@ -33,16 +33,13 @@ public class AdminNavigationManager {
     private DashboardController dashboardController;
     private DashboardView dashboardView;
 
-
     // Cache for main section panes
     private Pane dashboardPane;
     private Pane movieMgmtPane;
-    // Removed seatMgmtPane - using seatNavManager instead
     private Pane bookingMgmtPane;
     private Pane customerMgmtPane;
     private Pane adminMgmtPane;
     private Pane paymentMgmtPane;
-
 
     // Sub-navigation managers
     private AdminBookingNavManager bookingNavManager;
@@ -53,8 +50,8 @@ public class AdminNavigationManager {
     private AdminDashboardNavManager dashboardNavManager;
     private AdminGenreManager genreManager;
 
-
-    // Add others as needed
+    // 🆕 ADD THIS - Session validator
+    private SessionValidator sessionValidator;
 
     public AdminNavigationManager(Stage homeStage, AdminAuthNavManager authNavManager, Admin admin) {
         this.homeStage = homeStage;
@@ -67,7 +64,15 @@ public class AdminNavigationManager {
         this.bookingNavManager = new AdminBookingNavManager(admin);
         this.dashboardNavManager = new AdminDashboardNavManager(admin);
 
+        // 🆕 START SESSION VALIDATION
+        startSessionValidation();
+
         initializeHomeView();
+
+        // 🆕 HANDLE WINDOW CLOSE
+        homeStage.setOnCloseRequest(event -> {
+            cleanup();
+        });
     }
 
     private void initializeHomeView() {
@@ -88,6 +93,50 @@ public class AdminNavigationManager {
         }
     }
 
+    // 🆕 START SESSION VALIDATION
+    private void startSessionValidation() {
+        sessionValidator = new SessionValidator(
+                admin.adminId,
+                "admin",
+                new SessionValidator.SessionValidationCallback() {
+                    @Override
+                    public boolean validateSession() {
+                        // Create a temporary instance to call the method
+                        // since AdminParentModel is abstract, we need a concrete implementation
+                        AdminParentModel tempModel = new AdminHomeModel(); // or any concrete subclass
+                        return tempModel.validateSession(admin.adminId);
+                    }
+
+                    @Override
+                    public void onSessionInvalidated() {
+                        handleConcurrentLogin();
+                    }
+                }
+        );
+
+        sessionValidator.start();
+        System.out.println("✅ Session validation started for admin: " + admin.adminId);
+    }
+
+    // 🆕 HANDLE CONCURRENT LOGIN
+    private void handleConcurrentLogin() {
+        System.out.println("⚠️ Admin session invalidated (concurrent login): " + admin.adminId);
+
+        // Clean up and return to login
+        cleanup();
+        logoutAndReturnToAuth();
+    }
+
+    // 🆕 CLEANUP METHOD
+    private void cleanup() {
+        if (sessionValidator != null && sessionValidator.isRunning()) {
+            sessionValidator.stop();
+            System.out.println("🛑 Session validator stopped for admin: " + admin.adminId);
+        }
+    }
+
+    // === YOUR EXISTING METHODS (UNCHANGED) ===
+
     public void showDashboardView() {
         Pane pane = dashboardNavManager.getDashboardView();
         loadContentPane(pane);
@@ -96,7 +145,6 @@ public class AdminNavigationManager {
     public void showMovieMgmtView() {
         if (movieMgmtPane == null) {
             try {
-                // Initialize movie nav manager with AdminService and Admin
                 movieNavManager = new AdminMMNavManager(AdminParentModel.adminServices, admin);
                 movieMgmtPane = movieNavManager.getMovieMgmtView();
 
@@ -115,7 +163,6 @@ public class AdminNavigationManager {
         loadContentPane(movieMgmtPane);
     }
 
-
     public void showSeatMgmtView() {
         Pane pane = seatNavManager.getSeatMgmtView();
         loadContentPane(pane);
@@ -127,11 +174,9 @@ public class AdminNavigationManager {
                 FXMLLoader loader = new FXMLLoader(getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/Admin/AdminBookingMgmt.fxml"));
                 bookingMgmtPane = loader.load();
 
-                // Initialize booking nav manager if this section has sub-views
                 StackPane bookingContainer = (StackPane) bookingMgmtPane.lookup("#bookingSubContainer");
                 if (bookingContainer != null) {
-                    //Put stack pane of Booking MVCs here
-//                    bookingNavManager = new AdminBookingNavManager(bookingContainer);
+                    // Put stack pane of Booking MVCs here
                 }
 
             } catch (IOException e) {
@@ -144,7 +189,6 @@ public class AdminNavigationManager {
 
     public void showCustomerMgmtView() {
         if (customerMgmtPane == null) {
-            // Use AccountNavigationManager to properly initialize Customer Management MVC
             AccountNavigationManager customerNavManager = new AccountNavigationManager(admin.adminId, false);
             customerMgmtPane = customerNavManager.getCustomerPane();
 
@@ -172,10 +216,8 @@ public class AdminNavigationManager {
         loadContentPane(genreViewContent);
     }
 
-    //
     public void showAdminMgmtView(){
         if (adminMgmtPane == null) {
-
             accNavManager = new AccountNavigationManager(admin.adminId);
             adminMgmtPane = accNavManager.getAdminPane();
 
@@ -188,6 +230,7 @@ public class AdminNavigationManager {
         }
         loadContentPane(adminMgmtPane);
     }
+
     public void showPaymentMgmtView() {
         Pane paymentViewContent = paymentNavManager.getPaymentMgmtView();
         loadContentPane(paymentViewContent);
@@ -199,7 +242,9 @@ public class AdminNavigationManager {
         container.getChildren().add(pane);
     }
 
+    // 🆕 UPDATED - Now calls cleanup() before returning to auth
     public void logoutAndReturnToAuth() {
+        cleanup(); // Stop session validator
         homeStage.close();
         authNavManager.reopenAuthStage();
     }

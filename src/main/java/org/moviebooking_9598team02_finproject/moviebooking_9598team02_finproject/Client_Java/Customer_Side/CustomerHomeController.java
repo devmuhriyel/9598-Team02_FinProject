@@ -44,7 +44,6 @@ public class CustomerHomeController {
         view.getLogOutButton().setOnMouseClicked(event -> logOut());
         view.getNavBrowse().setOnMouseClicked(event -> switchToBrowse());
         view.getNavBookings().setOnMouseClicked(event -> switchToMyBookings());
-        view.getNavHistory().setOnMouseClicked(event -> switchToBookingHistory());
         view.getNavProfile().setOnMouseClicked(event -> switchToMyProfile());
         view.getNavSettings().setOnMouseClicked(event -> switchToSettings());
     }
@@ -113,10 +112,6 @@ public class CustomerHomeController {
     /**
      * Switch to Booking History view
      */
-    public void switchToBookingHistory() {
-        view.changePanes("navHistory");
-        navManager.showBookingHistoryView();
-    }
 
     /**
      * Switch to My Profile view

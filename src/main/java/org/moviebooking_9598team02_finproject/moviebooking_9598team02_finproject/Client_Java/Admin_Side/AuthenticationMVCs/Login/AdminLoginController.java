@@ -39,6 +39,8 @@ public class AdminLoginController {
             admin = model.logInAdmin(username, password);
             view.clearFields();
             view.clearError();
+
+            // Session validation will be handled by AdminNavigationManager
             authManager.openAdminHome(admin);
         } catch (AuthenticationException e) {
             view.showError("Invalid username or password");

@@ -2,59 +2,87 @@ package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finprojec
 
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingClient.ClientService;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingClient.ClientServiceHelper;
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.CommonService;
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.CommonServiceHelper;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.AuthenticationException;
 import org.omg.CORBA.ORB;
 import org.omg.CosNaming.NamingContextExt;
 import org.omg.CosNaming.NamingContextExtHelper;
-import org.omg.CosNaming.NamingContextPackage.CannotProceed;
-import org.omg.CosNaming.NamingContextPackage.InvalidName;
-import org.omg.CosNaming.NamingContextPackage.NotFound;
 
 import java.util.Properties;
 
-
+/**
+ * CustomerParentModel - Base class for all customer models
+ * Provides CORBA connection and session validation
+ */
 public abstract class CustomerParentModel {
+
     protected static ClientService clientServices;
-    protected static CommonService commonServices;
     private static String hostIP;
     private static int hostPort;
 
-    public static void initializeCORBAConnection(String[] args){
+    public static void initializeCORBAConnection(String[] args) {
         try {
-            Properties props = new java.util.Properties();
+            Properties props = new Properties();
             props.put("org.omg.CORBA.ORBInitialHost", hostIP);
             props.put("org.omg.CORBA.ORBInitialPort", String.valueOf(hostPort));
+
             ORB orb = ORB.init(args, props);
 
-            org.omg.CORBA.Object objectRef = orb.resolve_initial_references("NameService");
-            NamingContextExt nameContextExt = NamingContextExtHelper.narrow(objectRef);
+            // Get naming service
+            org.omg.CORBA.Object objRef = orb.resolve_initial_references("NameService");
+            NamingContextExt ncRef = NamingContextExtHelper.narrow(objRef);
 
-            String name = "ClientService";
-            clientServices = ClientServiceHelper.narrow(nameContextExt.resolve_str(name));
+            // Resolve ClientService
+            clientServices = ClientServiceHelper.narrow(ncRef.resolve_str("ClientService"));
 
-            String commonName = "CommonService";
-            commonServices = CommonServiceHelper.narrow(nameContextExt.resolve_str(commonName));
-        } catch (org.omg.CORBA.ORBPackage.InvalidName e) {
-
-        } catch (InvalidName e) {
-
-        } catch (CannotProceed e) {
-
-        } catch (NotFound e) {
-
+        } catch (Exception e) {
+            System.err.println("❌ Failed to initialize ClientService: " + e.getMessage());
+            e.printStackTrace();
+            clientServices = null;
         }
     }
 
-    public boolean isConnected(){
-        return clientServices != null && commonServices != null;
+    public boolean isConnected() {
+        return clientServices != null;
     }
 
-    public void setHostIP(String ip){
+    public void setHostIP(String ip) {
         hostIP = ip;
     }
 
-    public void setHostPort(int port){
+    public void setHostPort(int port) {
         hostPort = port;
+    }
+
+    /**
+     * 🆕 Validate if the customer session is still active
+     * This is called by SessionValidator every 5 seconds
+     *
+     * @param customerId The customer ID to validate
+     * @return true if session is valid, false if invalidated (concurrent login)
+     */
+    public boolean validateSession(int customerId) {
+        try {
+            // Check if we have a connection first
+            if (clientServices == null) {
+                System.err.println("⚠️ ClientServices not initialized");
+                return false;
+            }
+
+            // Try to get customer bookings - if session is invalid, this will throw exception
+            // This is a lightweight call to check session validity
+            clientServices.getCustomerBookings(customerId);
+            return true;
+
+        } catch (AuthenticationException e) {
+            // Session is no longer valid (concurrent login detected)
+            System.out.println("⚠️ Session validation failed for customer " + customerId + ": " + e.message);
+            return false;
+
+        } catch (Exception e) {
+            // Network error or other issue - treat as session still valid
+            // Don't logout on network glitches
+            System.err.println("⚠️ Session validation error (network?): " + e.getMessage());
+            return true;
+        }
     }
 }
