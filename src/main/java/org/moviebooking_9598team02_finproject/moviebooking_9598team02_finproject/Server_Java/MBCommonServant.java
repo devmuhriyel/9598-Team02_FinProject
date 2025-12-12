@@ -2,6 +2,7 @@ package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finprojec
 
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.*;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -679,5 +680,34 @@ public class MBCommonServant extends CommonServicePOA {
             throw new MovieNotFoundException("Error fetching genres", movieId);
         }
         return genreList.toArray(new Genre[0]);
+    }
+
+    private Movie attachImageDataToMovie(Movie movie) {
+        if (movie.moviePosterURL == null || movie.moviePosterURL.isEmpty()) {
+            return movie;
+        }
+
+        try {
+            // Read image file
+            java.nio.file.Path imagePath = java.nio.file.Paths.get(movie.moviePosterURL);
+
+            if (!java.nio.file.Files.exists(imagePath)) {
+                System.err.println("⚠️ Image file not found: " + movie.moviePosterURL);
+                return movie;
+            }
+
+            byte[] imageBytes = java.nio.file.Files.readAllBytes(imagePath);
+            String base64Image = java.util.Base64.getEncoder().encodeToString(imageBytes);
+
+            // Concatenate: path|||IMAGE_DATA|||base64data
+            movie.moviePosterURL = movie.moviePosterURL + "|||IMAGE_DATA|||" + base64Image;
+
+            System.out.println("✅ Attached image data for movie " + movie.movieId);
+
+        } catch (IOException e) {
+            System.err.println("❌ Error attaching image data: " + e.getMessage());
+        }
+
+        return movie;
     }
 }

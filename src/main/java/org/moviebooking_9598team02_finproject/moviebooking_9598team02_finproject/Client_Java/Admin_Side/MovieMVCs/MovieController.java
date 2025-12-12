@@ -210,9 +210,14 @@ public class MovieController {
             }
 
             allMoviesList = new ArrayList<>(Arrays.asList(allMovies));
-            filteredMoviesList = new ArrayList<>(allMoviesList);
 
-            allMoviesList.forEach(movie -> movieDataMap.put(movie.movieId, movie));
+            // ✅ EXTRACT AND SAVE IMAGES for each movie
+            for (Movie movie : allMoviesList) {
+                extractAndSaveImage(movie);
+                movieDataMap.put(movie.movieId, movie);
+            }
+
+            filteredMoviesList = new ArrayList<>(allMoviesList);
 
             currentPage = 1;
             updateMovieGrid();
@@ -567,8 +572,21 @@ public class MovieController {
         try {
             String posterURL = "";
             String imagePath = view.getSelectedImagePath();
+
             if (imagePath != null && !imagePath.isEmpty()) {
-                posterURL = uploadImage();
+                // Convert image to Base64
+                Path sourceImagePath = Paths.get(imagePath);
+                byte[] imageBytes = Files.readAllBytes(sourceImagePath);
+                String base64Image = Base64.getEncoder().encodeToString(imageBytes);
+
+                // Create filename with timestamp
+                String fileName = System.currentTimeMillis() + "_" + sourceImagePath.getFileName().toString();
+                String targetPath = IMAGE_DIRECTORY + fileName;
+
+                // Concatenate: path|||IMAGE_DATA|||base64data
+                posterURL = targetPath + "|||IMAGE_DATA|||" + base64Image;
+
+                System.out.println("✅ Image converted to Base64, size: " + base64Image.length() + " chars");
             }
 
             int[] genreIds = selectedGenreNames.stream()
@@ -775,6 +793,49 @@ public class MovieController {
             return true;
         } catch (Exception e) {
             return false;
+        }
+    }
+
+    private void extractAndSaveImage(Movie movie) {
+        if (movie.moviePosterURL == null || movie.moviePosterURL.isEmpty()) {
+            return;
+        }
+
+        // Check if it contains image data
+        if (!movie.moviePosterURL.contains("|||IMAGE_DATA|||")) {
+            return; // Already just a path
+        }
+
+        try {
+            // Split the concatenated string
+            String[] parts = movie.moviePosterURL.split("\\|\\|\\|IMAGE_DATA\\|\\|\\|");
+            if (parts.length != 2) {
+                System.err.println("❌ Invalid image data format for movie " + movie.movieId);
+                movie.moviePosterURL = ""; // Clear invalid data
+                return;
+            }
+
+            String targetPath = parts[0];
+            String base64Data = parts[1];
+
+            // Decode Base64
+            byte[] imageBytes = Base64.getDecoder().decode(base64Data);
+
+            // Create directory structure
+            Path targetFilePath = Paths.get("src/main/resources/" + targetPath);
+            Files.createDirectories(targetFilePath.getParent());
+
+            // Save file locally
+            Files.write(targetFilePath, imageBytes);
+
+            // Update movie object to contain ONLY the path
+            movie.moviePosterURL = targetPath;
+
+            System.out.println("✅ Image extracted and saved locally: " + targetPath);
+
+        } catch (Exception e) {
+            System.err.println("❌ Error extracting image: " + e.getMessage());
+            movie.moviePosterURL = ""; // Clear on error
         }
     }
 }

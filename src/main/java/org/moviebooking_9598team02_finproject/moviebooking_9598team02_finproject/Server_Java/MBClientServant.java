@@ -3,6 +3,7 @@ package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finprojec
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingClient.ClientServicePOA;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.*;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -254,6 +255,10 @@ public class MBClientServant extends ClientServicePOA {
                 movie.createdByAdmin = rs.getInt("created_by_admin");
                 movie.createdAt = rs.getString("created_at");
                 movie.updatedAt = rs.getString("updated_at");
+
+                // ✅ ATTACH IMAGE DATA before sending to client
+                movie = attachImageDataToMovie(movie);
+
                 movieList.add(movie);
             }
 
@@ -825,12 +830,12 @@ public class MBClientServant extends ClientServicePOA {
                 booking.bookingId = rs.getInt("booking_id");
                 booking.customerId = rs.getInt("customer_id");
                 booking.scheduleId = rs.getInt("schedule_id");
-                booking.bookingStatus = rs.getString("booking_status");
+                booking.bookingStatus = safeString(rs.getString("booking_status"));
                 booking.totalPrice = rs.getDouble("total_price");
-                booking.bookingDate = rs.getString("booking_date");
-                booking.cancellationReason = rs.getString("cancellation_reason");
-                booking.createdAt = rs.getString("created_at");
-                booking.updatedAt = rs.getString("updated_at");
+                booking.bookingDate = safeString(rs.getString("booking_date"));
+                booking.cancellationReason = safeString(rs.getString("cancellation_reason"));
+                booking.createdAt = safeString(rs.getString("created_at"));
+                booking.updatedAt = safeString(rs.getString("updated_at"));
 
                 String seatIdsStr = rs.getString("seat_ids");
                 if (seatIdsStr != null && !seatIdsStr.isEmpty()) {
@@ -1531,6 +1536,34 @@ public class MBClientServant extends ClientServicePOA {
             return resultSet.wasNull() ? 0 : maxID;
         }
         return 0;
+    }
+    private Movie attachImageDataToMovie(Movie movie) {
+        if (movie.moviePosterURL == null || movie.moviePosterURL.isEmpty()) {
+            return movie;
+        }
+
+        try {
+            // Read image file
+            java.nio.file.Path imagePath = java.nio.file.Paths.get(movie.moviePosterURL);
+
+            if (!java.nio.file.Files.exists(imagePath)) {
+                System.err.println("⚠️ Image file not found: " + movie.moviePosterURL);
+                return movie;
+            }
+
+            byte[] imageBytes = java.nio.file.Files.readAllBytes(imagePath);
+            String base64Image = java.util.Base64.getEncoder().encodeToString(imageBytes);
+
+            // Concatenate: path|||IMAGE_DATA|||base64data
+            movie.moviePosterURL = movie.moviePosterURL + "|||IMAGE_DATA|||" + base64Image;
+
+            System.out.println("✅ Attached image data for movie " + movie.movieId);
+
+        } catch (IOException e) {
+            System.err.println("❌ Error attaching image data: " + e.getMessage());
+        }
+
+        return movie;
     }
 
     private String safeString(String input) {

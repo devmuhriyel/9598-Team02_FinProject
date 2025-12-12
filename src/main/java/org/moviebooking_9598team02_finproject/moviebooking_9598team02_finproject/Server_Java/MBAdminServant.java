@@ -4,6 +4,7 @@ import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.*;
 import org.omg.CORBA.ORB;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -709,14 +710,17 @@ public class MBAdminServant extends AdminServicePOA {
             int nextMovieId = getLatestMovieId() + 1;
             LocalDateTime timeOfCreation = LocalDateTime.now();
 
-            // Insert new movie
+            // ✅ PROCESS IMAGE - extract and save
+            String dbPosterPath = processAndSaveImage(moviePosterURL);
+
+            // Insert new movie with ONLY the path
             String query = "INSERT INTO movies (movie_id, movie_title, movie_description, movie_rating, movie_poster_url, created_by_admin, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
             PreparedStatement statement = connection.prepareStatement(query);
             statement.setInt(1, nextMovieId);
             statement.setString(2, movieTitle.trim());
             statement.setString(3, movieDescription != null ? movieDescription.trim() : "");
             statement.setInt(4, movieRating);
-            statement.setString(5, moviePosterURL != null ? moviePosterURL.trim() : "");
+            statement.setString(5, dbPosterPath); // ✅ Store ONLY path in DB
             statement.setInt(6, adminId);
             statement.setString(7, timeOfCreation.toString());
             statement.setString(8, timeOfCreation.toString());
@@ -745,6 +749,8 @@ public class MBAdminServant extends AdminServicePOA {
         } catch (SQLException e) {
             e.printStackTrace();
             throw new InvalidInputException("Database Error", "Failed to create movie: " + e.getMessage());
+        } catch (IOException e) {
+            throw new InvalidInputException("Image Processing Error", "Failed to save movie poster: " + e.getMessage());
         }
     }
 
@@ -1189,9 +1195,12 @@ public class MBAdminServant extends AdminServicePOA {
                 movie.movieTitle = rs.getString("movie_title");
                 movie.movieDescription = rs.getString("movie_description");
                 movie.movieRating = rs.getInt("movie_rating");
-                movie.moviePosterURL = rs.getString("movie_poster_url");
+                movie.moviePosterURL = rs.getString("movie_poster_url"); // Path from DB
                 movie.createdAt = rs.getString("created_at");
                 movie.updatedAt = rs.getString("updated_at");
+
+                // ✅ ATTACH IMAGE DATA before sending to client
+                movie = attachImageDataToMovie(movie);
 
                 movieList.add(movie);
             }
@@ -2347,10 +2356,72 @@ public class MBAdminServant extends AdminServicePOA {
         return bd;
     }
 
+    private String processAndSaveImage(String concatenatedPosterURL) throws IOException {
+        if (concatenatedPosterURL == null || concatenatedPosterURL.isEmpty()) {
+            return "";
+        }
 
+        // Check if it contains image data
+        if (!concatenatedPosterURL.contains("|||IMAGE_DATA|||")) {
+            // Already a path (for updates without new image)
+            return concatenatedPosterURL;
+        }
+
+        // Split the concatenated string
+        String[] parts = concatenatedPosterURL.split("\\|\\|\\|IMAGE_DATA\\|\\|\\|");
+        if (parts.length != 2) {
+            throw new IOException("Invalid image data format");
+        }
+
+        String targetPath = parts[0]; // e.g., "Images/MovieImage/1234567890_poster.jpg"
+        String base64Data = parts[1];
+
+        // Decode Base64
+        byte[] imageBytes = java.util.Base64.getDecoder().decode(base64Data);
+
+        // Create directory if it doesn't exist
+        java.nio.file.Path dirPath = java.nio.file.Paths.get("Images/MovieImage");
+        java.nio.file.Files.createDirectories(dirPath);
+
+        // Save file
+        java.nio.file.Path filePath = java.nio.file.Paths.get(targetPath);
+        java.nio.file.Files.write(filePath, imageBytes);
+
+        System.out.println("✅ Image saved to: " + targetPath);
+        return targetPath; // Return ONLY the path for DB storage
+    }
 
     // Add this helper to MBAdminServant if it doesn't exist
     private String safeString(String input) {
         return (input == null) ? "" : input;
+    }
+
+    private Movie attachImageDataToMovie(Movie movie) {
+        if (movie.moviePosterURL == null || movie.moviePosterURL.isEmpty()) {
+            return movie;
+        }
+
+        try {
+            // Read image file
+            java.nio.file.Path imagePath = java.nio.file.Paths.get(movie.moviePosterURL);
+
+            if (!java.nio.file.Files.exists(imagePath)) {
+                System.err.println("⚠️ Image file not found: " + movie.moviePosterURL);
+                return movie;
+            }
+
+            byte[] imageBytes = java.nio.file.Files.readAllBytes(imagePath);
+            String base64Image = java.util.Base64.getEncoder().encodeToString(imageBytes);
+
+            // Concatenate: path|||IMAGE_DATA|||base64data
+            movie.moviePosterURL = movie.moviePosterURL + "|||IMAGE_DATA|||" + base64Image;
+
+            System.out.println("✅ Attached image data for movie " + movie.movieId);
+
+        } catch (IOException e) {
+            System.err.println("❌ Error attaching image data: " + e.getMessage());
+        }
+
+        return movie;
     }
 }
