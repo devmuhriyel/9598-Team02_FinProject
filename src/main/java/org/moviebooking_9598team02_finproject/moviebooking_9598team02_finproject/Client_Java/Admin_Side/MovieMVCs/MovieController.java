@@ -186,14 +186,23 @@ public class MovieController {
     // Update showEditViewInternal
     private void showEditViewInternal(Movie movie) {
         if (movie == null) return;
+
         currentViewState = ViewState.EDIT;
         loadAllGenres();
         selectedMovieId = movie.movieId;
         currentlySelectedMovie = movie;
+
         populateFieldsWithMovie(movie);
-        loadSchedulesForMovie(movie.movieId);
+
         view.showEditView();
+
+        // ✅ ADD: Force schedule container to be visible
+        view.ensureScheduleContainerVisible();
+
+        // ✅ Load schedules AFTER view is shown
+        loadSchedulesForMovie(movie.movieId);
     }
+
     // ===== DATA LOADING =====
 
     private void loadAllGenres() {
@@ -315,54 +324,61 @@ public class MovieController {
      */
     private void loadSchedulesForMovie(int movieId) {
         try {
+            System.out.println("🔍 Loading schedules for movie: " + movieId);
             Schedule[] schedules = model.getSchedulesByMovie(movieId);
+
+            System.out.println("📊 Retrieved " + (schedules != null ? schedules.length : 0) + " schedules");
 
             view.clearScheduleContainer();
 
             if (schedules == null || schedules.length == 0) {
-                System.out.println("No schedules found for movie " + movieId);
+                System.out.println("⚠️ No schedules found for movie " + movieId);
+
+                // ✅ ADD: Show a placeholder message
+                view.showNoSchedulesMessage();
                 return;
             }
 
-            for (Schedule schedule : schedules) {
+            for (int i = 0; i < schedules.length; i++) {
+                Schedule schedule = schedules[i];
+                System.out.println("📅 Loading schedule " + (i+1) + ": ID=" + schedule.scheduleId);
                 loadScheduleCard(schedule);
             }
 
-            System.out.println("✅ Loaded " + schedules.length + " schedules");
+            System.out.println("✅ Loaded " + schedules.length + " schedule cards");
 
         } catch (Exception e) {
+            System.err.println("❌ ERROR loading schedules: " + e.getMessage());
             view.showErrorAlert("Error", "Failed to load schedules: " + e.getMessage());
             e.printStackTrace();
         }
     }
+
 
     /**
      * Load a single schedule card with date/time info - FIXED VERSION (Pure Java)
      */
     private void loadScheduleCard(Schedule schedule) {
         try {
-            // ✅ FIX: Get MovieSchedule details from the model
+            // ✅ Get MovieSchedule details
             MovieSchedule movieSchedule = model.getMovieScheduleDetails(schedule.movieScheduleId);
 
             String screeningDate = movieSchedule.screeningDate;
             String screeningTime = movieSchedule.screeningTime;
 
-            // ✅ FIX: Create card and store reference for lambdas
-            // Using Object[] to hold mutable reference (workaround for lambda effectively final requirement)
+            // ✅ FIX: Use array to hold mutable reference (Java workaround)
             final Object[] cardHolder = new Object[1];
 
-            Object card = view.createScheduleCard(
+            cardHolder[0] = view.createScheduleCard(
                     schedule.scheduleId,
                     schedule.movieScheduleId,
                     screeningDate,
                     screeningTime,
-                    () -> handleScheduleSave(cardHolder[0]),  // Pass the card object
-                    () -> handleScheduleDelete(cardHolder[0]) // Pass the card object
+                    () -> handleScheduleSave(cardHolder[0]),
+                    () -> handleScheduleDelete(cardHolder[0])
             );
 
-            cardHolder[0] = card; // Store the card reference
-
-            view.addScheduleCardToContainer(card);
+            view.addScheduleCardToContainer(cardHolder[0]);
 
         } catch (Exception e) {
             view.showErrorAlert("Error", "Failed to load schedule: " + e.getMessage());
@@ -419,7 +435,7 @@ public class MovieController {
      */
     private void handleScheduleSave(Object scheduleCard) {
         try {
-            // Get data from the card using View's helper method
+            // ✅ Get data from the card (now gets live values from controls)
             Map<String, Object> data = view.getScheduleCardData(scheduleCard);
 
             if (data == null) {
@@ -431,15 +447,18 @@ public class MovieController {
             String newDate = (String) data.get("newDate");
             String newTime = (String) data.get("newTime");
 
+            // Validate time format
             if (!isValidTimeFormat(newTime)) {
                 view.showWarningAlert("Invalid Time", "Please use HH:mm format (e.g., 14:30)");
                 return;
             }
 
+            // ✅ Call model to update
             model.updateScheduleDateTime(scheduleId, newDate, newTime);
 
             view.showInfoAlert("Success!", "✅ Schedule updated successfully!");
 
+            // ✅ Refresh schedules
             if (selectedMovieId != -1) {
                 loadSchedulesForMovie(selectedMovieId);
             }
@@ -447,7 +466,7 @@ public class MovieController {
         } catch (ScheduleNotFoundException e) {
             view.showErrorAlert("Not Found", "Schedule not found");
         } catch (AuthenticationException e) {
-            view.showErrorAlert("Authentication Error", e.getMessage());
+            view.showErrorAlert("Authentication Error", e.message);
         } catch (Exception e) {
             view.showErrorAlert("Error", "Failed to update schedule: " + e.getMessage());
             e.printStackTrace();
@@ -459,7 +478,7 @@ public class MovieController {
      * Handle schedule delete - FIXED VERSION (Pure Java)
      */
     private void handleScheduleDelete(Object scheduleCard) {
-        // Get data from the card using View's helper method
+        // Get data from the card
         Map<String, Object> data = view.getScheduleCardData(scheduleCard);
 
         if (data == null) {
@@ -483,6 +502,7 @@ public class MovieController {
             model.deleteSchedule(scheduleId);
             view.showInfoAlert("Success!", "✅ Schedule deleted successfully!");
 
+            // ✅ Refresh schedules
             if (selectedMovieId != -1) {
                 loadSchedulesForMovie(selectedMovieId);
             }
@@ -490,7 +510,7 @@ public class MovieController {
         } catch (ScheduleNotFoundException e) {
             view.showErrorAlert("Not Found", "Schedule not found");
         } catch (AuthenticationException e) {
-            view.showErrorAlert("Authentication Error", e.getMessage());
+            view.showErrorAlert("Authentication Error", e.message);
         } catch (Exception e) {
             view.showErrorAlert("Error", "Failed to delete schedule: " + e.getMessage());
             e.printStackTrace();
@@ -563,7 +583,7 @@ public class MovieController {
             String description = view.getDescriptionInput().getText().trim();
             Integer rating = view.getRatingComboBox().getValue();
 
-            // GENRES: Get from the ADD checkboxes
+            // GENRES
             List<String> selectedGenres = view.getSelectedGenresAdd();
             int[] genreIds = getGenreIdsFromNames(selectedGenres);
 
@@ -579,6 +599,13 @@ public class MovieController {
                 String targetPath = IMAGE_DIRECTORY + filename;
                 posterUrl = targetPath + "|||IMAGE_DATA|||" + base64Image;
             }
+
+            // ✅ NEW: Get Schedule Data
+            LocalDate scheduleDate = view.getScheduleDatePicker().getValue();
+            String scheduleTime = view.getScheduleTimeComboBox().getValue();
+
+            System.out.println("📅 Schedule Date: " + scheduleDate);
+            System.out.println("🕐 Schedule Time: " + scheduleTime);
 
             // 2. Validate
             if (title.isEmpty()) {
@@ -598,22 +625,51 @@ public class MovieController {
                 return;
             }
 
-            // 3. Call Model (The Model has one method for adding everything)
-            // Check Model signature: addMovie(title, genreIds, description, rating, posterUrl)
+            // 3. Add Movie First
+            System.out.println("🔄 Creating movie...");
             int newMovieId = model.addMovie(title, genreIds, description, rating, posterUrl);
+            System.out.println("✅ Movie created with ID: " + newMovieId);
 
-            // 4. Success
+            // ✅ 4. NEW: Add Schedule if provided (OPTIONAL)
+            if (scheduleDate != null && scheduleTime != null && !scheduleTime.isEmpty()) {
+                try {
+                    System.out.println("🔄 Creating schedule for new movie...");
+
+                    String formattedDate = scheduleDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+
+                    // Create movie schedule (time slot)
+                    int movieScheduleId = model.createMovieSchedule(formattedDate, scheduleTime);
+                    System.out.println("✅ Created movieScheduleId: " + movieScheduleId);
+
+                    // Assign movie to schedule
+                    int scheduleId = model.assignMovieToSchedule(newMovieId, movieScheduleId);
+                    System.out.println("✅ Assigned to scheduleId: " + scheduleId);
+
+                } catch (Exception scheduleError) {
+                    System.err.println("⚠️ Failed to create schedule: " + scheduleError.getMessage());
+                    // Don't fail the entire operation - movie was created successfully
+                    view.showWarningAlert("Partial Success",
+                            "Movie created successfully, but schedule creation failed: " + scheduleError.getMessage());
+                }
+            } else {
+                System.out.println("ℹ️ No schedule provided - skipping schedule creation");
+            }
+
+            // 5. Success
             view.showInfoAlert("Success", "✅ Movie added successfully! ID: " + newMovieId);
 
             loadAllMovies(); // Refresh data
             showGridViewInternal(); // Go back to grid
 
         } catch (Exception e) {
+            System.err.println("❌ Error adding movie: " + e.getMessage());
             view.showErrorAlert("Error", "Failed to add movie: " + e.getMessage());
             e.printStackTrace();
         }
     }
-            // Inside MovieController.java
+
+
+    // Inside MovieController.java
             private void handleUpdateMovieClick() {
                 // 1. Safety Checks
                 if (selectedMovieId == -1 || currentlySelectedMovie == null) {

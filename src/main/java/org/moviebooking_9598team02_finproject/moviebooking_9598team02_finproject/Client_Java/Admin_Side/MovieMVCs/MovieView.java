@@ -106,6 +106,15 @@ public class MovieView {
             System.out.println("✅ genreListView is linked correctly.");
         }
 
+        // ✅ ADD: Verify scheduleListContainer
+        if (scheduleListContainer == null) {
+            System.err.println("❌ CRITICAL: scheduleListContainer is NULL!");
+        } else {
+            System.out.println("✅ scheduleListContainer found");
+            // Set a visible style to ensure it's showing
+            scheduleListContainer.setStyle("-fx-background-color: transparent;");
+        }
+
         // 1. Setup UI Components
         setupGenreListView();
         setupGenreListViewEdit();
@@ -119,18 +128,18 @@ public class MovieView {
         showGridView();
     }
 
-    // ===== SETUP METHODS =====
     private void setupTimeComboBox() {
         if (scheduleTimeComboBox != null) {
             List<String> timeSlots = new ArrayList<>();
-            // Generate times from 08:00 to 23:30
+            // ✅ FIX: Generate ONLY full hours (no :30)
             for (int hour = 8; hour < 24; hour++) {
                 timeSlots.add(String.format("%02d:00", hour));
-                timeSlots.add(String.format("%02d:30", hour));
+                // ❌ REMOVED: timeSlots.add(String.format("%02d:30", hour));
             }
             scheduleTimeComboBox.setItems(FXCollections.observableArrayList(timeSlots));
         }
     }
+
 
     private void setupRatingComboBox() {
         if (ratingComboBox != null) {
@@ -279,7 +288,8 @@ public class MovieView {
     /**
      * Create a schedule card UI element
      */
-    public VBox createScheduleCard(int scheduleId, int movieScheduleId, String date, String time, Runnable onSaveAction, Runnable onDeleteAction) {
+    public VBox createScheduleCard(int scheduleId, int movieScheduleId, String date, String time,
+                                   Runnable onSaveAction, Runnable onDeleteAction) {
         VBox scheduleCard = new VBox(12);
         scheduleCard.setStyle(
                 "-fx-background-color: #1A1A1A; " +
@@ -319,19 +329,18 @@ public class MovieView {
             datePicker.setValue(localDate);
         } catch (Exception e) {
             System.err.println("Invalid date format: " + date);
+            datePicker.setValue(LocalDate.now());
         }
 
         dateBox.getChildren().addAll(dateLabel, datePicker);
 
-        // --- CHANGED: Time Field to ComboBox ---
+        // Time ComboBox
         VBox timeBox = new VBox(5);
         Label timeLabel = new Label("🕐 Screening Time");
         timeLabel.setStyle("-fx-text-fill: #FFFFFF; -fx-font-size: 12px;");
 
         ComboBox<String> timeComboBox = new ComboBox<>();
         timeComboBox.setMaxWidth(250);
-
-        // CHANGED: Added -fx-text-fill and -fx-prompt-text-fill
         timeComboBox.setStyle(
                 "-fx-background-color: #292929; " +
                         "-fx-border-color: #404040; " +
@@ -345,15 +354,23 @@ public class MovieView {
         List<String> timeSlots = new ArrayList<>();
         for (int hour = 8; hour < 24; hour++) {
             timeSlots.add(String.format("%02d:00", hour));
-            timeSlots.add(String.format("%02d:30", hour));
+            // ❌ REMOVED: timeSlots.add(String.format("%02d:30", hour));
         }
-        timeComboBox.setItems(FXCollections.observableArrayList(timeSlots));
 
-        // Set Current Value
+        timeComboBox.setItems(FXCollections.observableArrayList(timeSlots));
         timeComboBox.setValue(time);
 
         timeBox.getChildren().addAll(timeLabel, timeComboBox);
-        // ----------------------------------------
+
+        // ✅ FIX: Store references in userData BEFORE creating buttons
+        Map<String, Object> userData = new HashMap<>();
+        userData.put("scheduleId", scheduleId);
+        userData.put("movieScheduleId", movieScheduleId);
+        userData.put("datePicker", datePicker);        // ✅ Store the actual DatePicker
+        userData.put("timeComboBox", timeComboBox);    // ✅ Store the actual ComboBox
+        scheduleCard.setUserData(userData);
+
+        // Action Buttons
         HBox buttonBox = new HBox(10);
         buttonBox.setAlignment(Pos.CENTER_RIGHT);
 
@@ -368,26 +385,31 @@ public class MovieView {
                         "-fx-cursor: hand;"
         );
 
+        // ✅ FIX: Don't set userData here, use the onSaveAction
         saveButton.setOnAction(e -> {
             if (onSaveAction != null) {
-                String newDate = datePicker.getValue() != null ?
-                        datePicker.getValue().toString() : date;
-
-                String newTime = timeComboBox.getValue();
-
-                Map<String, Object> userData = new HashMap<>();
-                userData.put("scheduleId", scheduleId);
-                userData.put("newDate", newDate);
-                userData.put("newTime", newTime);
-
-                scheduleCard.setUserData(userData);
-
                 onSaveAction.run();
             }
         });
 
-        Button deleteButton = getButton(scheduleId, onDeleteAction, scheduleCard);
+        Button deleteButton = new Button("🗑️ Delete");
+        deleteButton.setStyle(
+                "-fx-background-color: #8B0000; " +
+                        "-fx-text-fill: #FFFFFF; " +
+                        "-fx-font-size: 12px; " +
+                        "-fx-font-weight: bold; " +
+                        "-fx-padding: 8 20; " +
+                        "-fx-background-radius: 5; " +
+                        "-fx-cursor: hand;"
+        );
+
+        if (onDeleteAction != null) {
+            deleteButton.setOnAction(e -> onDeleteAction.run());
+        }
+
         buttonBox.getChildren().addAll(saveButton, deleteButton);
+
+        // Add all components to card
         scheduleCard.getChildren().addAll(header, dateBox, timeBox, buttonBox);
 
         return scheduleCard;
@@ -395,11 +417,38 @@ public class MovieView {
 
     // ✅ NEW METHOD: Extract schedule data from card
     public Map<String, Object> getScheduleCardData(Object card) {
-        if (card instanceof VBox) {
-            return (Map<String, Object>) ((VBox) card).getUserData();
+        if (!(card instanceof VBox)) {
+            return null;
         }
-        return null;
+
+        VBox scheduleCard = (VBox) card;
+        Map<String, Object> userData = (Map<String, Object>) scheduleCard.getUserData();
+
+        if (userData == null) {
+            return null;
+        }
+
+        // ✅ FIX: Get the actual controls and read their current values
+        DatePicker datePicker = (DatePicker) userData.get("datePicker");
+        ComboBox<String> timeComboBox = (ComboBox<String>) userData.get("timeComboBox");
+
+        if (datePicker == null || timeComboBox == null) {
+            System.err.println("❌ ERROR: Controls not found in userData");
+            return null;
+        }
+
+        // ✅ Create result map with CURRENT values
+        Map<String, Object> result = new HashMap<>();
+        result.put("scheduleId", userData.get("scheduleId"));
+        result.put("movieScheduleId", userData.get("movieScheduleId"));
+        result.put("newDate", datePicker.getValue() != null ?
+                datePicker.getValue().toString() : LocalDate.now().toString());
+        result.put("newTime", timeComboBox.getValue() != null ?
+                timeComboBox.getValue() : "10:00");
+
+        return result;
     }
+
 
     /**
      * Clear schedule container
@@ -413,10 +462,26 @@ public class MovieView {
     /**
      * Add schedule card to container
      */
+    /**
+     * Add schedule card to container
+     */
     public void addScheduleCardToContainer(Object card) {
-        if (scheduleListContainer != null && card instanceof VBox) {
-            scheduleListContainer.getChildren().add((VBox) card);
+        if (scheduleListContainer == null) {
+            System.err.println("❌ ERROR: scheduleListContainer is NULL!");
+            return;
         }
+
+        if (!(card instanceof VBox)) {
+            System.err.println("❌ ERROR: card is not a VBox! Type: " + card.getClass().getName());
+            return;
+        }
+
+        scheduleListContainer.getChildren().add((VBox) card);
+        System.out.println("✅ Added schedule card. Total cards: " +
+                scheduleListContainer.getChildren().size());
+
+        // Force layout refresh
+        scheduleListContainer.layout();
     }
 
     private static Button getButton(int scheduleId, Runnable onDeleteAction, VBox scheduleCard) {
@@ -966,6 +1031,46 @@ public class MovieView {
     public void stopAutoRefresh() {
         if (refreshTimer != null) {
             refreshTimer.stop();
+        }
+    }
+
+    /**
+     * Show a message when no schedules exist
+     */
+    public void showNoSchedulesMessage() {
+        if (scheduleListContainer != null) {
+            scheduleListContainer.getChildren().clear();
+
+            VBox placeholder = new VBox(10);
+            placeholder.setAlignment(Pos.CENTER);
+            placeholder.setStyle("-fx-padding: 30;");
+
+            Label icon = new Label("📅");
+            icon.setStyle("-fx-font-size: 48px;");
+
+            Label message = new Label("No schedules yet");
+            message.setStyle("-fx-text-fill: #888888; -fx-font-size: 16px;");
+
+            Label hint = new Label("Click '+ Add New Schedule' to create one");
+            hint.setStyle("-fx-text-fill: #666666; -fx-font-size: 12px;");
+
+            placeholder.getChildren().addAll(icon, message, hint);
+            scheduleListContainer.getChildren().add(placeholder);
+        }
+    }
+
+    /**
+     * Ensure schedule container is visible and ready
+     */
+    public void ensureScheduleContainerVisible() {
+        if (scheduleListContainer != null) {
+            scheduleListContainer.setVisible(true);
+            scheduleListContainer.setManaged(true);
+
+            // Force a layout pass
+            scheduleListContainer.layout();
+
+            System.out.println("✅ Schedule container visibility ensured");
         }
     }
 
