@@ -26,12 +26,28 @@ public class CustomerSignupController {
 
     private void signUp() {
         view.clearError();
-        if (view.getUserName().isEmpty() || view.getFullName().isEmpty() ||
-                view.getPhoneNumber().isEmpty() || view.getEmail().isEmpty() ||
-                view.getPassword().isEmpty() || view.getConfirmPassword().isEmpty()) {
-            view.showError("Please fill in all fields");
+
+        // --- START: Refactored Empty Field Check for Specific Errors ---
+        if (view.getUserName().isEmpty()) {
+            view.showError("Username cannot be empty.");
+            return;
+        } else if (view.getFullName().isEmpty()) {
+            view.showError("Full Name cannot be empty.");
+            return;
+        } else if (view.getPhoneNumber().isEmpty()) {
+            view.showError("Phone Number cannot be empty.");
+            return;
+        } else if (view.getEmail().isEmpty()) {
+            view.showError("Email Address cannot be empty.");
+            return;
+        } else if (view.getPassword().isEmpty()) {
+            view.showError("Password cannot be empty.");
+            return;
+        } else if (view.getConfirmPassword().isEmpty()) {
+            view.showError("Confirmation Password cannot be empty.");
             return;
         }
+        // --- END: Refactored Empty Field Check ---
 
         try {
             model.signUpCustomer(
@@ -48,13 +64,16 @@ public class CustomerSignupController {
             authManager.showLoginView();
 
         } catch (InvalidInputException | AuthenticationException e) {
+            // Already displays specific server-side errors (e.g., "Username already taken")
             view.showError(e.getMessage());
         } catch (IllegalArgumentException e) {
+            // Already displays specific client-side errors (e.g., "Passwords do not match")
             view.showError(e.getMessage());
         }
     }
 
     private void switchToLogin() {
+        view.clearError(); // Clear error before switching
         authManager.showLoginView();
     }
 }
