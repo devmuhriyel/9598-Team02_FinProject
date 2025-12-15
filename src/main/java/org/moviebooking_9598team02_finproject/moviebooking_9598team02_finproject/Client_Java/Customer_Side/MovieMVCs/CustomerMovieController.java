@@ -37,7 +37,6 @@ public class CustomerMovieController {
      * Manual initializer invoked by MovieNavigationManager after construction.
      */
     public void init() {
-        System.out.println("🔧 Initializing CustomerMovieController...");
         wireButtons();
         wireSearchField();
         loadAllGenres();
@@ -64,7 +63,6 @@ public class CustomerMovieController {
     // ===== DATA LOADING =====
 
     private void handleRefresh() {
-        System.out.println("Refreshing movie list...");
         view.showStatusMessage("Refreshing content...", false);
 
         // 1. Clear existing data to ensure a full reload
@@ -75,8 +73,6 @@ public class CustomerMovieController {
         // 2. Reload data from Database
         loadAllGenres();
         loadAllMovies();
-
-        System.out.println("Refresh complete.");
     }
 
     private void loadAllGenres() {
@@ -86,14 +82,10 @@ public class CustomerMovieController {
                 showStatus("No genres available.");
                 return;
             }
-
             genreDataMap.clear();
             for (Genre genre : allGenres) {
                 genreDataMap.put(genre.genreId, genre);
             }
-
-            System.out.println("✅ Loaded " + allGenres.length + " genres");
-
         } catch (Exception e) {
             showStatus("Error loading genres: " + e.getMessage());
             e.printStackTrace();
@@ -107,19 +99,14 @@ public class CustomerMovieController {
                 showStatus("No movies found.");
                 return;
             }
-
             movieDataMap.clear();
-
             // ✅ EXTRACT AND SAVE IMAGES for each movie
             for (Movie movie : allMovies) {
                 extractAndSaveImage(movie);
                 movieDataMap.put(movie.movieId, movie);
             }
-
             displayMovieCards(allMovies);
             showStatus("Movies loaded successfully. Total: " + allMovies.length);
-            System.out.println("✅ Loaded " + allMovies.length + " movies");
-
         } catch (Exception e) {
             showStatus("Error loading movies: " + e.getMessage());
             e.printStackTrace();
@@ -171,7 +158,6 @@ public class CustomerMovieController {
             loadAllMovies();
             return;
         }
-
         try {
             Movie[] searchResults = model.searchMovies(searchText.trim());
             if (searchResults == null || searchResults.length == 0) {
@@ -193,11 +179,8 @@ public class CustomerMovieController {
 
     private void handleMovieCardClick(Movie movie) {
         currentlySelectedMovie = movie;
-        System.out.println("🎬 Movie selected: " + movie.movieTitle);
-
         // Load schedules for this movie
         loadMovieSchedules(movie.movieId);
-
         // Show movie details view
         showMovieDetailsView(movie);
     }
@@ -213,8 +196,6 @@ public class CustomerMovieController {
 
             currentSchedulePage = 1;
             updateScheduleDisplay();
-
-            System.out.println("✅ Loaded " + currentScheduleList.size() + " schedules");
 
         } catch (MovieNotFoundException e) {
             showStatus("Movie not found: " + e.message);
@@ -262,8 +243,6 @@ public class CustomerMovieController {
         }
     }
     private void handleScheduleSelection(Schedule schedule) {
-        System.out.println("📅 Schedule selected: " + schedule.scheduleId);
-
         // Navigate to seat selection
         if (movieNavigationManager != null) {
             movieNavigationManager.showSeatSelection(schedule.scheduleId);
@@ -280,8 +259,6 @@ public class CustomerMovieController {
                 movie.movieDescription,
                 movie.moviePosterURL
         );
-
-        System.out.println("📋 Movie details view shown, schedules should be visible");
     }
 
     private void handleBackToMovieList() {
@@ -338,7 +315,6 @@ public class CustomerMovieController {
             // Split the concatenated string
             String[] parts = movie.moviePosterURL.split("\\|\\|\\|IMAGE_DATA\\|\\|\\|");
             if (parts.length != 2) {
-                System.err.println("❌ Invalid image data format for movie " + movie.movieId);
                 movie.moviePosterURL = ""; // Clear invalid data
                 return;
             }
@@ -374,10 +350,7 @@ public class CustomerMovieController {
             // This ensures the UI can load it later using getResource("/images/" + fileName)
             movie.moviePosterURL = "images/" + fileName;
 
-            System.out.println("✅ Image extracted and saved locally: " + targetFilePath);
-
         } catch (Exception e) {
-            System.err.println("❌ Error extracting image: " + e.getMessage());
             movie.moviePosterURL = ""; // Clear on error
         }
     }
@@ -385,7 +358,7 @@ public class CustomerMovieController {
     private void startAutoRefresh() {
         // This creates a timer that runs 'handleRefresh' every 30 seconds
         Timeline autoRefresh = new Timeline(
-                new KeyFrame(Duration.seconds(30), e -> handleRefresh())
+                new KeyFrame(Duration.seconds(1), e -> handleRefresh())
         );
         autoRefresh.setCycleCount(Timeline.INDEFINITE);
         autoRefresh.play();

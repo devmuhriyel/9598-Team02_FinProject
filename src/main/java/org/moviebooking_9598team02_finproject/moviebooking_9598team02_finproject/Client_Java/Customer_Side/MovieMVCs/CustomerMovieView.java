@@ -64,8 +64,6 @@ public class CustomerMovieView {
 
     @FXML
     public void initialize() {
-        System.out.println("✅ CustomerMovieView initialized via FXML");
-
         // Initially show movie list view
         if (movieListView != null && movieDetailsView != null) {
             showMovieListView();
@@ -83,7 +81,6 @@ public class CustomerMovieView {
             movieDetailsView.setVisible(false);
             movieDetailsView.setManaged(false);
         }
-        System.out.println("📄 Showing movie list view");
     }
 
     public void showMovieDetailsView(String title, String genres, int rating, String description, String posterURL) {
@@ -114,8 +111,6 @@ public class CustomerMovieView {
         if (moviePosterImageView != null) {
             loadPosterImage(posterURL);
         }
-
-        System.out.println("📋 Showing movie details view for: " + title);
     }
 
     // ===== MOVIE CARD CREATION =====
@@ -303,15 +298,13 @@ public class CustomerMovieView {
 
             if (localFile.exists()) {
                 image = new Image(localFile.toURI().toString(), width, height, true, true);
-                System.out.println("✅ [Disk Load] " + localPath);
-            }
+             }
             // 2. Fallback to CLASSPATH (Best for pre-existing images)
             else {
                 String resourcePath = posterURL.startsWith("/") ? posterURL : "/" + posterURL;
                 java.net.URL url = getClass().getResource(resourcePath);
                 if (url != null) {
                     image = new Image(url.toExternalForm(), width, height, true, true);
-                    System.out.println("✅ [Resource Load] " + resourcePath);
                 }
             }
         } catch (Exception e) {
@@ -320,7 +313,6 @@ public class CustomerMovieView {
 
         // 3. Fallback if both fail
         if (image == null || image.isError()) {
-            System.err.println("❌ Could not load image: " + posterURL);
             // Create a grey placeholder box
             image = new WritableImage(width, height);
         }

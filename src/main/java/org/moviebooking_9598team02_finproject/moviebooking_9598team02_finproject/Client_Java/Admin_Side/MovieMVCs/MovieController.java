@@ -545,10 +545,20 @@ public class MovieController {
         } catch (InvalidInputException e) {
             System.err.println("❌ Validation Error: " + e.message);
             view.showWarningAlert("Validation Error", e.message);
+
         } catch (AuthenticationException e) {
-            System.err.println("❌ Authentication Error: " + e.message);
-            view.showErrorAlert("Authentication Error",
-                    "Session may have expired. Please try logging in again.\n\n" + e.message);
+            System.err.println("❌ Error: " + e.message);
+
+            // ✅ Check if it's a conflict message
+            if (e.message.contains("already scheduled") || e.message.contains("Time slot conflict")) {
+                view.showErrorAlert("⚠️ Schedule Conflict", e.message);
+            } else if (e.message.contains("session expired") || e.message.contains("not logged in")) {
+                view.showErrorAlert("Authentication Error",
+                        "Session may have expired. Please try logging in again.\n\n" + e.message);
+            } else {
+                view.showErrorAlert("Error", e.message);
+            }
+
         } catch (Exception e) {
             System.err.println("❌ Unexpected Error: " + e.getMessage());
             e.printStackTrace();
@@ -729,8 +739,7 @@ public class MovieController {
         System.out.println("🎬 === ADD MOVIE PROCESS STARTED ===");
 
         try {
-            // ... all your existing code for gathering inputs and validation ...
-
+            // ===== STEP 1: GATHER INPUT =====
             String title = view.getTitleInput().getText().trim();
             String description = view.getDescriptionInput().getText().trim();
             Integer rating = view.getRatingComboBox().getValue();
@@ -740,6 +749,7 @@ public class MovieController {
             String posterUrl = "";
             String imagePath = view.getSelectedImagePath();
 
+            // Process image if provided
             if (imagePath != null && !imagePath.isEmpty()) {
                 Path sourceImagePath = Paths.get(imagePath);
                 byte[] imageBytes = Files.readAllBytes(sourceImagePath);
@@ -757,7 +767,7 @@ public class MovieController {
             LocalDate scheduleDate = view.getScheduleDatePicker().getValue();
             String scheduleTime = view.getScheduleTimeComboBox().getValue();
 
-            // Validations...
+            // ===== STEP 2: VALIDATE BASIC INPUTS =====
             if (title.isEmpty()) {
                 view.showWarningAlert("Validation Error", "Please enter a movie title.");
                 return;
@@ -775,38 +785,111 @@ public class MovieController {
                 return;
             }
 
-            // Create movie
+            // ===== STEP 3: PRE-VALIDATE SCHEDULE (if provided) =====
+            int movieScheduleId = -1;
+            if (scheduleDate != null && scheduleTime != null && !scheduleTime.isEmpty()) {
+                String formattedDate = scheduleDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+
+                // ✅ Validate date is not in the past
+                if (isDateInPast(formattedDate)) {
+                    view.showWarningAlert("Invalid Date",
+                            "⚠️ Cannot schedule a movie for a past date.\n\n" +
+                                    "Please select today's date or a future date.\n\n" +
+                                    "Selected date: " + formattedDate + "\n" +
+                                    "Today's date: " + LocalDate.now());
+                    view.setScheduleDateToToday();
+                    return;
+                }
+
+                // ✅ Validate time is not in the past (if date is today)
+                if (formattedDate.equals(LocalDate.now().toString())) {
+                    LocalTime currentTime = LocalTime.now();
+                    LocalTime selectedTime = LocalTime.parse(scheduleTime, DateTimeFormatter.ofPattern("HH:mm"));
+
+                    if (selectedTime.isBefore(currentTime)) {
+                        view.showWarningAlert("Invalid Time",
+                                "⚠️ Cannot schedule a movie for a time that has already passed today.\n\n" +
+                                        "Current time: " + currentTime.format(DateTimeFormatter.ofPattern("HH:mm")) + "\n" +
+                                        "Selected time: " + scheduleTime + "\n\n" +
+                                        "Please select a future time slot.");
+                        return;
+                    }
+                }
+
+                try {
+                    // ✅ CRITICAL: Try to create the schedule FIRST (this will check for conflicts)
+                    System.out.println("🔍 Pre-validating schedule: " + formattedDate + " at " + scheduleTime);
+                    movieScheduleId = model.createMovieSchedule(formattedDate, scheduleTime);
+                    System.out.println("✅ Schedule validated - movieScheduleId: " + movieScheduleId);
+
+                } catch (AuthenticationException e) {
+                    // ✅ Schedule conflict detected - show error and STOP
+                    System.err.println("❌ Schedule conflict: " + e.message);
+
+                    if (e.message.contains("Time slot conflict") || e.message.contains("already scheduled")) {
+                        view.showErrorAlert("⚠️ Schedule Conflict",
+                                e.message + "\n\n" +
+                                        "❌ Movie creation cancelled.\n\n" +
+                                        "Please choose a different date/time and try again.");
+                    } else {
+                        view.showErrorAlert("Error", e.message);
+                    }
+                    return; // ✅ STOP HERE - Don't create the movie
+
+                } catch (InvalidInputException e) {
+                    System.err.println("❌ Schedule validation error: " + e.message);
+                    view.showWarningAlert("Validation Error", e.message);
+                    return; // ✅ STOP HERE
+                }
+            }
+
+            // ===== STEP 4: CREATE MOVIE (only if schedule validation passed) =====
             System.out.println("📤 Creating movie...");
             int newMovieId = model.addMovie(title, genreIds, description, rating, posterUrl);
             System.out.println("✅ Movie created with ID: " + newMovieId);
 
-            // Add schedule if provided
-            if (scheduleDate != null && scheduleTime != null && !scheduleTime.isEmpty()) {
+            // ===== STEP 5: ASSIGN MOVIE TO SCHEDULE (if schedule was created) =====
+            if (movieScheduleId != -1) {
                 try {
-                    System.out.println("📤 Creating schedule for new movie...");
-                    String formattedDate = scheduleDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-
-                    int movieScheduleId = model.createMovieSchedule(formattedDate, scheduleTime);
-                    System.out.println("✅ Created movieScheduleId: " + movieScheduleId);
-
+                    System.out.println("📤 Assigning movie to schedule...");
                     int scheduleId = model.assignMovieToSchedule(newMovieId, movieScheduleId);
                     System.out.println("✅ Assigned to scheduleId: " + scheduleId);
 
-                } catch (Exception scheduleError) {
-                    System.err.println("⚠️ Failed to create schedule: " + scheduleError.getMessage());
+                } catch (AuthenticationException e) {
+                    // This should rarely happen since we already validated
+                    System.err.println("⚠️ Failed to assign schedule: " + e.message);
                     view.showWarningAlert("Partial Success",
-                            "Movie created successfully, but schedule creation failed: " + scheduleError.getMessage());
+                            "Movie created successfully (ID: " + newMovieId + "), " +
+                                    "but schedule assignment failed: " + e.message + "\n\n" +
+                                    "You can add a schedule later by editing the movie.");
+
+                } catch (Exception e) {
+                    System.err.println("⚠️ Failed to assign schedule: " + e.getMessage());
+                    view.showWarningAlert("Partial Success",
+                            "Movie created successfully (ID: " + newMovieId + "), " +
+                                    "but schedule assignment failed: " + e.getMessage());
                 }
             } else {
-                System.out.println("ℹ️ No schedule provided - skipping schedule creation");
+                System.out.println("ℹ️ No schedule provided - movie created without schedule");
             }
-
-            // Success
+            
+            // ===== STEP 6: SUCCESS =====
             view.showInfoAlert("Success", "✅ Movie added successfully! ID: " + newMovieId);
 
-            // ✅ CHANGED: Use reloadMoviesWithImages instead of loadAllMovies
-            reloadMoviesWithImages(); // Clear cache and reload
+            // Reload and show grid
+            reloadMoviesWithImages();
             showGridViewInternal();
+
+            System.out.println("✅ === ADD MOVIE PROCESS COMPLETED ===");
+
+        } catch (AuthenticationException e) {
+            System.err.println("❌ Authentication error: " + e.message);
+            view.showErrorAlert("Authentication Error",
+                    "Session may have expired. Please try logging in again.\n\n" + e.message);
+
+        } catch (InvalidInputException e) {
+            System.err.println("❌ Validation error: " + e.message);
+            view.showWarningAlert("Validation Error", e.message);
 
         } catch (Exception e) {
             System.err.println("❌ Error adding movie: " + e.getMessage());
@@ -814,7 +897,6 @@ public class MovieController {
             e.printStackTrace();
         }
     }
-
 
     private void handleUpdateMovieClick() {
         if (selectedMovieId == -1 || currentlySelectedMovie == null) {

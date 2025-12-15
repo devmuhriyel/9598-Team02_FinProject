@@ -33,7 +33,7 @@ public class CustomerParentController {
                 } else {
                     view.showError("Failed to connect to server");
                 }
-            } catch (NumberFormatException e) {
+            } catch (NumberFormatException e) { 
                 view.showError("Invalid port number");
             } catch (Exception e) {
                 view.showError("Connection error: " + e.getMessage());

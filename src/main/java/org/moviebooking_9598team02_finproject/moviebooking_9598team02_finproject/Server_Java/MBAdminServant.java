@@ -28,21 +28,22 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     // ===== CONSTRUCTORS =====
-    public MBAdminServant() {}
+    public MBAdminServant() {
+    }
 
     // ===== AUTHENTICATION METHODS =====
     @Override
     public Admin loginAdmin(String username, String password) throws AuthenticationException {
         Admin admin = new Admin();
-        try(Connection connection = DatabaseAccess.getConnection()){
+        try (Connection connection = DatabaseAccess.getConnection()) {
             String query = "SELECT * FROM admins where username = ?";
             PreparedStatement statement = connection.prepareStatement(query);
             statement.setString(1, username);
             ResultSet rs = statement.executeQuery();
 
-            if(rs.next()){
+            if (rs.next()) {
                 String hashedPassword = rs.getString("password");
-                if(PasswordManager.checkPassword(password, hashedPassword)){
+                if (PasswordManager.checkPassword(password, hashedPassword)) {
                     int admin_id = rs.getInt("admin_id");
 
                     // ✅ CORRECT ORDER: Check if already logged in FIRST
@@ -70,7 +71,7 @@ public class MBAdminServant extends AdminServicePOA {
             } else {
                 throw new AuthenticationException("Account does not exist");
             }
-        } catch (SQLException e){
+        } catch (SQLException e) {
             e.printStackTrace();
             throw new AuthenticationException("Database error:" + e.getMessage());
         }
@@ -79,14 +80,14 @@ public class MBAdminServant extends AdminServicePOA {
 
     @Override
     public void logoutAdmin(int adminId) {
-        if(SessionManager.isAdminLoggedIn(adminId)){
+        if (SessionManager.isAdminLoggedIn(adminId)) {
             SessionManager.removeAdminSession(adminId);
         }
     }
 
     @Override
     public int createAdmin(int creatorAdminId, String username, String email, String password, String fullName, String phoneNumber) throws AuthenticationException, InvalidInputException {
-        try (Connection connection = DatabaseAccess.getConnection()){
+        try (Connection connection = DatabaseAccess.getConnection()) {
             int nextAdminID = getLatestAdminID() + 1;
             String hashedPassword = PasswordManager.hashPassword(password);
             LocalDateTime timeOfCreation = LocalDateTime.now();
@@ -1324,7 +1325,7 @@ public class MBAdminServant extends AdminServicePOA {
             }
 
             if (!deleted) {
-                System.out.println("ℹ️ Image file not found (may have been deleted already): " + posterUrl);
+                System.out.println("ℹ️Image file not found (may have been deleted already): " + posterUrl);
             }
 
         } catch (IOException e) {
@@ -1354,13 +1355,13 @@ public class MBAdminServant extends AdminServicePOA {
                 movie.movieDescription = rs.getString("movie_description");
                 movie.movieRating = rs.getInt("movie_rating");
 
-                // ✅ JUST return the path - NO image data embedding
+                // JUST return the path - NO image data embedding
                 movie.moviePosterURL = rs.getString("movie_poster_url");
 
                 movie.createdAt = rs.getString("created_at");
                 movie.updatedAt = rs.getString("updated_at");
 
-                // ❌ REMOVE THIS LINE (or comment it out):
+                // REMOVE THIS LINE (or comment it out):
                 // movie = attachImageDataToMovie(movie);
 
                 movieList.add(movie);
@@ -1422,25 +1423,43 @@ public class MBAdminServant extends AdminServicePOA {
         Connection connection = null;
         try {
             connection = DatabaseAccess.getConnection();
-            connection.setAutoCommit(false); // ✅ START TRANSACTION
+            connection.setAutoCommit(false); // START TRANSACTION
 
-            // Check if this exact date/time combination already exists
-            String checkDuplicateQuery = "SELECT movie_schedule_id FROM movie_schedules " +
-                    "WHERE screening_date = ? AND screening_time = ?";
-            PreparedStatement checkStmt = connection.prepareStatement(checkDuplicateQuery);
-            checkStmt.setString(1, screeningDate);
-            checkStmt.setString(2, screeningTime);
-            ResultSet checkRs = checkStmt.executeQuery();
+            // Check if this time slot is already occupied
+            String checkOccupiedQuery =
+                    "SELECT ms.movie_schedule_id, COUNT(s.schedule_id) as movie_count " +
+                            "FROM movie_schedules ms " +
+                            "LEFT JOIN schedules s ON ms.movie_schedule_id = s.movie_schedule_id " +
+                            "WHERE ms.screening_date = ? AND ms.screening_time = ? " +
+                            "GROUP BY ms.movie_schedule_id";
 
-            if (checkRs.next()) {
-                // Time slot already exists - return existing ID
-                int existingId = checkRs.getInt("movie_schedule_id");
-                connection.commit();
-                System.out.println("⚠️ Time slot already exists, returning ID: " + existingId);
-                return existingId;
+            PreparedStatement checkOccupiedStmt = connection.prepareStatement(checkOccupiedQuery);
+            checkOccupiedStmt.setString(1, screeningDate);
+            checkOccupiedStmt.setString(2, screeningTime);
+            ResultSet occupiedRs = checkOccupiedStmt.executeQuery();
+
+            if (occupiedRs.next()) {
+                int movieCount = occupiedRs.getInt("movie_count");
+                int existingScheduleId = occupiedRs.getInt("movie_schedule_id");
+
+                if (movieCount > 0) {
+                    // Time slot already has a movie scheduled
+                    connection.rollback();
+                    throw new InvalidInputException(
+                            "Time slot conflict: Another movie is already scheduled for " +
+                                    screeningDate + " at " + screeningTime + ". " +
+                                    "Please choose a different date or time.",
+                            "schedule_conflict"
+                    );
+                } else {
+                    // Time slot exists but no movie assigned - can reuse it
+                    connection.commit();
+                    System.out.println("♻️ Reusing empty time slot ID: " + existingScheduleId);
+                    return existingScheduleId;
+                }
             }
 
-            // Get next movie_schedule_id
+            // Time slot doesn't exist - create new one
             String maxIdQuery = "SELECT MAX(movie_schedule_id) as max_id FROM movie_schedules";
             PreparedStatement maxIdStmt = connection.prepareStatement(maxIdQuery);
             ResultSet maxIdRs = maxIdStmt.executeQuery();
@@ -1467,8 +1486,8 @@ public class MBAdminServant extends AdminServicePOA {
             int rowsAffected = statement.executeUpdate();
 
             if (rowsAffected > 0) {
-                connection.commit(); // ✅ COMMIT TRANSACTION
-                System.out.println("✅ Created movie schedule ID: " + nextScheduleId +
+                connection.commit(); //COMMIT TRANSACTION
+                System.out.println(" Created movie schedule ID: " + nextScheduleId +
                         " for " + screeningDate + " at " + screeningTime);
                 return nextScheduleId;
             } else {
@@ -1498,7 +1517,6 @@ public class MBAdminServant extends AdminServicePOA {
         }
     }
 
-
     @Override
     public int assignMovieToSchedule(int adminId, int movieId, int movieScheduleId)
             throws AuthenticationException, MovieNotFoundException, ScheduleNotFoundException {
@@ -1514,9 +1532,9 @@ public class MBAdminServant extends AdminServicePOA {
         Connection connection = null;
         try {
             connection = DatabaseAccess.getConnection();
-            connection.setAutoCommit(false); // ✅ START TRANSACTION
+            connection.setAutoCommit(false); // START TRANSACTION
 
-            // 1️⃣ Check if movie exists
+            // Check if movie exists
             String checkMovieQuery = "SELECT movie_id, movie_title FROM movies WHERE movie_id = ?";
             PreparedStatement checkMovieStmt = connection.prepareStatement(checkMovieQuery);
             checkMovieStmt.setInt(1, movieId);
@@ -1531,7 +1549,7 @@ public class MBAdminServant extends AdminServicePOA {
             String movieTitle = movieRs.getString("movie_title");
             System.out.println("✅ Movie found: " + movieTitle);
 
-            // 2️⃣ Check if movie_schedule exists
+            //  Check if movie_schedule exists
             String checkScheduleQuery = "SELECT movie_schedule_id, screening_date, screening_time " +
                     "FROM movie_schedules WHERE movie_schedule_id = ?";
             PreparedStatement checkScheduleStmt = connection.prepareStatement(checkScheduleQuery);
@@ -1546,25 +1564,51 @@ public class MBAdminServant extends AdminServicePOA {
 
             String date = scheduleRs.getString("screening_date");
             String time = scheduleRs.getString("screening_time");
-            System.out.println("✅ Movie schedule found: " + date + " " + time);
+            System.out.println("Movie schedule found: " + date + " " + time);
 
-            // 3️⃣ Check if this movie is already assigned to this movie_schedule
-            String checkExistingQuery = "SELECT schedule_id FROM schedules " +
+            // Check if this EXACT movie is already scheduled at this time
+            String checkSameMovieQuery = "SELECT schedule_id FROM schedules " +
                     "WHERE movie_id = ? AND movie_schedule_id = ?";
-            PreparedStatement checkExistingStmt = connection.prepareStatement(checkExistingQuery);
-            checkExistingStmt.setInt(1, movieId);
-            checkExistingStmt.setInt(2, movieScheduleId);
-            ResultSet existingRs = checkExistingStmt.executeQuery();
+            PreparedStatement checkSameMovieStmt = connection.prepareStatement(checkSameMovieQuery);
+            checkSameMovieStmt.setInt(1, movieId);
+            checkSameMovieStmt.setInt(2, movieScheduleId);
+            ResultSet sameMovieRs = checkSameMovieStmt.executeQuery();
 
-            if (existingRs.next()) {
-                int existingScheduleId = existingRs.getInt("schedule_id");
-                connection.commit();
-                System.out.println("⚠️ Schedule already exists for this movie and time slot, returning ID: " +
-                        existingScheduleId);
-                return existingScheduleId;
+            if (sameMovieRs.next()) {
+                int existingScheduleId = sameMovieRs.getInt("schedule_id");
+                connection.rollback();
+
+                // FIXED: Use AuthenticationException instead of InvalidInputException
+                throw new AuthenticationException(
+                        "Schedule already exists: Movie '" + movieTitle + "' is already scheduled for " +
+                                date + " at " + time + "."
+                );
             }
 
-            // 4️⃣ Get next schedule_id
+            // NEW: Check if ANY OTHER movie is scheduled at this time
+            String checkOtherMovieQuery =
+                    "SELECT s.schedule_id, m.movie_title " +
+                            "FROM schedules s " +
+                            "JOIN movies m ON s.movie_id = m.movie_id " +
+                            "WHERE s.movie_schedule_id = ? AND s.movie_id != ?";
+
+            PreparedStatement checkOtherMovieStmt = connection.prepareStatement(checkOtherMovieQuery);
+            checkOtherMovieStmt.setInt(1, movieScheduleId);
+            checkOtherMovieStmt.setInt(2, movieId);
+            ResultSet otherMovieRs = checkOtherMovieStmt.executeQuery();
+
+            if (otherMovieRs.next()) {
+                String conflictingMovie = otherMovieRs.getString("movie_title");
+                connection.rollback();
+
+                // FIXED: Use AuthenticationException instead of InvalidInputException
+                throw new AuthenticationException(
+                        "Time slot conflict: Movie '" + conflictingMovie + "' is already scheduled for " +
+                                date + " at " + time + ". Please choose a different time slot."
+                );
+            }
+
+            //  Get next schedule_id
             String maxIdQuery = "SELECT MAX(schedule_id) as max_id FROM schedules";
             PreparedStatement maxIdStmt = connection.prepareStatement(maxIdQuery);
             ResultSet maxIdRs = maxIdStmt.executeQuery();
@@ -1575,7 +1619,7 @@ public class MBAdminServant extends AdminServicePOA {
                 nextScheduleId = maxId + 1;
             }
 
-            // 5️⃣ Insert into schedules table
+            // Insert into schedules table
             LocalDateTime now = LocalDateTime.now();
             String query = "INSERT INTO schedules (schedule_id, movie_id, movie_schedule_id, created_at, updated_at) " +
                     "VALUES (?, ?, ?, ?, ?)";
@@ -1589,12 +1633,12 @@ public class MBAdminServant extends AdminServicePOA {
             int rowsAffected = statement.executeUpdate();
 
             if (rowsAffected > 0) {
-                // 6️⃣ Initialize seats for this schedule
+                // Initialize seats for this schedule
                 System.out.println("🪑 Initializing seats for schedule " + nextScheduleId + "...");
                 initializeScheduleSeatsInternal(connection, nextScheduleId);
 
-                connection.commit(); // ✅ COMMIT TRANSACTION
-                System.out.println("✅ Assigned movie " + movieId + " ('" + movieTitle +
+                connection.commit(); // COMMIT TRANSACTION
+                System.out.println(" Assigned movie " + movieId + " ('" + movieTitle +
                         "') to schedule " + nextScheduleId);
                 return nextScheduleId;
             } else {
@@ -1623,6 +1667,7 @@ public class MBAdminServant extends AdminServicePOA {
             }
         }
     }
+
 
     // Helper method to initialize seats for a schedule
     private void initializeScheduleSeatsInternal(Connection connection, int scheduleId) throws SQLException {
@@ -1659,7 +1704,7 @@ public class MBAdminServant extends AdminServicePOA {
         }
 
         int[] results = insertStmt.executeBatch();
-        System.out.println("✅ Initialized " + count + " seats for schedule " + scheduleId);
+        System.out.println("Initialized " + count + " seats for schedule " + scheduleId);
     }
 
     @Override
@@ -1694,7 +1739,7 @@ public class MBAdminServant extends AdminServicePOA {
             int rowsAffected = updateStmt.executeUpdate();
 
             if (rowsAffected > 0) {
-                System.out.println("✅ Updated schedule " + scheduleId + " to " + newDate + " at " + newTime);
+                System.out.println("Updated schedule " + scheduleId + " to " + newDate + " at " + newTime);
             }
 
         } catch (SQLException e) {
@@ -1714,9 +1759,9 @@ public class MBAdminServant extends AdminServicePOA {
         Connection connection = null;
         try {
             connection = DatabaseAccess.getConnection();
-            connection.setAutoCommit(false); // ✅ START TRANSACTION
+            connection.setAutoCommit(false); // START TRANSACTION
 
-            // 1️⃣ Check if schedule exists
+            // Check if schedule exists
             String checkQuery = "SELECT schedule_id, movie_schedule_id FROM schedules WHERE schedule_id = ?";
             PreparedStatement checkStmt = connection.prepareStatement(checkQuery);
             checkStmt.setInt(1, scheduleId);
@@ -1729,7 +1774,7 @@ public class MBAdminServant extends AdminServicePOA {
 
             int movieScheduleId = rs.getInt("movie_schedule_id");
 
-            // 2️⃣ Check if there are any bookings for this schedule
+            //  Check if there are any bookings for this schedule
             String checkBookingsQuery = "SELECT COUNT(*) as booking_count FROM bookings WHERE schedule_id = ?";
             PreparedStatement checkBookingsStmt = connection.prepareStatement(checkBookingsQuery);
             checkBookingsStmt.setInt(1, scheduleId);
@@ -1740,14 +1785,14 @@ public class MBAdminServant extends AdminServicePOA {
                 throw new AuthenticationException("Cannot delete schedule: There are existing bookings for this schedule");
             }
 
-            // 3️⃣ Delete schedule_list_seats first (foreign key constraint)
+            //  Delete schedule_list_seats first (foreign key constraint)
             String deleteSeatsQuery = "DELETE FROM schedule_list_seats WHERE schedule_id = ?";
             PreparedStatement deleteSeatsStmt = connection.prepareStatement(deleteSeatsQuery);
             deleteSeatsStmt.setInt(1, scheduleId);
             int seatsDeleted = deleteSeatsStmt.executeUpdate();
             System.out.println("🗑️ Deleted " + seatsDeleted + " schedule_list_seats for schedule " + scheduleId);
 
-            // 4️⃣ Delete the schedule
+            //  Delete the schedule
             String deleteScheduleQuery = "DELETE FROM schedules WHERE schedule_id = ?";
             PreparedStatement deleteScheduleStmt = connection.prepareStatement(deleteScheduleQuery);
             deleteScheduleStmt.setInt(1, scheduleId);
@@ -1758,13 +1803,13 @@ public class MBAdminServant extends AdminServicePOA {
                 throw new ScheduleNotFoundException();
             }
 
-            // 5️⃣ Check if other schedules are using this movie_schedule_id
+            //  Check if other schedules are using this movie_schedule_id
             String checkOtherSchedulesQuery = "SELECT COUNT(*) as count FROM schedules WHERE movie_schedule_id = ?";
             PreparedStatement checkOtherStmt = connection.prepareStatement(checkOtherSchedulesQuery);
             checkOtherStmt.setInt(1, movieScheduleId);
             ResultSet otherRs = checkOtherStmt.executeQuery();
 
-            // 6️⃣ If no other schedules use this movie_schedule, delete it too
+            //  If no other schedules use this movie_schedule, delete it too
             if (otherRs.next() && otherRs.getInt("count") == 0) {
                 String deleteMovieScheduleQuery = "DELETE FROM movie_schedules WHERE movie_schedule_id = ?";
                 PreparedStatement deleteMovieScheduleStmt = connection.prepareStatement(deleteMovieScheduleQuery);
@@ -1773,8 +1818,8 @@ public class MBAdminServant extends AdminServicePOA {
                 System.out.println("🗑️ Deleted movie_schedule " + movieScheduleId + " (no longer used)");
             }
 
-            connection.commit(); // ✅ COMMIT TRANSACTION
-            System.out.println("✅ Successfully deleted schedule " + scheduleId);
+            connection.commit(); // COMMIT TRANSACTION
+            System.out.println("Successfully deleted schedule " + scheduleId);
 
         } catch (SQLException e) {
             if (connection != null) {
