@@ -410,6 +410,16 @@ public class CustomerMovieView {
         }
     }
 
+    public void runOnUIThread(Runnable action) {
+        if (javafx.application.Platform.isFxApplicationThread()) {
+            // Already on UI thread, run directly
+            action.run();
+        } else {
+            // Schedule to run on UI thread
+            javafx.application.Platform.runLater(action);
+        }
+    }
+
     // ===== GETTERS =====
 
     public VBox getMovieListView() {

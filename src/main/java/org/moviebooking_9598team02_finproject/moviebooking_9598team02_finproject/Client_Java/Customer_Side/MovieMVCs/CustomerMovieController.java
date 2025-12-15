@@ -1,8 +1,5 @@
 package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Customer_Side.MovieMVCs;
 
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
-import javafx.util.Duration;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.*;
 
 import java.nio.file.Files;
@@ -26,6 +23,9 @@ public class CustomerMovieController {
     private static final int SCHEDULES_PER_PAGE = 6;
     private int currentSchedulePage = 1;
     private int totalSchedulePages = 1;
+
+    // Auto-refresh timer
+    private Timer autoRefreshTimer;
 
     public CustomerMovieController(CustomerMovieView view, CustomerMovieModel model, MovieNavigationManager movieNavigationManager) {
         this.view = view;
@@ -242,6 +242,7 @@ public class CustomerMovieController {
             }
         }
     }
+
     private void handleScheduleSelection(Schedule schedule) {
         // Navigate to seat selection
         if (movieNavigationManager != null) {
@@ -319,7 +320,6 @@ public class CustomerMovieController {
                 return;
             }
 
-            // --- FIX START ---
             // 1. Get the raw string from DB
             String rawDbPath = parts[0];
 
@@ -333,7 +333,6 @@ public class CustomerMovieController {
             // 4. Construct the absolute path anchored to the Project Root
             Path projectRoot = Paths.get(System.getProperty("user.dir"));
             Path targetFilePath = projectRoot.resolve(relativeDirectory).resolve(fileName);
-            // --- FIX END ---
 
             String base64Data = parts[1];
 
@@ -356,11 +355,24 @@ public class CustomerMovieController {
     }
 
     private void startAutoRefresh() {
-        // This creates a timer that runs 'handleRefresh' every 30 seconds
-        Timeline autoRefresh = new Timeline(
-                new KeyFrame(Duration.seconds(1), e -> handleRefresh())
-        );
-        autoRefresh.setCycleCount(Timeline.INDEFINITE);
-        autoRefresh.play();
+        // Use java.util.Timer instead of JavaFX Timeline
+        autoRefreshTimer = new Timer(true); // daemon thread
+        autoRefreshTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                // Delegate to view to run on JavaFX thread
+                view.runOnUIThread(() -> handleRefresh());
+            }
+        }, 30000, 30000); // 30 seconds delay and period
+    }
+
+    /**
+     * Call this method when shutting down to clean up resources
+     */
+    public void shutdown() {
+        if (autoRefreshTimer != null) {
+            autoRefreshTimer.cancel();
+            autoRefreshTimer = null;
+        }
     }
 }
