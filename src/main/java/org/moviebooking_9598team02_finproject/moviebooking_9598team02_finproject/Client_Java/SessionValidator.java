@@ -20,6 +20,7 @@ public class SessionValidator {
     private final String userType; // "admin" or "customer"
     private final SessionValidationCallback callback;
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
+    private final AtomicBoolean alertShown = new AtomicBoolean(false);
 
     // Check every 5 seconds
     private static final long CHECK_INTERVAL_MS = 5000;
@@ -89,11 +90,14 @@ public class SessionValidator {
                 // Session was invalidated (concurrent login detected)
                 stop(); // Stop checking
 
-                // Notify user on JavaFX thread
-                Platform.runLater(() -> {
-                    showConcurrentLoginAlert();
-                    callback.onSessionInvalidated();
-                });
+                // Only show alert once
+                if (alertShown.compareAndSet(false, true)) {
+                    // Use Platform.runLater WITHOUT showAndWait to avoid blocking
+                    Platform.runLater(() -> {
+                        showConcurrentLoginAlert();
+                        callback.onSessionInvalidated();
+                    });
+                }
             }
 
         } catch (Exception e) {
@@ -104,6 +108,7 @@ public class SessionValidator {
 
     /**
      * Show alert to user about concurrent login
+     * FIXED: Use show() instead of showAndWait() to prevent UI freeze
      */
     private void showConcurrentLoginAlert() {
         Alert alert = new Alert(Alert.AlertType.WARNING);
@@ -114,7 +119,22 @@ public class SessionValidator {
                         "You have been logged out for security reasons."
         );
 
-        alert.showAndWait();
+        // ✅ FIX: Use show() instead of showAndWait()
+        // This prevents the "showAndWait is not allowed during animation" error
+        alert.show();
+
+        // Optional: Auto-close after 5 seconds
+        Timer autoCloseTimer = new Timer(true);
+        autoCloseTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                Platform.runLater(() -> {
+                    if (alert.isShowing()) {
+                        alert.close();
+                    }
+                });
+            }
+        }, 5000);
     }
 
     /**

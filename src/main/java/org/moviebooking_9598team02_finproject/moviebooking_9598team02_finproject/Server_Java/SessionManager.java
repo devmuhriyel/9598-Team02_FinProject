@@ -29,7 +29,7 @@ public class SessionManager {
     // ===== CONFIGURATION =====
 
     // Session timeout in minutes (default: 30 minutes)
-    private static final int SESSION_TIMEOUT_MINUTES = 10;
+    private static final int SESSION_TIMEOUT_MINUTES = 30;
 
     // Cleanup interval in minutes (default: 5 minutes)
     private static final int CLEANUP_INTERVAL_MINUTES = 5;
@@ -110,6 +110,13 @@ public class SessionManager {
     }
 
     public static String createAdminSession(int adminId, String username, String ipAddress) {
+        // ✅ FIX: Check if admin already has session BEFORE creating new one
+        SessionInfo existingSession = adminSessions.get(adminId);
+        if (existingSession != null) {
+            System.out.println("⚠️ Admin " + adminId + " already logged in. Removing old session.");
+            removeAdminSession(adminId);
+        }
+
         // Generate unique session token
         String sessionToken = UUID.randomUUID().toString();
 
@@ -118,7 +125,7 @@ public class SessionManager {
         adminSessions.put(adminId, sessionInfo);
         sessionTokens.put(sessionToken, adminId);
 
-        System.out.println("Admin session created: " + sessionInfo);
+        System.out.println("✅ Admin session created: " + sessionInfo);
         return sessionToken;
     }
 
@@ -161,7 +168,7 @@ public class SessionManager {
         SessionInfo session = adminSessions.remove(adminId);
         if (session != null) {
             sessionTokens.remove(session.sessionToken);
-            System.out.println("Admin session removed: adminId=" + adminId);
+            System.out.println("🗑️ Admin session removed: adminId=" + adminId);
         }
     }
 
@@ -180,13 +187,20 @@ public class SessionManager {
     }
 
     public static String createCustomerSession(int customerId, String username, String ipAddress) {
+        // ✅ FIX: Check if customer already has session BEFORE creating new one
+        SessionInfo existingSession = customerSessions.get(customerId);
+        if (existingSession != null) {
+            System.out.println("⚠️ Customer " + customerId + " already logged in. Removing old session.");
+            removeCustomerSession(customerId);
+        }
+
         String sessionToken = UUID.randomUUID().toString();
         SessionInfo sessionInfo = new SessionInfo(customerId, username, sessionToken, ipAddress);
 
         customerSessions.put(customerId, sessionInfo);
         sessionTokens.put(sessionToken, customerId);
 
-        System.out.println("Customer session created: " + sessionInfo);
+        System.out.println("✅ Customer session created: " + sessionInfo);
         return sessionToken;
     }
 
@@ -215,7 +229,7 @@ public class SessionManager {
         SessionInfo session = customerSessions.remove(customerId);
         if (session != null) {
             sessionTokens.remove(session.sessionToken);
-            System.out.println("Customer session removed: customerId=" + customerId);
+            System.out.println("🗑️ Customer session removed: customerId=" + customerId);
         }
     }
 
@@ -248,7 +262,7 @@ public class SessionManager {
         }
 
         if (expiredAdmin > 0 || expiredCustomer > 0) {
-            System.out.println(String.format("Session cleanup: removed %d admin, %d customer sessions",
+            System.out.println(String.format("🧹 Session cleanup: removed %d admin, %d customer sessions",
                     expiredAdmin, expiredCustomer));
         }
     }
@@ -261,7 +275,7 @@ public class SessionManager {
         adminSessions.clear();
         customerSessions.clear();
         sessionTokens.clear();
-        System.out.println("All sessions cleared");
+        System.out.println("🗑️ All sessions cleared");
     }
 
     // ===== STATISTICS & MONITORING =====
