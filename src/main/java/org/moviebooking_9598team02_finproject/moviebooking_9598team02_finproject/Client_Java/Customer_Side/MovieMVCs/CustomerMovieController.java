@@ -1,5 +1,8 @@
 package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Customer_Side.MovieMVCs;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.util.Duration;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.*;
 
 import java.nio.file.Files;
@@ -39,12 +42,14 @@ public class CustomerMovieController {
         wireSearchField();
         loadAllGenres();
         loadAllMovies();
+        startAutoRefresh();
     }
 
     private void wireButtons() {
         view.setBackButtonAction(this::handleBackToMovieList);
         view.setPreviousSchedulePageAction(this::handlePreviousSchedulePage);
         view.setNextSchedulePageAction(this::handleNextSchedulePage);
+        view.setRefreshButtonAction(this::handleRefresh);
     }
 
     private void wireSearchField() {
@@ -57,6 +62,22 @@ public class CustomerMovieController {
     }
 
     // ===== DATA LOADING =====
+
+    private void handleRefresh() {
+        System.out.println("Refreshing movie list...");
+        view.showStatusMessage("Refreshing content...", false);
+
+        // 1. Clear existing data to ensure a full reload
+        movieDataMap.clear();
+        genreDataMap.clear();
+        view.clearMovieCards(); // Clear UI immediately
+
+        // 2. Reload data from Database
+        loadAllGenres();
+        loadAllMovies();
+
+        System.out.println("Refresh complete.");
+    }
 
     private void loadAllGenres() {
         try {
@@ -79,7 +100,7 @@ public class CustomerMovieController {
         }
     }
 
-    private void loadAllMovies() {
+    public void loadAllMovies() {
         try {
             Movie[] allMovies = model.browseMovies();
             if (allMovies == null || allMovies.length == 0) {
@@ -322,27 +343,51 @@ public class CustomerMovieController {
                 return;
             }
 
-            String targetPath = parts[0];
+            // --- FIX START ---
+            // 1. Get the raw string from DB
+            String rawDbPath = parts[0];
+
+            // 2. Extract ONLY the filename (removes any accidental "C:/" or "/" from the DB string)
+            String fileName = Paths.get(rawDbPath).getFileName().toString();
+
+            // 3. Define where you want it saved relative to your project
+            // We force it into "src/main/resources/images" to keep it organized
+            String relativeDirectory = "src/main/resources/images";
+
+            // 4. Construct the absolute path anchored to the Project Root
+            Path projectRoot = Paths.get(System.getProperty("user.dir"));
+            Path targetFilePath = projectRoot.resolve(relativeDirectory).resolve(fileName);
+            // --- FIX END ---
+
             String base64Data = parts[1];
 
             // Decode Base64
             byte[] imageBytes = Base64.getDecoder().decode(base64Data);
 
-            // Create directory structure
-            Path targetFilePath = Paths.get("src/main/resources/" + targetPath);
+            // Create directory structure if it doesn't exist
             Files.createDirectories(targetFilePath.getParent());
 
             // Save file locally
             Files.write(targetFilePath, imageBytes);
 
-            // Update movie object to contain ONLY the path
-            movie.moviePosterURL = targetPath;
+            // Update movie object to contain the classpath-relative path
+            // This ensures the UI can load it later using getResource("/images/" + fileName)
+            movie.moviePosterURL = "images/" + fileName;
 
-            System.out.println("✅ Image extracted and saved locally: " + targetPath);
+            System.out.println("✅ Image extracted and saved locally: " + targetFilePath);
 
         } catch (Exception e) {
             System.err.println("❌ Error extracting image: " + e.getMessage());
             movie.moviePosterURL = ""; // Clear on error
         }
+    }
+
+    private void startAutoRefresh() {
+        // This creates a timer that runs 'handleRefresh' every 30 seconds
+        Timeline autoRefresh = new Timeline(
+                new KeyFrame(Duration.seconds(30), e -> handleRefresh())
+        );
+        autoRefresh.setCycleCount(Timeline.INDEFINITE);
+        autoRefresh.play();
     }
 }

@@ -7,8 +7,10 @@ import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.image.WritableImage;
 import javafx.scene.layout.*;
 
+import java.io.File;
 import java.util.Objects;
 
 /**
@@ -28,6 +30,13 @@ public class CustomerMovieView {
     private ScrollPane movieScrollPane;
     @FXML
     private TilePane movieTilePane;
+    @FXML
+    private Button btnRefresh;
+    public void setRefreshButtonAction(Runnable action) {
+        if (btnRefresh != null) {
+            btnRefresh.setOnAction(e -> action.run());
+        }
+    }
 
     // ===== MOVIE DETAILS VIEW COMPONENTS =====
     @FXML
@@ -285,79 +294,74 @@ public class CustomerMovieView {
     // ===== IMAGE HANDLING =====
 
     private ImageView createPosterImageView(String posterURL, int width, int height) {
+        Image image = null;
         try {
-            // Clean the path - remove leading slash if present
-            String cleanPath = posterURL.startsWith("/") ? posterURL.substring(1) : posterURL;
+            // 1. Try loading from LOCAL FILE SYSTEM (Best for newly saved images)
+            // Construct path: ProjectDir + src/main/resources + posterURL
+            String localPath = System.getProperty("user.dir") + "/src/main/resources/" + posterURL;
+            File localFile = new File(localPath);
 
-            System.out.println("🔍 Attempting to load image: " + cleanPath);
-
-            // Try to load from classpath using ClassLoader
-            Image image = new Image(
-                    Objects.requireNonNull(
-                            getClass().getClassLoader().getResourceAsStream(cleanPath)
-                    ),
-                    width, height, true, true
-            );
-
-            if (image.isError()) {
-                System.err.println("❌ Image error for: " + cleanPath);
-                System.err.println("Error: " + image.getException());
-                return null;
+            if (localFile.exists()) {
+                image = new Image(localFile.toURI().toString(), width, height, true, true);
+                System.out.println("✅ [Disk Load] " + localPath);
             }
-
-            ImageView imageView = new ImageView(image);
-            imageView.setFitWidth(width);
-            imageView.setFitHeight(height);
-            imageView.setPreserveRatio(true);
-            imageView.setSmooth(true);
-
-            System.out.println("✅ Successfully loaded image: " + cleanPath);
-            return imageView;
-
+            // 2. Fallback to CLASSPATH (Best for pre-existing images)
+            else {
+                String resourcePath = posterURL.startsWith("/") ? posterURL : "/" + posterURL;
+                java.net.URL url = getClass().getResource(resourcePath);
+                if (url != null) {
+                    image = new Image(url.toExternalForm(), width, height, true, true);
+                    System.out.println("✅ [Resource Load] " + resourcePath);
+                }
+            }
         } catch (Exception e) {
-            System.err.println("❌ Exception loading poster: " + posterURL);
-            e.printStackTrace();
-            return null;
+            System.err.println("⚠️ Error loading image: " + e.getMessage());
         }
+
+        // 3. Fallback if both fail
+        if (image == null || image.isError()) {
+            System.err.println("❌ Could not load image: " + posterURL);
+            // Create a grey placeholder box
+            image = new WritableImage(width, height);
+        }
+
+        ImageView imageView = new ImageView(image);
+        imageView.setFitWidth(width);
+        imageView.setFitHeight(height);
+        imageView.setPreserveRatio(true);
+        imageView.setSmooth(true);
+        return imageView;
     }
 
     private void loadPosterImage(String posterURL) {
         if (posterURL == null || posterURL.isEmpty()) {
-            if (moviePosterImageView != null) {
-                moviePosterImageView.setImage(null);
-            }
+            if (moviePosterImageView != null) moviePosterImageView.setImage(null);
             return;
         }
 
+        Image image = null;
         try {
-            // Clean the path - remove leading slash if present
-            String cleanPath = posterURL.startsWith("/") ? posterURL.substring(1) : posterURL;
+            // 1. Try Disk
+            String localPath = System.getProperty("user.dir") + "/src/main/resources/" + posterURL;
+            File localFile = new File(localPath);
 
-            System.out.println("🔍 Attempting to load poster: " + cleanPath);
-
-            Image image = new Image(
-                    Objects.requireNonNull(
-                            getClass().getClassLoader().getResourceAsStream(cleanPath)
-                    ),
-                    300, 400, true, true
-            );
-
-            if (!image.isError() && moviePosterImageView != null) {
-                moviePosterImageView.setImage(image);
-                System.out.println("✅ Successfully loaded poster: " + cleanPath);
-            } else {
-                System.err.println("⚠️ Error loading poster: " + (image.isError() ? image.getException() : "ImageView is null"));
-                if (moviePosterImageView != null) {
-                    moviePosterImageView.setImage(null);
+            if (localFile.exists()) {
+                image = new Image(localFile.toURI().toString(), 300, 400, true, true);
+            }
+            // 2. Try Resources
+            else {
+                String resourcePath = posterURL.startsWith("/") ? posterURL : "/" + posterURL;
+                java.net.URL url = getClass().getResource(resourcePath);
+                if (url != null) {
+                    image = new Image(url.toExternalForm(), 300, 400, true, true);
                 }
             }
-
         } catch (Exception e) {
-            System.err.println("⚠️ Exception loading poster: " + e.getMessage());
-            e.printStackTrace();
-            if (moviePosterImageView != null) {
-                moviePosterImageView.setImage(null);
-            }
+            System.err.println("⚠️ Error loading details poster: " + e.getMessage());
+        }
+
+        if (moviePosterImageView != null) {
+            moviePosterImageView.setImage(image); // It's okay if image is null here, it clears the view
         }
     }
 
