@@ -10,6 +10,7 @@ import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Customer_Side.AuthenticationMVCs.Login.CustomerLoginModel;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Customer_Side.MovieMVCs.MovieNavigationManager;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Customer_Side.BookingsMVCs.CustomerBookingNavManager;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Customer_Side.MyProfileMVCs.ProfileNavManager;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.SessionValidator;
 import java.io.IOException;
 
@@ -37,6 +38,7 @@ public class CustomerNavigationManager {
     // Sub-navigation managers
     private MovieNavigationManager movieNavManager;
     private CustomerBookingNavManager bookingNavManager;
+    private ProfileNavManager profileNavManager;
     // Add other nav managers as needed (BookingNavManager, etc.)
 
     public CustomerNavigationManager(Stage homeStage, CustomerAuthNavManager authNavManager, Customer customer) {
@@ -142,16 +144,19 @@ public class CustomerNavigationManager {
     public void showMyProfileView() {
         if (myProfilePane == null) {
             try {
-                FXMLLoader loader = new FXMLLoader(
-                        getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/Customer/CustomerProfile.fxml")
-                );
-                myProfilePane = loader.load();
-                System.out.println("✅ My Profile view loaded");
+                profileNavManager = new ProfileNavManager(customer);
+                myProfilePane = profileNavManager.getMyProfileView();
 
-            } catch (IOException e) {
-                System.err.println("⚠️ My Profile FXML not found, creating placeholder");
+                if (myProfilePane == null) {
+                    System.err.println("ERROR: My Profile returned null pane!");
+                    myProfilePane = createPlaceholder("My Profiile", "Error Loading View");
+                } else {
+                    System.out.println("My Profile loaded successfully");
+                }
+            } catch (Exception e) {
+                System.err.println("ERROR initializing My Profile:");
                 e.printStackTrace();
-                myProfilePane = createPlaceholder("My Profile", "Manage your account settings");
+                myBookingsPane = createPlaceholder("My Profile", "Error: " + e.getMessage());
             }
         }
         loadContentPane(myProfilePane);
