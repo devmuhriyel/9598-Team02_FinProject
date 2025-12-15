@@ -30,8 +30,6 @@ public class CustomerHomeView {
     @FXML
     private Label navProfile;  // Was: navCustomer
 
-    @FXML
-    private Label navSettings;  // NEW
 
     @FXML
     private Label currentDateTime;  // NEW - for date/time display
@@ -47,7 +45,6 @@ public class CustomerHomeView {
         labelMap.put("navBrowse", navBrowse);
         labelMap.put("navBookings", navBookings);
         labelMap.put("navProfile", navProfile);
-        labelMap.put("navSettings", navSettings);
     }
 
     // ===== METHODS =====
@@ -105,10 +102,6 @@ public class CustomerHomeView {
 
     public Label getNavProfile() {
         return navProfile;
-    }
-
-    public Label getNavSettings() {
-        return navSettings;
     }
 
     public Label getCurrentDateTime() {

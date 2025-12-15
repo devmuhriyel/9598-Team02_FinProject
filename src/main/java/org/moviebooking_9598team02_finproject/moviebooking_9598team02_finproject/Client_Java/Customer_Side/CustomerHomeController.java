@@ -45,7 +45,6 @@ public class CustomerHomeController {
         view.getNavBrowse().setOnMouseClicked(event -> switchToBrowse());
         view.getNavBookings().setOnMouseClicked(event -> switchToMyBookings());
         view.getNavProfile().setOnMouseClicked(event -> switchToMyProfile());
-        view.getNavSettings().setOnMouseClicked(event -> switchToSettings());
     }
 
     // ===== DATE/TIME UPDATER =====
@@ -120,15 +119,6 @@ public class CustomerHomeController {
         view.changePanes("navProfile");
         navManager.showMyProfileView();
     }
-
-    /**
-     * Switch to Settings view
-     */
-    public void switchToSettings() {
-        view.changePanes("navSettings");
-        navManager.showSettingsView();
-    }
-
     // ===== GETTERS =====
 
     public Customer getCustomer() {
