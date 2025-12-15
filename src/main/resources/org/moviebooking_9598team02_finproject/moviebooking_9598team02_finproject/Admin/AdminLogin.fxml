@@ -66,7 +66,7 @@
                <children>
                   <ImageView fitHeight="400.0" fitWidth="385.0" layoutX="16.0" pickOnBounds="true" smooth="false">
                      <image>
-                        <Image url="@../../../../Images/LoginPicture.jpg" />
+                        <Image url="@../../../../Images/filmbookBg.jpg" />
                      </image>
                   </ImageView>
                </children>

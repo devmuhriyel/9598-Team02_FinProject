@@ -21,7 +21,9 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 
 import java.io.File;
+import java.io.InputStream;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -72,6 +74,8 @@ public class MovieView {
     @FXML private TextField scheduleTimeField;
     @FXML private VBox scheduleListContainer;
     @FXML private Button btnAddNewSchedule;
+    @FXML private DatePicker scheduleDatePickerEdit;
+    @FXML private ComboBox<String> scheduleTimeComboBoxEdit;
 
     // ===== ACTION BUTTONS =====
     @FXML private Button btnAddNewMovie;
@@ -100,45 +104,269 @@ public class MovieView {
 
     @FXML
     public void initialize() {
+        System.out.println("🎬 MovieView.initialize() called");
+
         if (genreListView == null) {
-            System.err.println("❌ FATAL: genreListView is NULL! Java cannot find the FXML element.");
+            System.err.println("❌ FATAL: genreListView is NULL!");
         } else {
             System.out.println("✅ genreListView is linked correctly.");
         }
 
-        // ✅ ADD: Verify scheduleListContainer
         if (scheduleListContainer == null) {
             System.err.println("❌ CRITICAL: scheduleListContainer is NULL!");
         } else {
             System.out.println("✅ scheduleListContainer found");
-            // Set a visible style to ensure it's showing
             scheduleListContainer.setStyle("-fx-background-color: transparent;");
         }
 
-        // 1. Setup UI Components
+        // 1. Setup UI Components IN ORDER
         setupGenreListView();
         setupGenreListViewEdit();
         setupRatingComboBox();
         setupRatingComboBoxEdit();
-        setupTimeComboBox();
+        setupDatePicker();          // ✅ Add view date picker
+        setupTimeComboBox();        // ✅ Add view time combo
+        setupDatePickerEdit();      // ✅ NEW: Edit view date picker
+        setupTimeComboBoxEdit();    // ✅ NEW: Edit view time combo
         setupImageBrowsing();
         setupImageBrowsingEdit();
 
-        // 2. Default Visibility State (Show Grid, Hide Forms)
+        // 2. Verify setup was successful
+        verifyScheduleUIComponents();
+
+        // 3. Default Visibility State
         showGridView();
+
+        System.out.println("✅ MovieView initialization complete");
     }
+
+
+    public String getScheduleDateValue() {
+        if (scheduleDatePicker == null) {
+            System.err.println("❌ scheduleDatePicker is NULL");
+            return null;
+        }
+
+        LocalDate date = scheduleDatePicker.getValue();
+        if (date == null) {
+            System.err.println("⚠️ DatePicker value is NULL");
+            return null;
+        }
+
+        String dateStr = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        System.out.println("📅 Getting date value: " + dateStr);
+        return dateStr;
+    }
+
+    public String getScheduleTimeValue() {
+        if (scheduleTimeComboBox == null) {
+            System.err.println("❌ scheduleTimeComboBox is NULL");
+            return null;
+        }
+
+        String time = scheduleTimeComboBox.getValue();
+
+        if (time == null || time.isEmpty()) {
+            System.err.println("⚠️ TimeComboBox value is NULL or empty");
+            System.err.println("   → Items in combo box: " + scheduleTimeComboBox.getItems().size());
+            System.err.println("   → Prompt text: " + scheduleTimeComboBox.getPromptText());
+        } else {
+            System.out.println("🕐 Getting time value: " + time);
+        }
+
+        return time;
+    }
+
+    public void setScheduleDateToToday() {
+        if (scheduleDatePicker != null) {
+            scheduleDatePicker.setValue(LocalDate.now());
+            System.out.println("📅 Set date to today: " + LocalDate.now());
+        } else {
+            System.err.println("❌ Cannot set date - scheduleDatePicker is NULL");
+        }
+    }
+
+
+    //Setup date picker with default value
+    private void setupDatePicker() {
+        if (scheduleDatePicker != null) {
+            System.out.println("📅 Setting up date picker...");
+
+            // Set default to today
+            scheduleDatePicker.setValue(LocalDate.now());
+
+            // Disable past dates
+            scheduleDatePicker.setDayCellFactory(picker -> new DateCell() {
+                @Override
+                public void updateItem(LocalDate date, boolean empty) {
+                    super.updateItem(date, empty);
+                    if (date.isBefore(LocalDate.now())) {
+                        setDisable(true);
+                        setStyle("-fx-background-color: #ffc0cb;");
+                    }
+                }
+            });
+
+            System.out.println("✅ Date picker initialized with: " + scheduleDatePicker.getValue());
+        } else {
+            System.err.println("❌ scheduleDatePicker is NULL! Check FXML fx:id='scheduleDatePicker'");
+        }
+    }
+
+    private void setupDatePickerEdit() {
+        if (scheduleDatePickerEdit != null) {
+            System.out.println("📅 Setting up EDIT date picker...");
+
+            // Set default to today
+            scheduleDatePickerEdit.setValue(LocalDate.now());
+
+            // Disable past dates
+            scheduleDatePickerEdit.setDayCellFactory(picker -> new DateCell() {
+                @Override
+                public void updateItem(LocalDate date, boolean empty) {
+                    super.updateItem(date, empty);
+                    if (date.isBefore(LocalDate.now())) {
+                        setDisable(true);
+                        setStyle("-fx-background-color: #ffc0cb;");
+                    }
+                }
+            });
+
+            System.out.println("✅ Edit date picker initialized with: " + scheduleDatePickerEdit.getValue());
+        } else {
+            System.err.println("❌ scheduleDatePickerEdit is NULL! Check FXML fx:id='scheduleDatePickerEdit'");
+        }
+    }
+
+    private void setupTimeComboBoxEdit() {
+        if (scheduleTimeComboBoxEdit != null) {
+            System.out.println("🕐 Setting up EDIT time combo box...");
+
+            // Create time slots list (matching database enum values)
+            List<String> timeSlots = new ArrayList<>();
+            for (int hour = 8; hour < 24; hour++) {
+                timeSlots.add(String.format("%02d:00", hour));
+            }
+
+            // Set items to combo box
+            scheduleTimeComboBoxEdit.setItems(FXCollections.observableArrayList(timeSlots));
+            scheduleTimeComboBoxEdit.setPromptText("Select time");
+
+            System.out.println("✅ Edit time combo box populated with " + timeSlots.size() + " slots");
+            System.out.println("   → First: " + timeSlots.get(0) + ", Last: " + timeSlots.get(timeSlots.size()-1));
+
+        } else {
+            System.err.println("❌ scheduleTimeComboBoxEdit is NULL! Check FXML fx:id='scheduleTimeComboBoxEdit'");
+        }
+    }
+
+    private void verifyScheduleUIComponents() {
+        System.out.println("🔍 === SCHEDULE UI VERIFICATION ===");
+
+        // Check ADD VIEW components
+        System.out.println("📝 ADD VIEW Components:");
+        if (scheduleDatePicker != null) {
+            System.out.println("✅ scheduleDatePicker: FOUND");
+            System.out.println("   → Value: " + scheduleDatePicker.getValue());
+        } else {
+            System.err.println("❌ scheduleDatePicker: NULL");
+        }
+
+        if (scheduleTimeComboBox != null) {
+            System.out.println("✅ scheduleTimeComboBox: FOUND");
+            System.out.println("   → Items: " + scheduleTimeComboBox.getItems().size());
+        } else {
+            System.err.println("❌ scheduleTimeComboBox: NULL");
+        }
+
+        // Check EDIT VIEW components
+        System.out.println("\n✏️ EDIT VIEW Components:");
+        if (scheduleDatePickerEdit != null) {
+            System.out.println("✅ scheduleDatePickerEdit: FOUND");
+            System.out.println("   → Value: " + scheduleDatePickerEdit.getValue());
+        } else {
+            System.err.println("❌ scheduleDatePickerEdit: NULL");
+        }
+
+        if (scheduleTimeComboBoxEdit != null) {
+            System.out.println("✅ scheduleTimeComboBoxEdit: FOUND");
+            System.out.println("   → Items: " + scheduleTimeComboBoxEdit.getItems().size());
+        } else {
+            System.err.println("❌ scheduleTimeComboBoxEdit: NULL");
+        }
+
+        // Check Container
+        if (scheduleListContainer != null) {
+            System.out.println("✅ scheduleListContainer: FOUND");
+        } else {
+            System.err.println("❌ scheduleListContainer: NULL");
+        }
+
+        // Check Add Button
+        if (btnAddNewSchedule != null) {
+            System.out.println("✅ btnAddNewSchedule: FOUND");
+        } else {
+            System.err.println("❌ btnAddNewSchedule: NULL");
+        }
+
+        System.out.println("=====================================");
+    }
+
 
     private void setupTimeComboBox() {
         if (scheduleTimeComboBox != null) {
+            System.out.println("🕐 Setting up time combo box...");
+
+            // Create time slots list
             List<String> timeSlots = new ArrayList<>();
-            // ✅ FIX: Generate ONLY full hours (no :30)
             for (int hour = 8; hour < 24; hour++) {
                 timeSlots.add(String.format("%02d:00", hour));
-                // ❌ REMOVED: timeSlots.add(String.format("%02d:30", hour));
             }
+
+            // Set items to combo box
             scheduleTimeComboBox.setItems(FXCollections.observableArrayList(timeSlots));
+
+            // Set prompt text (don't set a default value, let user choose)
+            scheduleTimeComboBox.setPromptText("Select time");
+
+            System.out.println("✅ Time combo box populated with " + timeSlots.size() + " slots");
+            System.out.println("   → First: " + timeSlots.get(0) + ", Last: " + timeSlots.get(timeSlots.size()-1));
+
+        } else {
+            System.err.println("❌ scheduleTimeComboBox is NULL! Check FXML fx:id='scheduleTimeComboBox'");
         }
     }
+
+
+    //Method to reset schedule fields to defaults
+    public void resetScheduleFields() {
+        System.out.println("🔄 Resetting schedule fields...");
+
+        if (scheduleDatePicker != null) {
+            scheduleDatePicker.setValue(LocalDate.now());
+            System.out.println("  ✅ Date reset to: " + LocalDate.now());
+        } else {
+            System.err.println("  ❌ scheduleDatePicker is NULL");
+        }
+
+        if (scheduleTimeComboBox != null) {
+            // Clear selection
+            scheduleTimeComboBox.getSelectionModel().clearSelection();
+
+            // Verify items still exist
+            if (scheduleTimeComboBox.getItems().isEmpty()) {
+                System.err.println("  ⚠️ Time combo box items are empty! Re-populating...");
+                setupTimeComboBox();
+            } else {
+                System.out.println("  ✅ Time selection cleared (still has " +
+                        scheduleTimeComboBox.getItems().size() + " items)");
+            }
+        } else {
+            System.err.println("  ❌ scheduleTimeComboBox is NULL");
+        }
+    }
+
+
 
 
     private void setupRatingComboBox() {
@@ -354,20 +582,22 @@ public class MovieView {
         List<String> timeSlots = new ArrayList<>();
         for (int hour = 8; hour < 24; hour++) {
             timeSlots.add(String.format("%02d:00", hour));
-            // ❌ REMOVED: timeSlots.add(String.format("%02d:30", hour));
         }
 
         timeComboBox.setItems(FXCollections.observableArrayList(timeSlots));
+
+        // ✅ SET THE VALUE FROM DATABASE
         timeComboBox.setValue(time);
+        System.out.println("✅ Schedule card time set to: " + time);
 
         timeBox.getChildren().addAll(timeLabel, timeComboBox);
 
-        // ✅ FIX: Store references in userData BEFORE creating buttons
+        // ✅ Store references in userData BEFORE creating buttons
         Map<String, Object> userData = new HashMap<>();
         userData.put("scheduleId", scheduleId);
         userData.put("movieScheduleId", movieScheduleId);
-        userData.put("datePicker", datePicker);        // ✅ Store the actual DatePicker
-        userData.put("timeComboBox", timeComboBox);    // ✅ Store the actual ComboBox
+        userData.put("datePicker", datePicker);
+        userData.put("timeComboBox", timeComboBox);
         scheduleCard.setUserData(userData);
 
         // Action Buttons
@@ -385,7 +615,6 @@ public class MovieView {
                         "-fx-cursor: hand;"
         );
 
-        // ✅ FIX: Don't set userData here, use the onSaveAction
         saveButton.setOnAction(e -> {
             if (onSaveAction != null) {
                 onSaveAction.run();
@@ -414,10 +643,9 @@ public class MovieView {
 
         return scheduleCard;
     }
-
-    // ✅ NEW METHOD: Extract schedule data from card
     public Map<String, Object> getScheduleCardData(Object card) {
         if (!(card instanceof VBox)) {
+            System.err.println("❌ Card is not a VBox");
             return null;
         }
 
@@ -425,31 +653,39 @@ public class MovieView {
         Map<String, Object> userData = (Map<String, Object>) scheduleCard.getUserData();
 
         if (userData == null) {
+            System.err.println("❌ No userData found in card");
             return null;
         }
 
-        // ✅ FIX: Get the actual controls and read their current values
+        // Get the actual controls
         DatePicker datePicker = (DatePicker) userData.get("datePicker");
         ComboBox<String> timeComboBox = (ComboBox<String>) userData.get("timeComboBox");
 
         if (datePicker == null || timeComboBox == null) {
-            System.err.println("❌ ERROR: Controls not found in userData");
+            System.err.println("❌ Controls not found in userData");
             return null;
         }
 
-        // ✅ Create result map with CURRENT values
+        // Get current values from controls
+        String newDate = datePicker.getValue() != null ?
+                datePicker.getValue().toString() : LocalDate.now().toString();
+        String newTime = timeComboBox.getValue() != null ?
+                timeComboBox.getValue() : "10:00";
+
+        System.out.println("📅 Getting schedule data:");
+        System.out.println("  Schedule ID: " + userData.get("scheduleId"));
+        System.out.println("  Date: " + newDate);
+        System.out.println("  Time: " + newTime);
+
+        // Create result map
         Map<String, Object> result = new HashMap<>();
         result.put("scheduleId", userData.get("scheduleId"));
         result.put("movieScheduleId", userData.get("movieScheduleId"));
-        result.put("newDate", datePicker.getValue() != null ?
-                datePicker.getValue().toString() : LocalDate.now().toString());
-        result.put("newTime", timeComboBox.getValue() != null ?
-                timeComboBox.getValue() : "10:00");
+        result.put("newDate", newDate);
+        result.put("newTime", newTime);
 
         return result;
     }
-
-
     /**
      * Clear schedule container
      */
@@ -663,10 +899,18 @@ public class MovieView {
             editMovieView.setVisible(true);
             editMovieView.setManaged(true);
             editMovieView.toFront();
+
+            // ✅ CRITICAL: Ensure components are ready when view is shown
+            ensureScheduleComponentsReady();
+            ensureScheduleComponentsReadyEdit();
+
+            // ✅ Reset fields
+            resetScheduleFields();
         } else {
-            System.err.println("❌ ERROR: editMovieView is NULL. Check FXML fx:id!");
+            System.err.println("❌ ERROR: editMovieView is NULL!");
         }
     }
+
 
     // ===== MOVIE CARD CREATION =====
     public VBox createMovieCard(String title, String genres, int rating, String posterURL, Runnable onClickAction) {
@@ -760,30 +1004,67 @@ public class MovieView {
 
     private ImageView createPosterImageView(String posterURL) {
         try {
-            // Clean the path - remove leading slash if present
+            // Handle embedded data format
+            if (posterURL != null && posterURL.contains("|||IMAGE_DATA|||")) {
+                String[] parts = posterURL.split("\\|\\|\\|IMAGE_DATA\\|\\|\\|");
+                posterURL = parts[0];
+            }
+
             String cleanPath = posterURL.startsWith("/") ? posterURL.substring(1) : posterURL;
 
-            // Try to load from classpath
-            Image image = new Image(
-                    Objects.requireNonNull(
-                            getClass().getClassLoader().getResourceAsStream(cleanPath)
-                    ),
-                    180, 280, false, true
-            );
+            Image image = null;
 
-            if (image.isError()) {
-                System.err.println("❌ Image error for: " + cleanPath);
-                System.err.println("Error: " + image.getException());
+            // ✅ TRY 1: Load from project root
+            java.nio.file.Path projectRootPath = java.nio.file.Paths.get(cleanPath);
+            if (java.nio.file.Files.exists(projectRootPath)) {
+                try (java.io.FileInputStream fis = new java.io.FileInputStream(projectRootPath.toFile())) {
+                    image = new Image(fis, 180, 280, false, true);
+                    if (!image.isError()) {
+                        System.out.println("✅ Loaded from project root: " + cleanPath);
+                    }
+                }
+            }
+
+            // ✅ TRY 2: Load from resources (classpath)
+            if (image == null || image.isError()) {
+                InputStream inputStream = getClass().getClassLoader().getResourceAsStream(cleanPath);
+                if (inputStream != null) {
+                    image = new Image(inputStream, 180, 280, false, true);
+                    if (!image.isError()) {
+                        System.out.println("✅ Loaded from classpath: " + cleanPath);
+                    }
+                }
+            }
+
+            // ✅ TRY 3: Load from resources with file system
+            if (image == null || image.isError()) {
+                java.nio.file.Path resourcesPath = java.nio.file.Paths.get("src/main/resources/" + cleanPath);
+                if (java.nio.file.Files.exists(resourcesPath)) {
+                    try (java.io.FileInputStream fis = new java.io.FileInputStream(resourcesPath.toFile())) {
+                        image = new Image(fis, 180, 280, false, true);
+                        if (!image.isError()) {
+                            System.out.println("✅ Loaded from resources folder: " + cleanPath);
+                        }
+                    }
+                }
+            }
+
+            // Check if we successfully loaded an image
+            if (image == null || image.isError()) {
+                System.err.println("⚠️ Image not found in any location: " + cleanPath);
+                System.err.println("   Tried:");
+                System.err.println("   1. " + java.nio.file.Paths.get(cleanPath).toAbsolutePath());
+                System.err.println("   2. Classpath: " + cleanPath);
+                System.err.println("   3. " + java.nio.file.Paths.get("src/main/resources/" + cleanPath).toAbsolutePath());
                 return null;
             }
 
             ImageView imageView = new ImageView(image);
             imageView.setFitWidth(180);
-            imageView.setFitHeight(280);
+            imageView.setFitHeight(180);
             imageView.setPreserveRatio(false);
             imageView.setSmooth(true);
 
-            System.out.println("✅ Successfully loaded image: " + cleanPath);
             return imageView;
 
         } catch (Exception e) {
@@ -792,6 +1073,7 @@ public class MovieView {
             return null;
         }
     }
+
 
     private Circle createDefaultAvatar() {
         Circle avatar = new Circle(60);
@@ -892,8 +1174,11 @@ public class MovieView {
         clearSelectedImageLabel();
         clearSelectedImage();
 
-        if (scheduleTimeField != null) scheduleTimeField.clear();
+        // ✅ Clear schedule fields
+        resetScheduleFields();
     }
+
+
 
     public boolean showConfirmationDialog(String title, String header, String content) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
@@ -1035,7 +1320,7 @@ public class MovieView {
     }
 
     /**
-     * Show a message when no schedules exist
+     * Public method to show no schedules message
      */
     public void showNoSchedulesMessage() {
         if (scheduleListContainer != null) {
@@ -1056,6 +1341,8 @@ public class MovieView {
 
             placeholder.getChildren().addAll(icon, message, hint);
             scheduleListContainer.getChildren().add(placeholder);
+
+            System.out.println("📝 Displayed 'No schedules' message");
         }
     }
 
@@ -1074,7 +1361,139 @@ public class MovieView {
         }
     }
 
+    public void ensureScheduleComponentsReady() {
+        System.out.println("🔧 Ensuring schedule components are ready...");
+
+        // Re-verify date picker
+        if (scheduleDatePicker != null) {
+            if (scheduleDatePicker.getValue() == null) {
+                scheduleDatePicker.setValue(LocalDate.now());
+                System.out.println("  ✅ Reset date picker to: " + LocalDate.now());
+            }
+        }
+
+        // Re-verify time combo box
+        if (scheduleTimeComboBox != null) {
+            if (scheduleTimeComboBox.getItems().isEmpty()) {
+                System.err.println("  ⚠️ Time combo box is empty! Re-populating...");
+                setupTimeComboBox();
+            } else {
+                System.out.println("  ✅ Time combo box has " +
+                        scheduleTimeComboBox.getItems().size() + " items");
+            }
+        }
+    }
+
+    public void ensureScheduleComponentsReadyEdit() {
+        System.out.println("🔧 Ensuring EDIT schedule components are ready...");
+
+        // Re-verify date picker
+        if (scheduleDatePickerEdit != null) {
+            if (scheduleDatePickerEdit.getValue() == null) {
+                scheduleDatePickerEdit.setValue(LocalDate.now());
+                System.out.println("  ✅ Reset EDIT date picker to: " + LocalDate.now());
+            }
+        } else {
+            System.err.println("  ❌ scheduleDatePickerEdit is NULL");
+        }
+
+        // Re-verify time combo box
+        if (scheduleTimeComboBoxEdit != null) {
+            if (scheduleTimeComboBoxEdit.getItems().isEmpty()) {
+                System.err.println("  ⚠️ Edit time combo box is empty! Re-populating...");
+                setupTimeComboBoxEdit();
+            } else {
+                System.out.println("  ✅ Edit time combo box has " +
+                        scheduleTimeComboBoxEdit.getItems().size() + " items");
+            }
+        } else {
+            System.err.println("  ❌ scheduleTimeComboBoxEdit is NULL");
+        }
+    }
+
+
+
     // ===== GETTERS =====
+    public String getScheduleDateValueEdit() {
+        if (scheduleDatePickerEdit == null) {
+            System.err.println("❌ scheduleDatePickerEdit is NULL");
+            return null;
+        }
+
+        LocalDate date = scheduleDatePickerEdit.getValue();
+        if (date == null) {
+            System.err.println("⚠️ DatePicker Edit value is NULL");
+            return null;
+        }
+
+        String dateStr = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        System.out.println("📅 Getting EDIT date value: " + dateStr);
+        return dateStr;
+    }
+
+    public String getScheduleTimeValueEdit() {
+        if (scheduleTimeComboBoxEdit == null) {
+            System.err.println("❌ scheduleTimeComboBoxEdit is NULL");
+            return null;
+        }
+
+        String time = scheduleTimeComboBoxEdit.getValue();
+
+        if (time == null || time.isEmpty()) {
+            System.err.println("⚠️ TimeComboBox Edit value is NULL or empty");
+            System.err.println("   → Items in combo box: " + scheduleTimeComboBoxEdit.getItems().size());
+            System.err.println("   → Prompt text: " + scheduleTimeComboBoxEdit.getPromptText());
+        } else {
+            System.out.println("🕐 Getting EDIT time value: " + time);
+        }
+
+        return time;
+    }
+
+
+    public void setScheduleDateToTodayEdit() {
+        if (scheduleDatePickerEdit != null) {
+            scheduleDatePickerEdit.setValue(LocalDate.now());
+            System.out.println("📅 Set EDIT date to today: " + LocalDate.now());
+        } else {
+            System.err.println("❌ Cannot set date - scheduleDatePickerEdit is NULL");
+        }
+    }
+
+    public void resetScheduleFieldsEdit() {
+        System.out.println("🔄 Resetting EDIT schedule fields...");
+
+        if (scheduleDatePickerEdit != null) {
+            scheduleDatePickerEdit.setValue(LocalDate.now());
+            System.out.println("  ✅ Edit date reset to: " + LocalDate.now());
+        } else {
+            System.err.println("  ❌ scheduleDatePickerEdit is NULL");
+        }
+
+        if (scheduleTimeComboBoxEdit != null) {
+            // Clear selection
+            scheduleTimeComboBoxEdit.getSelectionModel().clearSelection();
+
+            // Verify items still exist
+            if (scheduleTimeComboBoxEdit.getItems().isEmpty()) {
+                System.err.println("  ⚠️ Edit time combo box items are empty! Re-populating...");
+                setupTimeComboBoxEdit();
+            } else {
+                System.out.println("  ✅ Edit time selection cleared (still has " +
+                        scheduleTimeComboBoxEdit.getItems().size() + " items)");
+            }
+        } else {
+            System.err.println("  ❌ scheduleTimeComboBoxEdit is NULL");
+        }
+    }
+
+    public DatePicker getScheduleDatePickerEdit() {
+        return scheduleDatePickerEdit;
+    }
+
+    public ComboBox<String> getScheduleTimeComboBoxEdit() {
+        return scheduleTimeComboBoxEdit;
+    }
 
     public VBox getMovieView() { return movieView; }
     public VBox getAddMovieView() { return addMovieView; }

@@ -120,4 +120,6 @@ public class CustomerMovieModel extends CustomerParentModel {
     public int getCurrentCustomerId() {
         return currentCustomerId;
     }
+
+
 }

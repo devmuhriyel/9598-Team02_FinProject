@@ -18,24 +18,40 @@ import java.util.Objects;
 public class CustomerMovieView {
 
     // ===== MOVIE LIST VIEW COMPONENTS =====
-    @FXML private VBox movieListView;
-    @FXML private TextField searchField;
-    @FXML private Label statusMessageLabel;
-    @FXML private ScrollPane movieScrollPane;
-    @FXML private TilePane movieTilePane;
+    @FXML
+    private VBox movieListView;
+    @FXML
+    private TextField searchField;
+    @FXML
+    private Label statusMessageLabel;
+    @FXML
+    private ScrollPane movieScrollPane;
+    @FXML
+    private TilePane movieTilePane;
 
     // ===== MOVIE DETAILS VIEW COMPONENTS =====
-    @FXML private VBox movieDetailsView;
-    @FXML private Button btnBackToList;
-    @FXML private Label movieTitleLabel;
-    @FXML private Label movieGenreLabel;
-    @FXML private Label movieRatingLabel;
-    @FXML private TextArea movieDescriptionArea;
-    @FXML private ImageView moviePosterImageView;
-    @FXML private GridPane scheduleGridPane;
-    @FXML private Button btnPreviousSchedulePage;
-    @FXML private Button btnNextSchedulePage;
-    @FXML private Label schedulePageLabel;
+    @FXML
+    private VBox movieDetailsView;
+    @FXML
+    private Button btnBackToList;
+    @FXML
+    private Label movieTitleLabel;
+    @FXML
+    private Label movieGenreLabel;
+    @FXML
+    private Label movieRatingLabel;
+    @FXML
+    private TextArea movieDescriptionArea;
+    @FXML
+    private ImageView moviePosterImageView;
+    @FXML
+    private GridPane scheduleGridPane;
+    @FXML
+    private Button btnPreviousSchedulePage;
+    @FXML
+    private Button btnNextSchedulePage;
+    @FXML
+    private Label schedulePageLabel;
 
     @FXML
     public void initialize() {
@@ -174,33 +190,46 @@ public class CustomerMovieView {
 
         if (scheduleGridPane != null) {
             int currentSize = scheduleGridPane.getChildren().size();
-            int row = currentSize / 2;  // 2 columns
+            int row = currentSize / 2;
             int col = currentSize % 2;
+
+            GridPane.setHgrow(card, Priority.ALWAYS);
+            GridPane.setVgrow(card, Priority.NEVER);
+            GridPane.setFillWidth(card, true);
+
             scheduleGridPane.add(card, col, row);
+
+            javafx.application.Platform.runLater(() -> scheduleGridPane.requestLayout());
         }
     }
+
 
     private VBox createScheduleCard(int scheduleId, String date, String time,
                                     long availableSeats, long totalSeats, Runnable onClickAction) {
         VBox card = new VBox(10);
         card.setAlignment(Pos.CENTER);
         card.setPadding(new Insets(15));
-        card.setPrefSize(280, 120);
+        card.setMinHeight(120);
+        card.setPrefHeight(120);
+        card.setMaxWidth(Double.MAX_VALUE);
         card.setStyle("-fx-background-color: #2D2D2D; -fx-border-color: #00CC66; " +
                 "-fx-border-width: 2; -fx-border-radius: 8; -fx-background-radius: 8;");
 
-        // Date and Time
         Label dateTimeLabel = new Label(date + " at " + time);
         dateTimeLabel.setStyle("-fx-text-fill: #FFFFFF; -fx-font-size: 16px; -fx-font-weight: bold;");
+        dateTimeLabel.setWrapText(true);
+        dateTimeLabel.setMaxWidth(Double.MAX_VALUE);
+        dateTimeLabel.setAlignment(Pos.CENTER);
 
-        // Availability
         Label availabilityLabel = new Label(availableSeats + " / " + totalSeats + " seats available");
         availabilityLabel.setStyle("-fx-text-fill: #00CC66; -fx-font-size: 13px;");
+        availabilityLabel.setMaxWidth(Double.MAX_VALUE);
+        availabilityLabel.setAlignment(Pos.CENTER);
 
-        // Select button
         Button selectButton = new Button("Select Seats");
         selectButton.setStyle("-fx-background-color: #00CC66; -fx-text-fill: #FFFFFF; " +
-                "-fx-font-weight: bold; -fx-padding: 8 20; -fx-cursor: hand;");
+                "-fx-font-weight: bold; -fx-padding: 8 20; -fx-cursor: hand; -fx-background-radius: 5;");
+        selectButton.setMaxWidth(Double.MAX_VALUE);
 
         if (onClickAction != null) {
             selectButton.setOnAction(e -> onClickAction.run());
@@ -208,19 +237,12 @@ public class CustomerMovieView {
 
         card.getChildren().addAll(dateTimeLabel, availabilityLabel, selectButton);
 
-        // Hover effect
         card.setOnMouseEntered(e -> card.setStyle("-fx-background-color: #3D3D3D; -fx-border-color: #00CC66; " +
                 "-fx-border-width: 2; -fx-border-radius: 8; -fx-background-radius: 8;"));
         card.setOnMouseExited(e -> card.setStyle("-fx-background-color: #2D2D2D; -fx-border-color: #00CC66; " +
                 "-fx-border-width: 2; -fx-border-radius: 8; -fx-background-radius: 8;"));
 
         return card;
-    }
-
-    public void clearScheduleGrid() {
-        if (scheduleGridPane != null) {
-            scheduleGridPane.getChildren().clear();
-        }
     }
 
     // ===== PAGINATION =====
@@ -336,6 +358,26 @@ public class CustomerMovieView {
             if (moviePosterImageView != null) {
                 moviePosterImageView.setImage(null);
             }
+        }
+    }
+
+    public void clearScheduleGrid() {
+        if (scheduleGridPane != null) {
+            scheduleGridPane.getChildren().clear();
+            scheduleGridPane.getColumnConstraints().clear();
+            scheduleGridPane.getRowConstraints().clear();
+
+            ColumnConstraints col1 = new ColumnConstraints();
+            col1.setPercentWidth(50);
+            col1.setHgrow(Priority.ALWAYS);
+
+            ColumnConstraints col2 = new ColumnConstraints();
+            col2.setPercentWidth(50);
+            col2.setHgrow(Priority.ALWAYS);
+
+            scheduleGridPane.getColumnConstraints().addAll(col1, col2);
+            scheduleGridPane.setHgap(20);
+            scheduleGridPane.setVgap(20);
         }
     }
 

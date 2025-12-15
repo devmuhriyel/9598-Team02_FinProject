@@ -361,7 +361,9 @@
                                         </font>
                                     </Label>
                                     <Region HBox.hgrow="ALWAYS" />
-                                    <Button fx:id="btnAddNewSchedule" style="-fx-background-color: #ff2525; -fx-text-fill: #FFFFFF; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 8 16; -fx-background-radius: 5; -fx-cursor: hand;" text="➕ Add New Schedule">
+                                    <Button fx:id="btnAddNewSchedule"
+                                            style="-fx-background-color: #ff2525; -fx-text-fill: #FFFFFF; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 8 16; -fx-background-radius: 5; -fx-cursor: hand;"
+                                            text="➕ Add New Schedule">
                                         <font>
                                             <Font name="SansSerif Bold" size="12.0" />
                                         </font>
@@ -369,22 +371,27 @@
                                 </HBox>
 
                                 <VBox spacing="8.0" style="-fx-background-color: #1A1A1A; -fx-padding: 12; -fx-background-radius: 5;">
-                                    <Label style="-fx-text-fill: #CCCCCC; -fx-font-size: 12px; -fx-font-style: italic;" text="📝 How to manage schedules:">
+                                    <Label style="-fx-text-fill: #CCCCCC; -fx-font-size: 12px; -fx-font-style: italic;" text="📖 How to manage schedules:">
                                         <font>
                                             <Font name="SansSerif Italic" size="12.0" />
                                         </font>
                                     </Label>
-                                    <Label style="-fx-text-fill: #CCCCCC; -fx-font-size: 11px;" text="1. Update the date and time fields for existing schedules">
+                                    <Label style="-fx-text-fill: #CCCCCC; -fx-font-size: 11px;" text="1. Fill in the date and time fields below to create a new schedule">
                                         <font>
                                             <Font name="SansSerif Regular" size="11.0" />
                                         </font>
                                     </Label>
-                                    <Label style="-fx-text-fill: #CCCCCC; -fx-font-size: 11px;" text="2. Click '✅ Save' to update a schedule">
+                                    <Label style="-fx-text-fill: #CCCCCC; -fx-font-size: 11px;" text="2. Click '+ Add New Schedule' to create the schedule">
                                         <font>
                                             <Font name="SansSerif Regular" size="11.0" />
                                         </font>
                                     </Label>
-                                    <Label style="-fx-text-fill: #CCCCCC; -fx-font-size: 11px;" text="3. Click '🗑️ Delete' to remove a schedule">
+                                    <Label style="-fx-text-fill: #CCCCCC; -fx-font-size: 11px;" text="3. Update existing schedules by changing their date/time and clicking '✅ Save'">
+                                        <font>
+                                            <Font name="SansSerif Regular" size="11.0" />
+                                        </font>
+                                    </Label>
+                                    <Label style="-fx-text-fill: #CCCCCC; -fx-font-size: 11px;" text="4. Click '🗑️ Delete' to remove a schedule">
                                         <font>
                                             <Font name="SansSerif Regular" size="11.0" />
                                         </font>
@@ -393,14 +400,65 @@
 
                                 <Separator style="-fx-background-color: #404040;" />
 
-                                <!-- Schedule List Container -->
-                                <ScrollPane fitToWidth="true" maxHeight="400.0" style="-fx-background: #2A2A2A; -fx-background-color: #2A2A2A;">
-                                    <VBox fx:id="scheduleListContainer" spacing="12.0">
-                                        <padding>
-                                            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                                        </padding>
+                                <!-- ✅ NEW: Add New Schedule Input Section -->
+                                <VBox spacing="15.0" style="-fx-background-color: #1A1A1A; -fx-padding: 15; -fx-background-radius: 5;">
+                                    <Label style="-fx-text-fill: #ff2525; -fx-font-size: 14px; -fx-font-weight: bold;" text="➕ New Schedule Details">
+                                        <font>
+                                            <Font name="SansSerif Bold" size="14.0" />
+                                        </font>
+                                    </Label>
+
+                                    <!-- Date Picker -->
+                                    <VBox spacing="6.0">
+                                        <Label style="-fx-text-fill: #FFFFFF; -fx-font-size: 13px; -fx-font-weight: bold;" text="Screening Date *">
+                                            <font>
+                                                <Font name="SansSerif Bold" size="13.0" />
+                                            </font>
+                                        </Label>
+                                        <DatePicker fx:id="scheduleDatePickerEdit" maxWidth="300.0" prefWidth="300.0"
+                                                    promptText="Select screening date"
+                                                    style="-fx-background-color: #292929; -fx-text-fill: #FFFFFF; -fx-border-color: #404040; -fx-border-width: 1; -fx-border-radius: 5;" />
                                     </VBox>
-                                </ScrollPane>
+
+                                    <!-- Time ComboBox -->
+                                    <VBox spacing="6.0">
+                                        <Label style="-fx-text-fill: #FFFFFF; -fx-font-size: 13px; -fx-font-weight: bold;" text="Screening Time *">
+                                            <font>
+                                                <Font name="SansSerif Bold" size="13.0" />
+                                            </font>
+                                        </Label>
+                                        <ComboBox fx:id="scheduleTimeComboBoxEdit" maxWidth="300.0" prefWidth="300.0"
+                                                  promptText="Select screening time"
+                                                  style="-fx-background-color: #292929; -fx-border-color: #404040; -fx-border-width: 1; -fx-border-radius: 5; -fx-text-fill: #FFFFFF; -fx-prompt-text-fill: #888888;" />
+                                    </VBox>
+
+                                    <Label style="-fx-text-fill: #888888; -fx-font-size: 11px; -fx-font-style: italic;"
+                                           text="💡 Tip: Fill in both fields above, then click '➕ Add New Schedule' at the top">
+                                        <font>
+                                            <Font name="SansSerif Italic" size="11.0" />
+                                        </font>
+                                    </Label>
+                                </VBox>
+
+                                <Separator style="-fx-background-color: #404040;" />
+
+                                <!-- Existing Schedules List -->
+                                <VBox spacing="10.0">
+                                    <Label style="-fx-text-fill: #FFFFFF; -fx-font-size: 14px; -fx-font-weight: bold;" text="📋 Existing Schedules">
+                                        <font>
+                                            <Font name="SansSerif Bold" size="14.0" />
+                                        </font>
+                                    </Label>
+
+                                    <!-- Schedule List Container -->
+                                    <ScrollPane fitToWidth="true" maxHeight="400.0" style="-fx-background: #2A2A2A; -fx-background-color: #2A2A2A;">
+                                        <VBox fx:id="scheduleListContainer" spacing="12.0">
+                                            <padding>
+                                                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                            </padding>
+                                        </VBox>
+                                    </ScrollPane>
+                                </VBox>
                             </VBox>
                         </VBox>
 

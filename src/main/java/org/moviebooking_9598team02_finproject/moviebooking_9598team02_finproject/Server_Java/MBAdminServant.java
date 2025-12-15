@@ -1095,34 +1095,59 @@ public class MBAdminServant extends AdminServicePOA {
     @Override
     public void updateMoviePoster(int adminId, int movieId, String newPosterURL)
             throws AuthenticationException, MovieNotFoundException {
-        // Check authentication
+
         if (!SessionManager.isAdminLoggedIn(adminId)) {
             throw new AuthenticationException("Admin not logged in or session expired");
         }
 
         try (Connection connection = DatabaseAccess.getConnection()) {
-            // Check if movie exists
-            String checkQuery = "SELECT movie_id FROM movies WHERE movie_id = ?";
-            PreparedStatement checkStatement = connection.prepareStatement(checkQuery);
-            checkStatement.setInt(1, movieId);
-            ResultSet checkRs = checkStatement.executeQuery();
-            if (!checkRs.next()) {
-                System.err.println("Movie not found: " + movieId);
+            // ✅ STEP 1: Get the OLD poster URL BEFORE updating
+            String getOldPosterQuery = "SELECT movie_poster_url FROM movies WHERE movie_id = ?";
+            PreparedStatement getOldPosterStmt = connection.prepareStatement(getOldPosterQuery);
+            getOldPosterStmt.setInt(1, movieId);
+            ResultSet oldPosterRs = getOldPosterStmt.executeQuery();
+
+            String oldPosterUrl = null;
+            if (oldPosterRs.next()) {
+                oldPosterUrl = oldPosterRs.getString("movie_poster_url");
+            } else {
                 throw new MovieNotFoundException();
             }
 
-            // Update poster URL
+            // ✅ STEP 2: Process and save the NEW image
+            String posterPathToStore = newPosterURL;
+
+            if (newPosterURL != null && newPosterURL.contains("|||IMAGE_DATA|||")) {
+                try {
+                    posterPathToStore = processAndSaveImage(newPosterURL);
+                    System.out.println("✅ Processed and saved new image: " + posterPathToStore);
+                } catch (IOException e) {
+                    System.err.println("❌ Failed to process image: " + e.getMessage());
+                    e.printStackTrace();
+                    throw new AuthenticationException("Failed to process image: " + e.getMessage());
+                }
+            }
+
+            // ✅ STEP 3: Update database with new poster URL
             LocalDateTime timeOfUpdate = LocalDateTime.now();
             String query = "UPDATE movies SET movie_poster_url = ?, updated_at = ? WHERE movie_id = ?";
             PreparedStatement statement = connection.prepareStatement(query);
-            statement.setString(1, newPosterURL != null ? newPosterURL.trim() : "");
+            statement.setString(1, posterPathToStore);
             statement.setString(2, timeOfUpdate.toString());
             statement.setInt(3, movieId);
 
             int rowsAffected = statement.executeUpdate();
 
             if (rowsAffected > 0) {
-                System.out.println("Successfully updated movie poster for ID: " + movieId);
+                // ✅ STEP 4: Delete old image AFTER successful database update
+                if (oldPosterUrl != null && !oldPosterUrl.isEmpty()
+                        && !oldPosterUrl.equals(posterPathToStore)) {
+                    deleteImageFile(oldPosterUrl);
+                }
+
+                System.out.println("✅ Successfully updated movie poster for ID: " + movieId);
+                System.out.println("   Old: " + oldPosterUrl);
+                System.out.println("   New: " + posterPathToStore);
             } else {
                 throw new MovieNotFoundException();
             }
@@ -1136,43 +1161,176 @@ public class MBAdminServant extends AdminServicePOA {
     @Override
     public void deleteMovie(int adminId, int movieId)
             throws AuthenticationException, MovieNotFoundException {
-        // Check authentication
+
         if (!SessionManager.isAdminLoggedIn(adminId)) {
             throw new AuthenticationException("Admin not logged in or session expired");
         }
 
-        try (Connection connection = DatabaseAccess.getConnection()) {
-            // Check if movie exists
-            String checkQuery = "SELECT movie_id FROM movies WHERE movie_id = ?";
-            PreparedStatement checkStatement = connection.prepareStatement(checkQuery);
-            checkStatement.setInt(1, movieId);
-            ResultSet checkRs = checkStatement.executeQuery();
-            if (!checkRs.next()) {
-                System.err.println("Movie not found: " + movieId);
+        Connection connection = null;
+        try {
+            connection = DatabaseAccess.getConnection();
+            connection.setAutoCommit(false); // ✅ START TRANSACTION
+
+            // 1️⃣ Check if movie exists AND get poster URL
+            String checkMovieQuery = "SELECT movie_id, movie_poster_url FROM movies WHERE movie_id = ?";
+            PreparedStatement checkMovieStmt = connection.prepareStatement(checkMovieQuery);
+            checkMovieStmt.setInt(1, movieId);
+            ResultSet movieRs = checkMovieStmt.executeQuery();
+
+            String posterUrl = null;
+            if (!movieRs.next()) {
+                connection.rollback();
                 throw new MovieNotFoundException();
-            }
-
-            // Delete movie_genres relationships first (foreign key constraint)
-            String deleteGenresQuery = "DELETE FROM movie_genres WHERE movie_id = ?";
-            PreparedStatement deleteGenresStatement = connection.prepareStatement(deleteGenresQuery);
-            deleteGenresStatement.setInt(1, movieId);
-            deleteGenresStatement.executeUpdate();
-
-            // Delete movie
-            String query = "DELETE FROM movies WHERE movie_id = ?";
-            PreparedStatement statement = connection.prepareStatement(query);
-            statement.setInt(1, movieId);
-            int rowsAffected = statement.executeUpdate();
-
-            if (rowsAffected > 0) {
-                System.out.println("Successfully deleted movie ID: " + movieId);
             } else {
+                posterUrl = movieRs.getString("movie_poster_url"); // ✅ Store poster URL
+            }
+
+            // 2️⃣ Get all schedules AND their movie_schedule_ids
+            String getSchedulesQuery = "SELECT schedule_id, movie_schedule_id FROM schedules WHERE movie_id = ?";
+            PreparedStatement getSchedulesStmt = connection.prepareStatement(getSchedulesQuery);
+            getSchedulesStmt.setInt(1, movieId);
+            ResultSet schedulesRs = getSchedulesStmt.executeQuery();
+
+            List<Integer> scheduleIds = new ArrayList<>();
+            List<Integer> movieScheduleIds = new ArrayList<>();
+
+            while (schedulesRs.next()) {
+                scheduleIds.add(schedulesRs.getInt("schedule_id"));
+                movieScheduleIds.add(schedulesRs.getInt("movie_schedule_id"));
+            }
+
+            // 3️⃣ Check for confirmed bookings
+            if (!scheduleIds.isEmpty()) {
+                String checkBookingsQuery = "SELECT COUNT(*) as booking_count FROM bookings " +
+                        "WHERE schedule_id IN (" +
+                        scheduleIds.stream().map(String::valueOf).collect(java.util.stream.Collectors.joining(",")) +
+                        ") AND booking_status = 'confirmed'";
+                PreparedStatement checkBookingsStmt = connection.prepareStatement(checkBookingsQuery);
+                ResultSet bookingRs = checkBookingsStmt.executeQuery();
+
+                if (bookingRs.next() && bookingRs.getInt("booking_count") > 0) {
+                    connection.rollback();
+                    throw new AuthenticationException("Cannot delete movie: There are confirmed bookings");
+                }
+            }
+
+            // 4️⃣ Delete schedule_list_seats
+            if (!scheduleIds.isEmpty()) {
+                String deleteScheduleSeatsQuery = "DELETE FROM schedule_list_seats WHERE schedule_id IN (" +
+                        scheduleIds.stream().map(String::valueOf).collect(java.util.stream.Collectors.joining(",")) + ")";
+                PreparedStatement deleteScheduleSeatsStmt = connection.prepareStatement(deleteScheduleSeatsQuery);
+                int seatsDeleted = deleteScheduleSeatsStmt.executeUpdate();
+                System.out.println("🗑️ Deleted " + seatsDeleted + " schedule_list_seats");
+            }
+
+            // 5️⃣ Delete bookings
+            String deleteBookingsQuery = "DELETE FROM bookings WHERE schedule_id IN " +
+                    "(SELECT schedule_id FROM schedules WHERE movie_id = ?)";
+            PreparedStatement deleteBookingsStmt = connection.prepareStatement(deleteBookingsQuery);
+            deleteBookingsStmt.setInt(1, movieId);
+            int bookingsDeleted = deleteBookingsStmt.executeUpdate();
+            System.out.println("🗑️ Deleted " + bookingsDeleted + " bookings");
+
+            // 6️⃣ Delete schedules
+            String deleteSchedulesQuery = "DELETE FROM schedules WHERE movie_id = ?";
+            PreparedStatement deleteSchedulesStmt = connection.prepareStatement(deleteSchedulesQuery);
+            deleteSchedulesStmt.setInt(1, movieId);
+            int schedulesDeleted = deleteSchedulesStmt.executeUpdate();
+            System.out.println("🗑️ Deleted " + schedulesDeleted + " schedules");
+
+            // 7️⃣ Delete movie_schedules
+            if (!movieScheduleIds.isEmpty()) {
+                String deleteMovieSchedulesQuery = "DELETE FROM movie_schedules WHERE movie_schedule_id IN (" +
+                        movieScheduleIds.stream().map(String::valueOf).collect(java.util.stream.Collectors.joining(",")) + ")";
+                PreparedStatement deleteMovieSchedulesStmt = connection.prepareStatement(deleteMovieSchedulesQuery);
+                int movieSchedulesDeleted = deleteMovieSchedulesStmt.executeUpdate();
+                System.out.println("🗑️ Deleted " + movieSchedulesDeleted + " movie_schedules");
+            }
+
+            // 8️⃣ Delete movie_genres
+            String deleteGenresQuery = "DELETE FROM movie_genres WHERE movie_id = ?";
+            PreparedStatement deleteGenresStmt = connection.prepareStatement(deleteGenresQuery);
+            deleteGenresStmt.setInt(1, movieId);
+            int genresDeleted = deleteGenresStmt.executeUpdate();
+            System.out.println("🗑️ Deleted " + genresDeleted + " movie_genres");
+
+            // 9️⃣ Delete reviews
+            String deleteReviewsQuery = "DELETE FROM reviews WHERE movie_id = ?";
+            PreparedStatement deleteReviewsStmt = connection.prepareStatement(deleteReviewsQuery);
+            deleteReviewsStmt.setInt(1, movieId);
+            int reviewsDeleted = deleteReviewsStmt.executeUpdate();
+            System.out.println("🗑️ Deleted " + reviewsDeleted + " reviews");
+
+            // 🔟 Delete the movie
+            String deleteMovieQuery = "DELETE FROM movies WHERE movie_id = ?";
+            PreparedStatement deleteMovieStmt = connection.prepareStatement(deleteMovieQuery);
+            deleteMovieStmt.setInt(1, movieId);
+            int movieDeleted = deleteMovieStmt.executeUpdate();
+
+            if (movieDeleted == 0) {
+                connection.rollback();
                 throw new MovieNotFoundException();
             }
+
+            connection.commit(); // ✅ COMMIT TRANSACTION
+
+            // ✅ Delete image file AFTER successful database deletion
+            if (posterUrl != null && !posterUrl.isEmpty()) {
+                deleteImageFile(posterUrl);
+            }
+
+            System.out.println("✅ Successfully deleted movie " + movieId + " and its poster");
 
         } catch (SQLException e) {
+            if (connection != null) {
+                try {
+                    connection.rollback();
+                } catch (SQLException rollbackEx) {
+                    rollbackEx.printStackTrace();
+                }
+            }
             e.printStackTrace();
             throw new AuthenticationException("Database error: " + e.getMessage());
+        } finally {
+            if (connection != null) {
+                try {
+                    connection.setAutoCommit(true);
+                    connection.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    private void deleteImageFile(String posterUrl) {
+        try {
+            // Try both locations (project root and resources)
+            java.nio.file.Path projectRootPath = java.nio.file.Paths.get(posterUrl);
+            java.nio.file.Path resourcesPath = java.nio.file.Paths.get("src/main/resources/" + posterUrl);
+
+            boolean deleted = false;
+
+            if (java.nio.file.Files.exists(projectRootPath)) {
+                java.nio.file.Files.delete(projectRootPath);
+                System.out.println("🗑️ Deleted image from project root: " + posterUrl);
+                deleted = true;
+            }
+
+            if (java.nio.file.Files.exists(resourcesPath)) {
+                java.nio.file.Files.delete(resourcesPath);
+                System.out.println("🗑️ Deleted image from resources: " + posterUrl);
+                deleted = true;
+            }
+
+            if (!deleted) {
+                System.out.println("ℹ️ Image file not found (may have been deleted already): " + posterUrl);
+            }
+
+        } catch (IOException e) {
+            System.err.println("⚠️ Failed to delete image file: " + posterUrl);
+            System.err.println("   Error: " + e.getMessage());
+            // Don't throw exception - movie is already deleted from DB
         }
     }
 
@@ -1195,12 +1353,15 @@ public class MBAdminServant extends AdminServicePOA {
                 movie.movieTitle = rs.getString("movie_title");
                 movie.movieDescription = rs.getString("movie_description");
                 movie.movieRating = rs.getInt("movie_rating");
-                movie.moviePosterURL = rs.getString("movie_poster_url"); // Path from DB
+
+                // ✅ JUST return the path - NO image data embedding
+                movie.moviePosterURL = rs.getString("movie_poster_url");
+
                 movie.createdAt = rs.getString("created_at");
                 movie.updatedAt = rs.getString("updated_at");
 
-                // ✅ ATTACH IMAGE DATA before sending to client
-                movie = attachImageDataToMovie(movie);
+                // ❌ REMOVE THIS LINE (or comment it out):
+                // movie = attachImageDataToMovie(movie);
 
                 movieList.add(movie);
             }
@@ -1233,6 +1394,8 @@ public class MBAdminServant extends AdminServicePOA {
     public int createMovieSchedule(int adminId, String screeningDate, String screeningTime)
             throws AuthenticationException, InvalidInputException {
 
+        System.out.println("🎬 createMovieSchedule called - Date: " + screeningDate + ", Time: " + screeningTime);
+
         // Check authentication
         if (!SessionManager.isAdminLoggedIn(adminId)) {
             throw new AuthenticationException("Admin not logged in or session expired");
@@ -1246,7 +1409,37 @@ public class MBAdminServant extends AdminServicePOA {
             throw new InvalidInputException("Screening time cannot be empty", "time");
         }
 
-        try (Connection connection = DatabaseAccess.getConnection()) {
+        // Validate date format (YYYY-MM-DD)
+        if (!screeningDate.matches("\\d{4}-\\d{2}-\\d{2}")) {
+            throw new InvalidInputException("Invalid date format. Use YYYY-MM-DD", "date");
+        }
+
+        // Validate time format (HH:mm or HH:MM)
+        if (!screeningTime.matches("\\d{2}:\\d{2}")) {
+            throw new InvalidInputException("Invalid time format. Use HH:mm", "time");
+        }
+
+        Connection connection = null;
+        try {
+            connection = DatabaseAccess.getConnection();
+            connection.setAutoCommit(false); // ✅ START TRANSACTION
+
+            // Check if this exact date/time combination already exists
+            String checkDuplicateQuery = "SELECT movie_schedule_id FROM movie_schedules " +
+                    "WHERE screening_date = ? AND screening_time = ?";
+            PreparedStatement checkStmt = connection.prepareStatement(checkDuplicateQuery);
+            checkStmt.setString(1, screeningDate);
+            checkStmt.setString(2, screeningTime);
+            ResultSet checkRs = checkStmt.executeQuery();
+
+            if (checkRs.next()) {
+                // Time slot already exists - return existing ID
+                int existingId = checkRs.getInt("movie_schedule_id");
+                connection.commit();
+                System.out.println("⚠️ Time slot already exists, returning ID: " + existingId);
+                return existingId;
+            }
+
             // Get next movie_schedule_id
             String maxIdQuery = "SELECT MAX(movie_schedule_id) as max_id FROM movie_schedules";
             PreparedStatement maxIdStmt = connection.prepareStatement(maxIdQuery);
@@ -1260,7 +1453,8 @@ public class MBAdminServant extends AdminServicePOA {
 
             // Insert new movie_schedule
             LocalDateTime now = LocalDateTime.now();
-            String query = "INSERT INTO movie_schedules (movie_schedule_id, screening_date, screening_time, created_by_admin, created_at, updated_at) " +
+            String query = "INSERT INTO movie_schedules " +
+                    "(movie_schedule_id, screening_date, screening_time, created_by_admin, created_at, updated_at) " +
                     "VALUES (?, ?, ?, ?, ?, ?)";
             PreparedStatement statement = connection.prepareStatement(query);
             statement.setInt(1, nextScheduleId);
@@ -1273,15 +1467,34 @@ public class MBAdminServant extends AdminServicePOA {
             int rowsAffected = statement.executeUpdate();
 
             if (rowsAffected > 0) {
-                System.out.println("✅ Created movie schedule ID: " + nextScheduleId + " for " + screeningDate + " at " + screeningTime);
+                connection.commit(); // ✅ COMMIT TRANSACTION
+                System.out.println("✅ Created movie schedule ID: " + nextScheduleId +
+                        " for " + screeningDate + " at " + screeningTime);
                 return nextScheduleId;
             } else {
+                connection.rollback();
                 throw new InvalidInputException("Failed to create movie schedule", "database");
             }
 
         } catch (SQLException e) {
+            if (connection != null) {
+                try {
+                    connection.rollback();
+                } catch (SQLException rollbackEx) {
+                    rollbackEx.printStackTrace();
+                }
+            }
             e.printStackTrace();
             throw new InvalidInputException("Database error: " + e.getMessage(), "database");
+        } finally {
+            if (connection != null) {
+                try {
+                    connection.setAutoCommit(true);
+                    connection.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
@@ -1290,31 +1503,68 @@ public class MBAdminServant extends AdminServicePOA {
     public int assignMovieToSchedule(int adminId, int movieId, int movieScheduleId)
             throws AuthenticationException, MovieNotFoundException, ScheduleNotFoundException {
 
+        System.out.println("🎬 assignMovieToSchedule called - Movie: " + movieId +
+                ", MovieSchedule: " + movieScheduleId);
+
         // Check authentication
         if (!SessionManager.isAdminLoggedIn(adminId)) {
             throw new AuthenticationException("Admin not logged in or session expired");
         }
 
-        try (Connection connection = DatabaseAccess.getConnection()) {
-            // Check if movie exists
-            String checkMovieQuery = "SELECT movie_id FROM movies WHERE movie_id = ?";
+        Connection connection = null;
+        try {
+            connection = DatabaseAccess.getConnection();
+            connection.setAutoCommit(false); // ✅ START TRANSACTION
+
+            // 1️⃣ Check if movie exists
+            String checkMovieQuery = "SELECT movie_id, movie_title FROM movies WHERE movie_id = ?";
             PreparedStatement checkMovieStmt = connection.prepareStatement(checkMovieQuery);
             checkMovieStmt.setInt(1, movieId);
             ResultSet movieRs = checkMovieStmt.executeQuery();
+
             if (!movieRs.next()) {
+                connection.rollback();
+                System.err.println("❌ Movie not found: " + movieId);
                 throw new MovieNotFoundException();
             }
 
-            // Check if movie_schedule exists
-            String checkScheduleQuery = "SELECT movie_schedule_id FROM movie_schedules WHERE movie_schedule_id = ?";
+            String movieTitle = movieRs.getString("movie_title");
+            System.out.println("✅ Movie found: " + movieTitle);
+
+            // 2️⃣ Check if movie_schedule exists
+            String checkScheduleQuery = "SELECT movie_schedule_id, screening_date, screening_time " +
+                    "FROM movie_schedules WHERE movie_schedule_id = ?";
             PreparedStatement checkScheduleStmt = connection.prepareStatement(checkScheduleQuery);
             checkScheduleStmt.setInt(1, movieScheduleId);
             ResultSet scheduleRs = checkScheduleStmt.executeQuery();
+
             if (!scheduleRs.next()) {
+                connection.rollback();
+                System.err.println("❌ Movie schedule not found: " + movieScheduleId);
                 throw new ScheduleNotFoundException();
             }
 
-            // Get next schedule_id
+            String date = scheduleRs.getString("screening_date");
+            String time = scheduleRs.getString("screening_time");
+            System.out.println("✅ Movie schedule found: " + date + " " + time);
+
+            // 3️⃣ Check if this movie is already assigned to this movie_schedule
+            String checkExistingQuery = "SELECT schedule_id FROM schedules " +
+                    "WHERE movie_id = ? AND movie_schedule_id = ?";
+            PreparedStatement checkExistingStmt = connection.prepareStatement(checkExistingQuery);
+            checkExistingStmt.setInt(1, movieId);
+            checkExistingStmt.setInt(2, movieScheduleId);
+            ResultSet existingRs = checkExistingStmt.executeQuery();
+
+            if (existingRs.next()) {
+                int existingScheduleId = existingRs.getInt("schedule_id");
+                connection.commit();
+                System.out.println("⚠️ Schedule already exists for this movie and time slot, returning ID: " +
+                        existingScheduleId);
+                return existingScheduleId;
+            }
+
+            // 4️⃣ Get next schedule_id
             String maxIdQuery = "SELECT MAX(schedule_id) as max_id FROM schedules";
             PreparedStatement maxIdStmt = connection.prepareStatement(maxIdQuery);
             ResultSet maxIdRs = maxIdStmt.executeQuery();
@@ -1325,7 +1575,7 @@ public class MBAdminServant extends AdminServicePOA {
                 nextScheduleId = maxId + 1;
             }
 
-            // Insert into schedules table
+            // 5️⃣ Insert into schedules table
             LocalDateTime now = LocalDateTime.now();
             String query = "INSERT INTO schedules (schedule_id, movie_id, movie_schedule_id, created_at, updated_at) " +
                     "VALUES (?, ?, ?, ?, ?)";
@@ -1339,18 +1589,38 @@ public class MBAdminServant extends AdminServicePOA {
             int rowsAffected = statement.executeUpdate();
 
             if (rowsAffected > 0) {
-                // Initialize seats for this schedule
+                // 6️⃣ Initialize seats for this schedule
+                System.out.println("🪑 Initializing seats for schedule " + nextScheduleId + "...");
                 initializeScheduleSeatsInternal(connection, nextScheduleId);
 
-                System.out.println("✅ Assigned movie " + movieId + " to schedule " + nextScheduleId);
+                connection.commit(); // ✅ COMMIT TRANSACTION
+                System.out.println("✅ Assigned movie " + movieId + " ('" + movieTitle +
+                        "') to schedule " + nextScheduleId);
                 return nextScheduleId;
             } else {
+                connection.rollback();
                 throw new AuthenticationException("Failed to assign movie to schedule");
             }
 
         } catch (SQLException e) {
+            if (connection != null) {
+                try {
+                    connection.rollback();
+                } catch (SQLException rollbackEx) {
+                    rollbackEx.printStackTrace();
+                }
+            }
             e.printStackTrace();
             throw new AuthenticationException("Database error: " + e.getMessage());
+        } finally {
+            if (connection != null) {
+                try {
+                    connection.setAutoCommit(true);
+                    connection.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
@@ -1373,7 +1643,8 @@ public class MBAdminServant extends AdminServicePOA {
         }
 
         // Insert schedule_list_seats
-        String insertQuery = "INSERT INTO schedule_list_seats (schedule_list_seat_id, schedule_id, seat_id, status, created_at, updated_at) " +
+        String insertQuery = "INSERT INTO schedule_list_seats " +
+                "(schedule_list_seat_id, schedule_id, seat_id, status, created_at, updated_at) " +
                 "VALUES (?, ?, ?, 'available', NOW(), NOW())";
         PreparedStatement insertStmt = connection.prepareStatement(insertQuery);
 
@@ -1440,31 +1711,90 @@ public class MBAdminServant extends AdminServicePOA {
             throw new AuthenticationException("Admin not logged in or session expired");
         }
 
-        try (Connection connection = DatabaseAccess.getConnection()) {
-            // Check if schedule exists
-            String checkQuery = "SELECT schedule_id FROM schedules WHERE schedule_id = ?";
+        Connection connection = null;
+        try {
+            connection = DatabaseAccess.getConnection();
+            connection.setAutoCommit(false); // ✅ START TRANSACTION
+
+            // 1️⃣ Check if schedule exists
+            String checkQuery = "SELECT schedule_id, movie_schedule_id FROM schedules WHERE schedule_id = ?";
             PreparedStatement checkStmt = connection.prepareStatement(checkQuery);
             checkStmt.setInt(1, scheduleId);
             ResultSet rs = checkStmt.executeQuery();
 
             if (!rs.next()) {
+                connection.rollback();
                 throw new ScheduleNotFoundException();
             }
 
-            // Delete schedule (cascade will handle schedule_list_seats)
-            String deleteQuery = "DELETE FROM schedules WHERE schedule_id = ?";
-            PreparedStatement deleteStmt = connection.prepareStatement(deleteQuery);
-            deleteStmt.setInt(1, scheduleId);
+            int movieScheduleId = rs.getInt("movie_schedule_id");
 
-            int rowsAffected = deleteStmt.executeUpdate();
+            // 2️⃣ Check if there are any bookings for this schedule
+            String checkBookingsQuery = "SELECT COUNT(*) as booking_count FROM bookings WHERE schedule_id = ?";
+            PreparedStatement checkBookingsStmt = connection.prepareStatement(checkBookingsQuery);
+            checkBookingsStmt.setInt(1, scheduleId);
+            ResultSet bookingRs = checkBookingsStmt.executeQuery();
 
-            if (rowsAffected > 0) {
-                System.out.println("✅ Deleted schedule " + scheduleId);
+            if (bookingRs.next() && bookingRs.getInt("booking_count") > 0) {
+                connection.rollback();
+                throw new AuthenticationException("Cannot delete schedule: There are existing bookings for this schedule");
             }
 
+            // 3️⃣ Delete schedule_list_seats first (foreign key constraint)
+            String deleteSeatsQuery = "DELETE FROM schedule_list_seats WHERE schedule_id = ?";
+            PreparedStatement deleteSeatsStmt = connection.prepareStatement(deleteSeatsQuery);
+            deleteSeatsStmt.setInt(1, scheduleId);
+            int seatsDeleted = deleteSeatsStmt.executeUpdate();
+            System.out.println("🗑️ Deleted " + seatsDeleted + " schedule_list_seats for schedule " + scheduleId);
+
+            // 4️⃣ Delete the schedule
+            String deleteScheduleQuery = "DELETE FROM schedules WHERE schedule_id = ?";
+            PreparedStatement deleteScheduleStmt = connection.prepareStatement(deleteScheduleQuery);
+            deleteScheduleStmt.setInt(1, scheduleId);
+            int scheduleDeleted = deleteScheduleStmt.executeUpdate();
+
+            if (scheduleDeleted == 0) {
+                connection.rollback();
+                throw new ScheduleNotFoundException();
+            }
+
+            // 5️⃣ Check if other schedules are using this movie_schedule_id
+            String checkOtherSchedulesQuery = "SELECT COUNT(*) as count FROM schedules WHERE movie_schedule_id = ?";
+            PreparedStatement checkOtherStmt = connection.prepareStatement(checkOtherSchedulesQuery);
+            checkOtherStmt.setInt(1, movieScheduleId);
+            ResultSet otherRs = checkOtherStmt.executeQuery();
+
+            // 6️⃣ If no other schedules use this movie_schedule, delete it too
+            if (otherRs.next() && otherRs.getInt("count") == 0) {
+                String deleteMovieScheduleQuery = "DELETE FROM movie_schedules WHERE movie_schedule_id = ?";
+                PreparedStatement deleteMovieScheduleStmt = connection.prepareStatement(deleteMovieScheduleQuery);
+                deleteMovieScheduleStmt.setInt(1, movieScheduleId);
+                deleteMovieScheduleStmt.executeUpdate();
+                System.out.println("🗑️ Deleted movie_schedule " + movieScheduleId + " (no longer used)");
+            }
+
+            connection.commit(); // ✅ COMMIT TRANSACTION
+            System.out.println("✅ Successfully deleted schedule " + scheduleId);
+
         } catch (SQLException e) {
+            if (connection != null) {
+                try {
+                    connection.rollback();
+                } catch (SQLException rollbackEx) {
+                    rollbackEx.printStackTrace();
+                }
+            }
             e.printStackTrace();
-            throw new AuthenticationException("Database error: " + e.getMessage());
+            throw new AuthenticationException("Database error while deleting schedule: " + e.getMessage());
+        } finally {
+            if (connection != null) {
+                try {
+                    connection.setAutoCommit(true);
+                    connection.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
@@ -2123,24 +2453,85 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public void updatePaymentStatus(int adminId, int paymentId, String status) throws AuthenticationException, PaymentNotFoundException {
-        String sql = "UPDATE payments SET payment_status = ?, updated_at = NOW() WHERE payment_id = ?";
+    public void updatePaymentStatus(int adminId, int paymentId, String status)
+            throws AuthenticationException, PaymentNotFoundException {
 
-        try (Connection conn = DatabaseAccess.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+        if (!SessionManager.isAdminLoggedIn(adminId)) {
+            throw new AuthenticationException("Admin not logged in");
+        }
 
-            stmt.setString(1, status);
-            stmt.setInt(2, paymentId);
+        Connection connection = null;
+        try {
+            connection = DatabaseAccess.getConnection();
+            connection.setAutoCommit(false); // ✅ START TRANSACTION
 
-            int rowsUpdated = stmt.executeUpdate();
-            if (rowsUpdated == 0) {
+            // 1️⃣ Get the booking_id for this payment
+            String getBookingQuery = "SELECT booking_id FROM payments WHERE payment_id = ?";
+            PreparedStatement getBookingStmt = connection.prepareStatement(getBookingQuery);
+            getBookingStmt.setInt(1, paymentId);
+            ResultSet bookingRs = getBookingStmt.executeQuery();
+
+            if (!bookingRs.next()) {
+                connection.rollback();
                 throw new PaymentNotFoundException();
             }
-            System.out.println("Admin " + adminId + " updated payment " + paymentId + " to " + status);
+
+            int bookingId = bookingRs.getInt("booking_id");
+
+            // 2️⃣ Update payment status
+            String updatePaymentQuery = "UPDATE payments SET payment_status = ?, updated_at = NOW() WHERE payment_id = ?";
+            PreparedStatement paymentStmt = connection.prepareStatement(updatePaymentQuery);
+            paymentStmt.setString(1, status);
+            paymentStmt.setInt(2, paymentId);
+
+            int rowsUpdated = paymentStmt.executeUpdate();
+            if (rowsUpdated == 0) {
+                connection.rollback();
+                throw new PaymentNotFoundException();
+            }
+
+            // 3️⃣ ✅ NEW: Update booking status based on payment status
+            String newBookingStatus = null;
+
+            if ("completed".equalsIgnoreCase(status)) {
+                newBookingStatus = "confirmed";
+            } else if ("failed".equalsIgnoreCase(status) || "refunded".equalsIgnoreCase(status)) {
+                newBookingStatus = "cancelled";
+            }
+
+            // Only update booking if we determined a new status
+            if (newBookingStatus != null) {
+                String updateBookingQuery = "UPDATE bookings SET booking_status = ?, updated_at = NOW() WHERE booking_id = ?";
+                PreparedStatement bookingStmt = connection.prepareStatement(updateBookingQuery);
+                bookingStmt.setString(1, newBookingStatus);
+                bookingStmt.setInt(2, bookingId);
+                bookingStmt.executeUpdate();
+
+                System.out.println("✅ Updated booking " + bookingId + " status to: " + newBookingStatus);
+            }
+
+            connection.commit(); // ✅ COMMIT TRANSACTION
+            System.out.println("✅ Payment " + paymentId + " updated to: " + status);
 
         } catch (SQLException e) {
+            if (connection != null) {
+                try {
+                    connection.rollback();
+                } catch (SQLException rollbackEx) {
+                    rollbackEx.printStackTrace();
+                }
+            }
             e.printStackTrace();
-            throw new RuntimeException("Database error: " + e.getMessage());
+            throw new AuthenticationException("Database error: " + e.getMessage());
+        } finally {
+            if (connection != null) {
+                try {
+                    connection.setAutoCommit(true);
+                    connection.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
@@ -2361,34 +2752,37 @@ public class MBAdminServant extends AdminServicePOA {
             return "";
         }
 
-        // Check if it contains image data
         if (!concatenatedPosterURL.contains("|||IMAGE_DATA|||")) {
-            // Already a path (for updates without new image)
             return concatenatedPosterURL;
         }
 
-        // Split the concatenated string
         String[] parts = concatenatedPosterURL.split("\\|\\|\\|IMAGE_DATA\\|\\|\\|");
         if (parts.length != 2) {
             throw new IOException("Invalid image data format");
         }
 
-        String targetPath = parts[0]; // e.g., "Images/MovieImage/1234567890_poster.jpg"
+        String targetPath = parts[0];
         String base64Data = parts[1];
 
-        // Decode Base64
         byte[] imageBytes = java.util.Base64.getDecoder().decode(base64Data);
 
-        // Create directory if it doesn't exist
-        java.nio.file.Path dirPath = java.nio.file.Paths.get("Images/MovieImage");
-        java.nio.file.Files.createDirectories(dirPath);
+        // ✅ Save to BOTH locations to ensure compatibility
 
-        // Save file
-        java.nio.file.Path filePath = java.nio.file.Paths.get(targetPath);
-        java.nio.file.Files.write(filePath, imageBytes);
+        // Location 1: Project root (for current loading mechanism)
+        java.nio.file.Path projectRootDir = java.nio.file.Paths.get("Images/MovieImage");
+        java.nio.file.Files.createDirectories(projectRootDir);
+        java.nio.file.Path projectRootFile = java.nio.file.Paths.get(targetPath);
+        java.nio.file.Files.write(projectRootFile, imageBytes);
+        System.out.println("✅ Image saved to PROJECT ROOT: " + projectRootFile.toAbsolutePath());
 
-        System.out.println("✅ Image saved to: " + targetPath);
-        return targetPath; // Return ONLY the path for DB storage
+        // Location 2: Resources folder (for production deployment)
+        java.nio.file.Path resourcesDir = java.nio.file.Paths.get("src/main/resources/Images/MovieImage");
+        java.nio.file.Files.createDirectories(resourcesDir);
+        java.nio.file.Path resourcesFile = java.nio.file.Paths.get("src/main/resources/" + targetPath);
+        java.nio.file.Files.write(resourcesFile, imageBytes);
+        System.out.println("✅ Image saved to RESOURCES: " + resourcesFile.toAbsolutePath());
+
+        return targetPath;
     }
 
     // Add this helper to MBAdminServant if it doesn't exist

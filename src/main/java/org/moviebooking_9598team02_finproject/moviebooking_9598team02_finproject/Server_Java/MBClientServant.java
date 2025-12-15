@@ -574,28 +574,40 @@ public class MBClientServant extends ClientServicePOA {
 
             if (rs.next()) {
                 ScheduleDetails details = new ScheduleDetails();
+
                 details.scheduleId = rs.getInt("schedule_id");
                 details.movieId = rs.getInt("movie_id");
                 details.movieScheduleId = rs.getInt("movie_schedule_id");
-                details.movieTitle = rs.getString("movie_title");
-                details.movieDescription = rs.getString("movie_description");
                 details.movieRating = rs.getInt("movie_rating");
-                details.moviePosterURL = rs.getString("movie_poster_url");
-                details.movieGenres = rs.getString("movie_genres");
-                details.screeningDate = rs.getString("screening_date");
-                details.screeningTime = rs.getString("screening_time");
                 details.availableSeats = rs.getInt("available_seats");
                 details.totalSeats = rs.getInt("total_seats");
-                details.createdAt = rs.getString("created_at");
-                details.updatedAt = rs.getString("updated_at");
+
+                details.movieTitle = safeString(rs.getString("movie_title"));
+                details.movieDescription = safeString(rs.getString("movie_description"));
+                details.moviePosterURL = safeString(rs.getString("moviePosterURL"));
+                details.movieGenres = safeString(rs.getString("movie_genres"));
+                details.screeningDate = safeString(rs.getString("screening_date"));
+                details.screeningTime = safeString(rs.getString("screening_time"));
+                details.createdAt = safeString(rs.getString("created_at"));
+                details.updatedAt = safeString(rs.getString("updated_at"));
+
                 return details;
+
             } else {
-                throw new ScheduleNotFoundException("Schedule not found", scheduleId);
+                ScheduleNotFoundException ex = new ScheduleNotFoundException();
+                ex.message = "Schedule not found with ID: " + scheduleId;
+                ex.scheduleId = scheduleId;
+                throw ex;
             }
 
+        } catch (ScheduleNotFoundException e) {
+            throw e;
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new ScheduleNotFoundException("Error fetching schedule details", scheduleId);
+            ScheduleNotFoundException ex = new ScheduleNotFoundException();
+            ex.message = "Database error: " + e.getMessage();
+            ex.scheduleId = scheduleId;
+            throw ex;
         }
     }
 

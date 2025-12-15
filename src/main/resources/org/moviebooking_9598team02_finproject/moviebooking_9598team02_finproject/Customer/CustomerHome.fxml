@@ -65,12 +65,7 @@
                 <!-- Spacer -->
                 <Region VBox.vgrow="ALWAYS" />
 
-                <!-- Settings (Optional) -->
-                <Label fx:id="navSettings" style="-fx-padding: 8 10; -fx-cursor: hand; -fx-font-size: 13px;" text="⚙️  Settings" textFill="#FFFFFF">
-                    <font>
-                        <Font name="System Bold" size="13.0" />
-                    </font>
-                </Label>
+                <!-- ✅ SETTINGS BUTTON REMOVED -->
 
                 <!-- Logout Button -->
                 <Label fx:id="logOutButton" style="-fx-padding: 8 10; -fx-cursor: hand; -fx-font-weight: bold; -fx-font-size: 13px;" text="🚪  Logout" textFill="#FF6B6B">

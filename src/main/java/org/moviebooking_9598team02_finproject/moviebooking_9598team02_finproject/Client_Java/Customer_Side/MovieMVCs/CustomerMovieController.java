@@ -204,29 +204,27 @@ public class CustomerMovieController {
     }
 
     private void updateScheduleDisplay() {
-        // Calculate pagination
         totalSchedulePages = (int) Math.ceil((double) currentScheduleList.size() / SCHEDULES_PER_PAGE);
         if (totalSchedulePages == 0) totalSchedulePages = 1;
         if (currentSchedulePage > totalSchedulePages) currentSchedulePage = totalSchedulePages;
 
-        // Update page controls
         view.updateSchedulePageLabel(currentSchedulePage);
         view.setSchedulePaginationButtons(currentSchedulePage > 1, currentSchedulePage < totalSchedulePages);
 
-        // Get schedules for current page
         int startIndex = (currentSchedulePage - 1) * SCHEDULES_PER_PAGE;
         int endIndex = Math.min(startIndex + SCHEDULES_PER_PAGE, currentScheduleList.size());
-
         List<Schedule> schedulesOnPage = currentScheduleList.subList(startIndex, endIndex);
 
-        // Clear and populate schedule grid
         view.clearScheduleGrid();
+
+        if (schedulesOnPage.isEmpty()) {
+            showStatus("No schedules available for this movie.");
+            return;
+        }
 
         for (Schedule schedule : schedulesOnPage) {
             try {
-                // Get schedule details with movie info
                 ScheduleDetails details = model.getScheduleDetailsView(schedule.scheduleId);
-
                 Runnable selectAction = () -> handleScheduleSelection(schedule);
 
                 view.createAndAddScheduleCard(
@@ -237,13 +235,11 @@ public class CustomerMovieController {
                         details.totalSeats,
                         selectAction
                 );
-
             } catch (Exception e) {
-                System.err.println("Error loading schedule details: " + e.getMessage());
+                System.err.println("Error loading schedule " + schedule.scheduleId + ": " + e.getMessage());
             }
         }
     }
-
     private void handleScheduleSelection(Schedule schedule) {
         System.out.println("📅 Schedule selected: " + schedule.scheduleId);
 
@@ -263,6 +259,8 @@ public class CustomerMovieController {
                 movie.movieDescription,
                 movie.moviePosterURL
         );
+
+        System.out.println("📋 Movie details view shown, schedules should be visible");
     }
 
     private void handleBackToMovieList() {
