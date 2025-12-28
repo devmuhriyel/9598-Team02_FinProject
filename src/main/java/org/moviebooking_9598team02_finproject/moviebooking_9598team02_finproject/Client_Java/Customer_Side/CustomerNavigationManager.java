@@ -1,5 +1,6 @@
 package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Customer_Side;
 
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
@@ -257,19 +258,30 @@ public class CustomerNavigationManager {
 
                     @Override
                     public void onSessionInvalidated() {
-                        handleConcurrentLogin();
+                        handleSessionExpired();
                     }
                 }
         );
 
         sessionValidator.start();
-        System.out.println("✅ Session validation started for customer: " + customer.customerId);
+        System.out.println("Session validation started for customer: " + customer.customerId);
     }
 
-    private void handleConcurrentLogin() {
-        System.out.println("⚠️ Customer session invalidated (concurrent login): " + customer.customerId);
+    private void handleSessionExpired() {
+        System.out.println("Customer session expired: " + customer.customerId);
         cleanup();
-        logoutAndReturnToAuth(); // or whatever your logout method is called
+        Platform.runLater(() -> {
+            try {
+                logoutAndReturnToAuth();
+            } catch (Exception e) {
+                System.err.println("Error during logout: " + e.getMessage());
+                e.printStackTrace();
+                // Fallback: try to close stage directly
+                if (homeStage != null) {
+                    homeStage.close();
+                }
+            }
+        });
     }
 
     private void cleanup() {

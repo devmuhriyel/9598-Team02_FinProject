@@ -1,5 +1,6 @@
 package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side;
 
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
@@ -110,22 +111,30 @@ public class AdminNavigationManager {
 
                     @Override
                     public void onSessionInvalidated() {
-                        handleConcurrentLogin();
+                        handleSessionExpired();
                     }
                 }
         );
 
         sessionValidator.start();
-        System.out.println("✅ Session validation started for admin: " + admin.adminId);
+        System.out.println("Session validation started for admin: " + admin.adminId);
     }
 
-    // 🆕 HANDLE CONCURRENT LOGIN
-    private void handleConcurrentLogin() {
-        System.out.println("⚠️ Admin session invalidated (concurrent login): " + admin.adminId);
-
-        // Clean up and return to login
+    private void handleSessionExpired() {
+        System.out.println("Admin session expired: " + admin.adminId);
         cleanup();
-        logoutAndReturnToAuth();
+        Platform.runLater(() -> {
+            try {
+                logoutAndReturnToAuth();
+            } catch (Exception e) {
+                System.err.println("Error during logout: " + e.getMessage());
+                e.printStackTrace();
+                // Fallback: try to close stage directly
+                if (homeStage != null) {
+                    homeStage.close();
+                }
+            }
+        });
     }
 
     // 🆕 CLEANUP METHOD

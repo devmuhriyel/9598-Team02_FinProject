@@ -116,6 +116,18 @@ module MovieBookingCommon {
         string refundReason;   // NULL if not refunded
     };
 
+    // ===== SESSION STRUCTS =====
+    
+    struct AdminLoginResponse {
+        Admin admin;
+        string sessionToken;
+    };
+    
+    struct CustomerLoginResponse {
+        Customer customer;
+        string sessionToken;
+    };
+
     // ===== COMPLEX STRUCTS (FROM VIEWS) =====
 
     struct BookingDetails {

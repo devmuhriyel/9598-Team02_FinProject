@@ -46,15 +46,15 @@ public class MBAdminServant extends AdminServicePOA {
                 if (PasswordManager.checkPassword(password, hashedPassword)) {
                     int admin_id = rs.getInt("admin_id");
 
-                    // ✅ CORRECT ORDER: Check if already logged in FIRST
-                    if (SessionManager.isAdminLoggedIn(admin_id)) {
-                        System.out.println("Admin " + admin_id + " already has active session. Removing old session.");
-                        SessionManager.removeAdminSession(admin_id);
-                    }
+                    synchronized (SessionManager.getAdminSessionsLock()) {
+                        if (SessionManager.isAdminLoggedIn(admin_id)) {
+                            System.out.println("Concurrent login rejected: Admin " + admin_id + " is already logged in.");
+                            throw new AuthenticationException("This account is already logged in. Please log out from other devices before logging in again.");
+                        }
 
-                    // ✅ NOW create new session
-                    SessionManager.createAdminSession(admin_id, rs.getString("username"));
-                    System.out.println("✅ Admin " + admin_id + " logged in successfully");
+                        String sessionToken = SessionManager.createAdminSessionUnsafe(admin_id, rs.getString("username"));
+                        System.out.println("Admin " + admin_id + " logged in successfully. Session token: " + sessionToken.substring(0, 8) + "...");
+                    }
 
                     // Populate admin object
                     admin.adminId = rs.getInt("admin_id");
@@ -80,9 +80,14 @@ public class MBAdminServant extends AdminServicePOA {
 
     @Override
     public void logoutAdmin(int adminId) {
-        if (SessionManager.isAdminLoggedIn(adminId)) {
-            SessionManager.removeAdminSession(adminId);
+        SessionManager.SessionInfo session = SessionManager.getAdminSession(adminId);
+        if (session == null) {
+            System.out.println("Admin " + adminId + " not logged in - logout ignored");
+            return;
         }
+        
+        SessionManager.removeAdminSession(adminId);
+        System.out.println("Admin " + adminId + " logged out successfully");
     }
 
     @Override

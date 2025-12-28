@@ -39,11 +39,12 @@ module MovieBookingAdmin {
 
         // ===== ADMIN AUTHENTICATION =====
 
-        // Admin login
-        Admin loginAdmin(in string username, in string password) raises (MovieBookingCommon::AuthenticationException);
+        // Admin login - returns admin info and session token
+        // If admin is already logged in from another device, old session is invalidated
+        MovieBookingCommon::AdminLoginResponse loginAdmin(in string username, in string password) raises (MovieBookingCommon::AuthenticationException);
 
-        // Admin logout
-        void logoutAdmin(in long adminId);
+        // Admin logout - requires session token for authentication
+        void logoutAdmin(in long adminId, in string sessionToken) raises (MovieBookingCommon::AuthenticationException);
 
         // ===== GENRE MANAGEMENT =====
 

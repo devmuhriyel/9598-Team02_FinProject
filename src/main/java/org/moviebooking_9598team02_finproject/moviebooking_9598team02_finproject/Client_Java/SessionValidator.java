@@ -2,7 +2,6 @@ package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finprojec
 
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.AuthenticationException;
 
 import java.util.Timer;
@@ -11,7 +10,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * SessionValidator - Periodically validates if the user's session is still active
- * Detects concurrent logins and notifies the user
+ * Checks for expired sessions only (concurrent logins are prevented at login level)
  */
 public class SessionValidator {
 
@@ -22,18 +21,18 @@ public class SessionValidator {
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
     private final AtomicBoolean alertShown = new AtomicBoolean(false);
 
-    // Check every 5 seconds
-    private static final long CHECK_INTERVAL_MS = 5000;
+    // Check interval for session validation (every 30 seconds - less frequent since we only check for expired sessions)
+    private static final long CHECK_INTERVAL_MS = 30000;
 
     public interface SessionValidationCallback {
         /**
          * Check if the session is still valid on the server
-         * @return true if valid, false if session was terminated
+         * @return true if valid, false if session was terminated or expired
          */
         boolean validateSession();
 
         /**
-         * Called when session is invalidated (concurrent login detected)
+         * Called when session is invalidated (expired session)
          */
         void onSessionInvalidated();
     }
@@ -60,7 +59,7 @@ public class SessionValidator {
             }
         }, CHECK_INTERVAL_MS, CHECK_INTERVAL_MS);
 
-        System.out.println("✅ Session validator started for " + userType + " " + userId);
+        System.out.println("Session validator started for " + userType + " " + userId);
     }
 
     /**
@@ -76,54 +75,70 @@ public class SessionValidator {
             timer = null;
         }
 
-        System.out.println("🛑 Session validator stopped for " + userType + " " + userId);
+        System.out.println("Session validator stopped for " + userType + " " + userId);
     }
 
     /**
      * Check if session is still valid
+     * Only checks for expired sessions (concurrent logins are prevented at login level)
      */
     private void checkSession() {
+        // Check if validator is still running before proceeding
+        if (!isRunning.get()) {
+            return; // Already stopped, exit immediately
+        }
+
         try {
             boolean isValid = callback.validateSession();
 
+            // If session is invalid (expired), notify and stop checking
             if (!isValid) {
-                // Session was invalidated (concurrent login detected)
-                stop(); // Stop checking
+                System.out.println("Session expired for " + userType + " " + userId);
+                stop(); // Stop checking - prevents non-terminating loop
 
                 // Only show alert once
                 if (alertShown.compareAndSet(false, true)) {
-                    // Use Platform.runLater WITHOUT showAndWait to avoid blocking
+                    // Use Platform.runLater to ensure UI thread safety
                     Platform.runLater(() -> {
-                        showConcurrentLoginAlert();
+                        showSessionExpiredAlert();
                         callback.onSessionInvalidated();
                     });
                 }
             }
 
         } catch (Exception e) {
-            // Network error or other issue - don't logout, just log it
-            System.err.println("⚠️ Session validation error: " + e.getMessage());
+            // If validation fails (e.g., user logged out or session expired)
+            if (e instanceof AuthenticationException) {
+                System.out.println("Session validation failed for " + userType + " " + userId + " - session expired or invalid");
+                stop();
+                if (alertShown.compareAndSet(false, true)) {
+                    Platform.runLater(() -> {
+                        showSessionExpiredAlert();
+                        callback.onSessionInvalidated();
+                    });
+                }
+            } else {
+                // Network error - don't logout on network glitches, just log it
+                System.err.println("Session validation error (network?): " + e.getMessage());
+            }
         }
     }
 
     /**
-     * Show alert to user about concurrent login
-     * FIXED: Use show() instead of showAndWait() to prevent UI freeze
+     * Show alert to user about expired session
      */
-    private void showConcurrentLoginAlert() {
-        Alert alert = new Alert(Alert.AlertType.WARNING);
-        alert.setTitle("Session Ended");
-        alert.setHeaderText("Concurrent Login Detected");
+    private void showSessionExpiredAlert() {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Session Expired");
+        alert.setHeaderText("Your session has expired");
         alert.setContentText(
-                "Your account has been logged in from another location.\n\n" +
-                        "You have been logged out for security reasons."
+                "Your session has expired due to inactivity.\n\n" +
+                        "You will be logged out."
         );
 
-        // ✅ FIX: Use show() instead of showAndWait()
-        // This prevents the "showAndWait is not allowed during animation" error
         alert.show();
 
-        // Optional: Auto-close after 5 seconds
+        // Auto-close after 5 seconds
         Timer autoCloseTimer = new Timer(true);
         autoCloseTimer.schedule(new TimerTask() {
             @Override

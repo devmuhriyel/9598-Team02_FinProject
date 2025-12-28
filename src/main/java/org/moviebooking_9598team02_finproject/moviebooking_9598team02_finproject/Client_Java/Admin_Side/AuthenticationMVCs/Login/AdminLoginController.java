@@ -43,7 +43,8 @@ public class AdminLoginController {
             // Session validation will be handled by AdminNavigationManager
             authManager.openAdminHome(admin);
         } catch (AuthenticationException e) {
-            view.showError("Invalid username or password");
+            // ✅ FIX: Show actual error message from server (e.g., "Account already logged in")
+            view.showError(e.message != null && !e.message.isEmpty() ? e.message : "Invalid username or password");
         }
     }
 

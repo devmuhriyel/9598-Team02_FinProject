@@ -69,7 +69,16 @@ public class MBClientServant extends ClientServicePOA {
                 String hashedPassword = rs.getString("password");
                 if(PasswordManager.checkPassword(password, hashedPassword)){
                     int customer_id = rs.getInt("customer_id");
-                    SessionManager.createCustomerSession(customer_id, rs.getString("username"));
+
+                    synchronized (SessionManager.getCustomerSessionsLock()) {
+                        if (SessionManager.isCustomerLoggedIn(customer_id)) {
+                            System.out.println("Concurrent login rejected: Customer " + customer_id + " is already logged in.");
+                            throw new AuthenticationException("This account is already logged in. Please log out from other devices before logging in again.");
+                        }
+
+                        String sessionToken = SessionManager.createCustomerSessionUnsafe(customer_id, rs.getString("username"));
+                        System.out.println("Customer " + customer_id + " logged in successfully. Session token: " + sessionToken.substring(0, 8) + "...");
+                    }
 
                     customer.customerId = rs.getInt("customer_id");
                     customer.username = rs.getString("username");
@@ -94,8 +103,14 @@ public class MBClientServant extends ClientServicePOA {
 
     @Override
     public void logoutCustomer(int customerId) {
+        SessionManager.SessionInfo session = SessionManager.getCustomerSession(customerId);
+        if (session == null) {
+            System.out.println("Customer " + customerId + " not logged in - logout ignored");
+            return;
+        }
+        
         SessionManager.removeCustomerSession(customerId);
-        System.out.println("Customer " + customerId + " logged out");
+        System.out.println("Customer " + customerId + " logged out successfully");
     }
 
     // ===== ACCOUNT MANAGEMENT METHODS =====

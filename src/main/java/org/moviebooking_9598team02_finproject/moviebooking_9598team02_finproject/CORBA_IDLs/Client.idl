@@ -33,11 +33,12 @@ module MovieBookingClient {
         // Returns the newly created customer ID
         long registerCustomer(in string username, in string email, in string password, in string phoneNumber, in string fullName) raises (MovieBookingCommon::InvalidInputException);
 
-        // Login customer and return customer details
-        Customer loginCustomer(in string username, in string password) raises (MovieBookingCommon::AuthenticationException);
+        // Login customer and return customer details with session token
+        // If customer is already logged in from another device, old session is invalidated
+        MovieBookingCommon::CustomerLoginResponse loginCustomer(in string username, in string password) raises (MovieBookingCommon::AuthenticationException);
 
-        // Logout customer (for cleanup/tracking)
-        void logoutCustomer(in long customerId);
+        // Logout customer - requires session token for authentication
+        void logoutCustomer(in long customerId, in string sessionToken) raises (MovieBookingCommon::AuthenticationException);
 
         // Update customer profile
         void updateCustomerProfile(in long customerId, in string phoneNumber, in string fullName) raises (MovieBookingCommon::AuthenticationException);

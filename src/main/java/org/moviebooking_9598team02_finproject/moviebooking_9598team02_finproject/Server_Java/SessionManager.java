@@ -110,23 +110,24 @@ public class SessionManager {
     }
 
     public static String createAdminSession(int adminId, String username, String ipAddress) {
-        // ✅ FIX: Check if admin already has session BEFORE creating new one
-        SessionInfo existingSession = adminSessions.get(adminId);
-        if (existingSession != null) {
-            System.out.println("⚠️ Admin " + adminId + " already logged in. Removing old session.");
-            removeAdminSession(adminId);
+        synchronized (adminSessions) {
+            SessionInfo existingSession = adminSessions.get(adminId);
+            if (existingSession != null) {
+                if (existingSession.sessionToken != null) {
+                    sessionTokens.remove(existingSession.sessionToken);
+                }
+                adminSessions.remove(adminId);
+            }
+
+            String sessionToken = UUID.randomUUID().toString();
+            SessionInfo sessionInfo = new SessionInfo(adminId, username, sessionToken, ipAddress);
+
+            adminSessions.put(adminId, sessionInfo);
+            sessionTokens.put(sessionToken, adminId);
+
+            System.out.println("Admin session created: " + sessionInfo);
+            return sessionToken;
         }
-
-        // Generate unique session token
-        String sessionToken = UUID.randomUUID().toString();
-
-        SessionInfo sessionInfo = new SessionInfo(adminId, username, sessionToken, ipAddress);
-
-        adminSessions.put(adminId, sessionInfo);
-        sessionTokens.put(sessionToken, adminId);
-
-        System.out.println("✅ Admin session created: " + sessionInfo);
-        return sessionToken;
     }
 
     public static boolean isAdminLoggedIn(int adminId) {
@@ -151,6 +152,33 @@ public class SessionManager {
         return null;
     }
 
+    // ✅ FIX: Get raw session from map (for concurrent login prevention - checks ALL sessions, not just active)
+    public static SessionInfo getAdminSessionRaw(int adminId) {
+        return adminSessions.get(adminId);
+    }
+
+    // ✅ FIX: Internal method to create admin session WITHOUT synchronization (caller must synchronize)
+    // This is used when the caller already holds the lock (e.g., in loginAdmin)
+    public static String createAdminSessionUnsafe(int adminId, String username) {
+        return createAdminSessionUnsafe(adminId, username, null);
+    }
+
+    public static String createAdminSessionUnsafe(int adminId, String username, String ipAddress) {
+        SessionInfo existingSession = adminSessions.get(adminId);
+        if (existingSession != null) {
+            removeAdminSession(adminId);
+        }
+
+        String sessionToken = UUID.randomUUID().toString();
+        SessionInfo sessionInfo = new SessionInfo(adminId, username, sessionToken, ipAddress);
+
+        adminSessions.put(adminId, sessionInfo);
+        sessionTokens.put(sessionToken, adminId);
+
+        System.out.println("Admin session created: " + sessionInfo);
+        return sessionToken;
+    }
+
     public static boolean validateAdminToken(String token) {
         Integer adminId = sessionTokens.get(token);
         return adminId != null && isAdminLoggedIn(adminId);
@@ -168,7 +196,6 @@ public class SessionManager {
         SessionInfo session = adminSessions.remove(adminId);
         if (session != null) {
             sessionTokens.remove(session.sessionToken);
-            System.out.println("🗑️ Admin session removed: adminId=" + adminId);
         }
     }
 
@@ -187,21 +214,24 @@ public class SessionManager {
     }
 
     public static String createCustomerSession(int customerId, String username, String ipAddress) {
-        // ✅ FIX: Check if customer already has session BEFORE creating new one
-        SessionInfo existingSession = customerSessions.get(customerId);
-        if (existingSession != null) {
-            System.out.println("⚠️ Customer " + customerId + " already logged in. Removing old session.");
-            removeCustomerSession(customerId);
+        synchronized (customerSessions) {
+            SessionInfo existingSession = customerSessions.get(customerId);
+            if (existingSession != null) {
+                if (existingSession.sessionToken != null) {
+                    sessionTokens.remove(existingSession.sessionToken);
+                }
+                customerSessions.remove(customerId);
+            }
+
+            String sessionToken = UUID.randomUUID().toString();
+            SessionInfo sessionInfo = new SessionInfo(customerId, username, sessionToken, ipAddress);
+
+            customerSessions.put(customerId, sessionInfo);
+            sessionTokens.put(sessionToken, customerId);
+
+            System.out.println("Customer session created: " + sessionInfo);
+            return sessionToken;
         }
-
-        String sessionToken = UUID.randomUUID().toString();
-        SessionInfo sessionInfo = new SessionInfo(customerId, username, sessionToken, ipAddress);
-
-        customerSessions.put(customerId, sessionInfo);
-        sessionTokens.put(sessionToken, customerId);
-
-        System.out.println("✅ Customer session created: " + sessionInfo);
-        return sessionToken;
     }
 
     public static boolean isCustomerLoggedIn(int customerId) {
@@ -225,11 +255,47 @@ public class SessionManager {
         return null;
     }
 
+    // ✅ FIX: Get raw session from map (for concurrent login prevention - checks ALL sessions, not just active)
+    public static SessionInfo getCustomerSessionRaw(int customerId) {
+        return customerSessions.get(customerId);
+    }
+
+    // ✅ FIX: Get lock object for synchronizing login operations
+    public static Object getCustomerSessionsLock() {
+        return customerSessions;
+    }
+
+    // ✅ FIX: Get lock object for synchronizing admin login operations
+    public static Object getAdminSessionsLock() {
+        return adminSessions;
+    }
+
+    // ✅ FIX: Internal method to create customer session WITHOUT synchronization (caller must synchronize)
+    // This is used when the caller already holds the lock (e.g., in loginCustomer)
+    public static String createCustomerSessionUnsafe(int customerId, String username) {
+        return createCustomerSessionUnsafe(customerId, username, null);
+    }
+
+    public static String createCustomerSessionUnsafe(int customerId, String username, String ipAddress) {
+        SessionInfo existingSession = customerSessions.get(customerId);
+        if (existingSession != null) {
+            removeCustomerSession(customerId);
+        }
+
+        String sessionToken = UUID.randomUUID().toString();
+        SessionInfo sessionInfo = new SessionInfo(customerId, username, sessionToken, ipAddress);
+
+        customerSessions.put(customerId, sessionInfo);
+        sessionTokens.put(sessionToken, customerId);
+
+        System.out.println("Customer session created: " + sessionInfo);
+        return sessionToken;
+    }
+
     public static void removeCustomerSession(int customerId) {
         SessionInfo session = customerSessions.remove(customerId);
         if (session != null) {
             sessionTokens.remove(session.sessionToken);
-            System.out.println("🗑️ Customer session removed: customerId=" + customerId);
         }
     }
 
