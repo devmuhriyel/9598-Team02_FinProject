@@ -12,4 +12,10 @@ public class PaymentModel extends CustomerParentModel {
 
         return clientServices.processPayment(customerId, bookingId, amount, method, txnId);
     }
+
+    public void cancelBooking(int customerId, int bookingId)
+            throws AuthenticationException, BookingException {
+
+        clientServices.cancelBooking(customerId, bookingId);
+    }
 }

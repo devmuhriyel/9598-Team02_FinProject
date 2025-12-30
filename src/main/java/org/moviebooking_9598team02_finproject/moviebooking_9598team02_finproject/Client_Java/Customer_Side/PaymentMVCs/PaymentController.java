@@ -80,7 +80,32 @@ public class PaymentController {
         }).start();
     }
 
-    private void handleCancel() { view.closeWindow(); }
+    private void handleCancel() {
+        view.setConfirmButtonEnabled(false);
+        view.showStatus("Cancelling booking...", false);
+
+        new Thread(() -> {
+            try {
+                // Call the server to cancel the booking
+                model.cancelBooking(customerId, bookingId);
+                view.runOnUIThread(() -> {
+                    view.showStatus("Booking cancelled successfully!", false);
+                    // Close window after showing the message for 2 seconds
+                    new Thread(() -> {
+                        try { Thread.sleep(2000); }
+                        catch (InterruptedException e) { e.printStackTrace(); }
+                        view.runOnUIThread(view::closeWindow);
+                    }).start();
+                });
+            } catch (Exception e) {
+                view.runOnUIThread(() -> {
+                    e.printStackTrace();
+                    view.showStatus("Failed to cancel booking: " + e.getMessage(), true);
+                    view.setConfirmButtonEnabled(true);
+                });
+            }
+        }).start();
+    }
 
     private void startAutoClose(long delayMillis) {
         new Thread(() -> {
