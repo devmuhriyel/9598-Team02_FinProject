@@ -63,8 +63,11 @@ public class CustomerSignupController {
             view.clearError();
             authManager.showLoginView();
 
-        } catch (InvalidInputException | AuthenticationException e) {
-            // Already displays specific server-side errors (e.g., "Username already taken")
+        } catch (InvalidInputException e) {
+            // Display the custom message field from the exception
+            view.showError(e.message);
+        } catch (AuthenticationException e) {
+            // Display authentication error message
             view.showError(e.getMessage());
         } catch (IllegalArgumentException e) {
             // Already displays specific client-side errors (e.g., "Passwords do not match")

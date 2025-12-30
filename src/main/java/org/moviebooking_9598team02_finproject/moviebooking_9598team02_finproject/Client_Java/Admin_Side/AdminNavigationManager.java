@@ -120,8 +120,11 @@ public class AdminNavigationManager {
         System.out.println("Session validation started for admin: " + admin.adminId);
     }
 
+    // 🆕 HANDLE CONCURRENT LOGIN
     private void handleSessionExpired() {
-        System.out.println("Admin session expired: " + admin.adminId);
+        System.out.println("Admin session invalidated (concurrent login): " + admin.adminId);
+
+        // Clean up and return to login
         cleanup();
         Platform.runLater(() -> {
             try {
