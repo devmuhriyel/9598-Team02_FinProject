@@ -40,6 +40,12 @@ public class CustomerBookingsModel extends CustomerParentModel {
     public List<BookingDetails> filter(List<BookingDetails> all, String timeFilter, String statusFilter) {
         List<BookingDetails> filtered = new ArrayList<>();
         for (BookingDetails b : all) {
+            // Always exclude cancelled and failed bookings from the main list
+            String status = b.bookingStatus.toLowerCase();
+            if ("cancelled".equals(status) || "failed".equals(status)) {
+                continue;
+            }
+
             boolean matchesTime = true;
             boolean upcoming = isUpcoming(b);
 
