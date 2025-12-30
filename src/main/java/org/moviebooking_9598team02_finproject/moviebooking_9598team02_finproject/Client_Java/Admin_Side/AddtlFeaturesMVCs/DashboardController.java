@@ -8,6 +8,7 @@ import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Genre;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.AdminParentModel;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -31,13 +32,16 @@ public class DashboardController {
         cachedAllMovies = new Movie[0];
         loadGenres();
         loadTotalRevenue();
-        loadAllMovieData(null);
+        loadAllMovieData(null, "");
         setupEventHandlers();
     }
 
     private void setupEventHandlers() {
-        // Only All Movies table and genre filter are needed
+        // Event handlers for all controls
         view.setGenreComboBoxAction(this::handleGenreFilterChange);
+        view.setSearchButtonAction(this::handleSearch);
+        view.setClearSearchButtonAction(this::handleClearSearch);
+        view.setRefreshButtonAction(this::handleRefresh);
         view.setAllMoviesSelectionListener(() -> handleMovieListings("All"));
         setupGenreColumn();
     }
@@ -96,42 +100,100 @@ public class DashboardController {
 
 
 
-    private void loadAllMovieData(String genreName) {
+    private void loadAllMovieData(String genreName, String searchQuery) {
         try {
             // Load all movies from server if not cached
             if (cachedAllMovies.length == 0) {
                 cachedAllMovies = AdminParentModel.adminServices.getAllMovies(currentAdminId);
             }
 
-            List<Movie> moviesToDisplay = Arrays.asList(cachedAllMovies);
+            List<Movie> moviesToDisplay = new ArrayList<>(Arrays.asList(cachedAllMovies));
 
             // Filter by selected genre
             if (genreName != null && !genreName.isEmpty() && !"All Genres".equals(genreName)) {
-                int genreId = Arrays.stream(cachedGenres)
-                        .filter(g -> g.genreName.equals(genreName))
-                        .map(g -> g.genreId)
-                        .findFirst()
-                        .orElse(0);
+                // Find the genre ID from the cached genres
+                int targetGenreId = -1;
+                for (Genre g : cachedGenres) {
+                    if (g.genreName.equals(genreName)) {
+                        targetGenreId = g.genreId;
+                        break;
+                    }
+                }
 
-                if (genreId > 0) {
-                    moviesToDisplay = Arrays.asList(dashboardModel.getMoviesByGenre(currentAdminId, genreId));
+                // Filter movies that belong to this genre
+                if (targetGenreId > 0) {
+                    final int genreIdToFilter = targetGenreId;
+                    List<Movie> filteredByGenre = new ArrayList<>();
+
+                    for (Movie movie : moviesToDisplay) {
+                        try {
+                            Genre[] movieGenres = AdminParentModel.adminServices.getMovieGenres(currentAdminId, movie.movieId);
+                            if (movieGenres != null) {
+                                for (Genre g : movieGenres) {
+                                    if (g.genreId == genreIdToFilter) {
+                                        filteredByGenre.add(movie);
+                                        break;
+                                    }
+                                }
+                            }
+                        } catch (Exception e) {
+                            System.err.println("Error checking genres for movie " + movie.movieId + ": " + e.getMessage());
+                        }
+                    }
+                    moviesToDisplay = filteredByGenre;
                 }
             }
 
-            // Display only in All Movies table
+            // Filter by search query
+            if (searchQuery != null && !searchQuery.isEmpty()) {
+                final String query = searchQuery;
+                moviesToDisplay = moviesToDisplay.stream()
+                        .filter(m -> m.movieTitle.toLowerCase().contains(query))
+                        .collect(Collectors.toList());
+            }
+
+            // Display results in All Movies table
             view.setAllMoviesTableData(moviesToDisplay);
+            view.setStatus("Showing " + moviesToDisplay.size() + " movie(s)", false);
 
         } catch (AuthenticationException e) {
             System.err.println("Authentication failed for movie data: " + e.getMessage());
+            view.setStatus("Authentication failed", true);
         } catch (Exception e) {
             System.err.println("Error loading movie data: " + e.getMessage());
+            view.setStatus("Error loading movies: " + e.getMessage(), true);
         }
     }
 
     private void handleGenreFilterChange() {
         String selectedGenre = view.getSelectedGenre();
+        String searchQuery = view.getSearchQuery();
+        loadAllMovieData(selectedGenre, searchQuery);
+    }
+
+    private void handleSearch() {
+        String selectedGenre = view.getSelectedGenre();
+        String searchQuery = view.getSearchQuery();
+
+        if (searchQuery.isEmpty()) {
+            view.setStatus("Please enter a search term", true);
+            return;
+        }
+
+        loadAllMovieData(selectedGenre, searchQuery);
+    }
+
+    private void handleClearSearch() {
+        view.clearSearch();
+        handleRefresh();
+    }
+
+    private void handleRefresh() {
         cachedAllMovies = new Movie[0]; // Clear cache to reload
-        loadAllMovieData(selectedGenre);
+        loadTotalRevenue();
+        String selectedGenre = view.getSelectedGenre();
+        loadAllMovieData(selectedGenre, "");
+        view.setStatus("✅ Dashboard refreshed", false);
     }
 
     private void handleMovieListings(String category) {
