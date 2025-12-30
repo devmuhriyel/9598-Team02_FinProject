@@ -37,7 +37,11 @@ public class AdminSignupController {
             view.clearFields();
             view.clearError();
             authManager.showLoginView();
-        } catch (InvalidInputException | AuthenticationException e) {
+        } catch (InvalidInputException e) {
+            // Display the custom message field from the exception
+            view.showError(e.message);
+        } catch (AuthenticationException e) {
+            // Display authentication error message
             view.showError(e.getMessage());
         } catch (IllegalArgumentException e) {
             view.showError(e.getMessage());
