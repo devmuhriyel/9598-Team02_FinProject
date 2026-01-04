@@ -95,6 +95,7 @@ public class MovieNavigationManager {
     /**
      * Show seat selection for a specific schedule - FIXED VERSION
      */
+    // In the showSeatSelection method, update this part:
     public void showSeatSelection(int scheduleId) {
         System.out.println("💺 Opening seat selection for schedule ID: " + scheduleId);
 
@@ -112,8 +113,8 @@ public class MovieNavigationManager {
             Pane seatPane = loader.load();
             seatView = loader.getController();
 
-            // Create Model
-            seatModel = new CustomerSeatSelectionModel(scheduleId);
+            // ✅ FIX: Pass customer ID and session token
+            seatModel = new CustomerSeatSelectionModel(scheduleId, customer.customerId, sessionToken);
 
             // Create Controller (pass null for navigation manager since we're using modal window)
             seatController = new CustomerSeatSelectionController(seatView, seatModel, this);

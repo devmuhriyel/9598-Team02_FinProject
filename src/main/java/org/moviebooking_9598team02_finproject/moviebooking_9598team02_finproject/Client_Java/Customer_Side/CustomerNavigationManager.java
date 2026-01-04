@@ -253,8 +253,8 @@ public class CustomerNavigationManager {
                 new SessionValidator.SessionValidationCallback() {
                     @Override
                     public boolean validateSession() {
-                        CustomerLoginModel tempModel = new CustomerLoginModel();
-                        // 🔥 Pass sessionToken directly
+                        // ✅ FIX: Create model with session data
+                        CustomerHomeModel tempModel = new CustomerHomeModel(customer.customerId, sessionToken);
                         return tempModel.validateSession(customer.customerId, sessionToken);
                     }
 

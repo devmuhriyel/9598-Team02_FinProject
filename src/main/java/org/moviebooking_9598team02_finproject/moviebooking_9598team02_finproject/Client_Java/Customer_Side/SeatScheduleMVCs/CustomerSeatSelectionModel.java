@@ -9,8 +9,11 @@ public class CustomerSeatSelectionModel extends CustomerParentModel {
     private ClientService clientService;
     private int currentScheduleId;
 
-    public CustomerSeatSelectionModel( int scheduleId) {
+    // ✅ FIX: Accept session data in constructor
+    public CustomerSeatSelectionModel(int scheduleId, int customerId, String sessionToken) {
         this.currentScheduleId = scheduleId;
+        this.customerId = customerId;
+        this.sessionToken = sessionToken;
         this.clientService = clientServices;
     }
 
@@ -27,7 +30,8 @@ public class CustomerSeatSelectionModel extends CustomerParentModel {
     // Create booking
     public int createBooking(int customerId, String sessionToken, int scheduleId, int[] scheduleListSeatIds)
             throws AuthenticationException, SeatNotAvailableException, BookingException {
-        return clientService.createBooking(customerId, sessionToken, scheduleId, scheduleListSeatIds);
+        // ✅ Use stored session token instead of parameter
+        return clientService.createBooking(this.customerId, this.sessionToken, scheduleId, scheduleListSeatIds);
     }
 
     // Get schedule details with seat availability info
@@ -35,4 +39,3 @@ public class CustomerSeatSelectionModel extends CustomerParentModel {
         return clientService.getScheduleDetailsView(currentScheduleId);
     }
 }
-

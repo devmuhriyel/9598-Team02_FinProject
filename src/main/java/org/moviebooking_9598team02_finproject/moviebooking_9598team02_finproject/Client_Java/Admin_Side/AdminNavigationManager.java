@@ -110,8 +110,8 @@ public class AdminNavigationManager {
                 new SessionValidator.SessionValidationCallback() {
                     @Override
                     public boolean validateSession() {
-                        AdminParentModel tempModel = new AdminHomeModel();
-                        // 🔥 Pass sessionToken directly
+                        // ✅ FIX: Create model with session data
+                        AdminHomeModel tempModel = new AdminHomeModel(admin.adminId, sessionToken);
                         return tempModel.validateSession(admin.adminId, sessionToken);
                     }
 
@@ -252,7 +252,8 @@ public class AdminNavigationManager {
 
     public void showGenreMgmtView(){
         if (genreManager == null) {
-            genreManager = new AdminGenreManager(admin.adminId);
+            // ✅ FIX: Pass sessionToken
+            genreManager = new AdminGenreManager(admin.adminId, sessionToken);
         }
         Pane genreViewContent = genreManager.getGenrePane();
         if (genreViewContent == null) {
