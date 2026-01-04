@@ -16,6 +16,9 @@ import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject
 
 import java.io.IOException;
 
+/**
+ * ✅ UPDATED: AdminAuthNavManager with concurrent login support
+ */
 public class AdminAuthNavManager {
     private Stage authStage;
     private StackPane authStackPane;
@@ -25,6 +28,7 @@ public class AdminAuthNavManager {
 
     private AdminLoginController loginController;
     private AdminSignupController signupController;
+    private AdminLoginView loginView;
 
     public AdminAuthNavManager(Stage authStage) {
         this.authStage = authStage;
@@ -39,7 +43,7 @@ public class AdminAuthNavManager {
             // Load Login View
             FXMLLoader loginLoader = new FXMLLoader(getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/Admin/AdminLogin.fxml"));
             loginPane = loginLoader.load();
-            AdminLoginView loginView = loginLoader.getController();
+            loginView = loginLoader.getController();
             AdminLoginModel loginModel = new AdminLoginModel();
             loginController = new AdminLoginController(loginView, loginModel, this);
 
@@ -71,19 +75,41 @@ public class AdminAuthNavManager {
         authStage.setTitle("Admin Signup");
     }
 
-    public void openAdminHome(Admin admin) {
+    /**
+     * ✅ UPDATED: Now accepts sessionToken parameter
+     */
+    public void openAdminHome(Admin admin, String sessionToken) {
         // Close auth stage and open home in new stage
         Stage homeStage = new Stage();
-        new AdminNavigationManager(homeStage, this, admin);
+        new AdminNavigationManager(homeStage, this, admin, sessionToken); // ✅ Pass token
         authStage.close();
     }
 
-    public void reopenAuthStage() {
+    /**
+     * ✅ UPDATED: Can now show concurrent login message
+     */
+    public void reopenAuthStage(String message) {
         // Create fresh instances for returning to auth
         authStage = new Stage();
         authStackPane = new StackPane();
         authScene = new Scene(authStackPane, 600, 400);
         authStage.setScene(authScene);
+
+        // Reinitialize views
+        initializeAuthViews();
+
+        // Show message if provided
+        if (message != null && !message.isEmpty() && loginView != null) {
+            loginView.showError(message);
+        }
+
         showLoginView();
+    }
+
+    /**
+     * ✅ NEW: Overload for backward compatibility
+     */
+    public void reopenAuthStage() {
+        reopenAuthStage(null);
     }
 }

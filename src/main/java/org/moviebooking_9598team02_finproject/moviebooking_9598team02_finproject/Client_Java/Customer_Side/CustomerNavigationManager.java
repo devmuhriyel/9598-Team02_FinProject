@@ -3,6 +3,8 @@ package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finprojec
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
@@ -16,13 +18,13 @@ import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject
 import java.io.IOException;
 
 /**
- * CustomerNavigationManager - Manages customer home screen and all main sections
- * UPDATED VERSION - Implements proper MVC navigation like Admin
+ * ✅ UPDATED: CustomerNavigationManager with concurrent login detection
  */
 public class CustomerNavigationManager {
     private Stage homeStage;
     private CustomerAuthNavManager authNavManager;
     private Customer customer;
+    private String sessionToken; // ✅ Now properly stored
 
     private Pane homePane;
     private CustomerHomeController homeController;
@@ -40,12 +42,19 @@ public class CustomerNavigationManager {
     private MovieNavigationManager movieNavManager;
     private CustomerBookingNavManager bookingNavManager;
     private ProfileNavManager profileNavManager;
-    // Add other nav managers as needed (BookingNavManager, etc.)
 
-    public CustomerNavigationManager(Stage homeStage, CustomerAuthNavManager authNavManager, Customer customer) {
+    /**
+     * ✅ UPDATED: Now accepts sessionToken parameter
+     */
+    public CustomerNavigationManager(Stage homeStage, CustomerAuthNavManager authNavManager,
+                                     Customer customer, String sessionToken) {
         this.homeStage = homeStage;
         this.authNavManager = authNavManager;
         this.customer = customer;
+        this.sessionToken = sessionToken; // ✅ Properly store the token
+
+        System.out.println("🔑 Session token stored: " +
+                (sessionToken != null ? sessionToken.substring(0, 8) + "..." : "NULL"));
 
         // Initialize CORBA connection
         CustomerParentModel.initializeCORBAConnection(new String[]{});
@@ -84,13 +93,9 @@ public class CustomerNavigationManager {
 
     // ===== SECTION NAVIGATION METHODS =====
 
-    /**
-     * Show Browse Movies view - Uses MovieNavigationManager
-     */
     public void showBrowseMoviesView() {
         if (browseMoviesPane == null) {
             try {
-                // Initialize movie nav manager with proper MVC setup
                 movieNavManager = new MovieNavigationManager(customer);
                 browseMoviesPane = movieNavManager.getMovieBrowseView();
 
@@ -98,7 +103,7 @@ public class CustomerNavigationManager {
                     System.err.println("ERROR: Movie Browse returned null pane!");
                     browseMoviesPane = createPlaceholder("Browse Movies", "Error Loading");
                 } else {
-                    System.out.println("✅ Browse Movies loaded successfully with MVC wiring");
+                    System.out.println("✅ Browse Movies loaded successfully");
                 }
             } catch (Exception e) {
                 System.err.println("❌ ERROR initializing Browse Movies:");
@@ -109,19 +114,14 @@ public class CustomerNavigationManager {
         loadContentPane(browseMoviesPane);
     }
 
-    /**
-     * Switch to My Bookings view following the Movie style
-     */
     public void showMyBookingsView() {
         if (myBookingsPane == null) {
             try {
-                // Initialize booking nav manager with proper MVC setup
                 bookingNavManager = new CustomerBookingNavManager(customer);
                 myBookingsPane = bookingNavManager.getMyBookingsView();
 
                 if (myBookingsPane == null) {
                     System.err.println("ERROR: My Bookings returned null pane!");
-                    // Fixed method name: createPlaceholder instead of createPlaceholderPane
                     myBookingsPane = createPlaceholder("My Bookings", "Error Loading View");
                 } else {
                     System.out.println("✅ My Bookings loaded successfully");
@@ -133,15 +133,11 @@ public class CustomerNavigationManager {
             }
         }
 
-        // Fixed variable: Use homeView.getPanesContainer() instead of panesContainer
         if (homeView != null && homeView.getPanesContainer() != null) {
             homeView.getPanesContainer().getChildren().setAll(myBookingsPane);
         }
     }
 
-    /**
-     * Show My Profile view
-     */
     public void showMyProfileView() {
         if (myProfilePane == null) {
             try {
@@ -150,12 +146,12 @@ public class CustomerNavigationManager {
 
                 if (myProfilePane == null) {
                     System.err.println("ERROR: My Profile returned null pane!");
-                    myProfilePane = createPlaceholder("My Profiile", "Error Loading View");
+                    myProfilePane = createPlaceholder("My Profile", "Error Loading View");
                 } else {
-                    System.out.println("My Profile loaded successfully");
+                    System.out.println("✅ My Profile loaded successfully");
                 }
             } catch (Exception e) {
-                System.err.println("ERROR initializing My Profile:");
+                System.err.println("❌ ERROR initializing My Profile:");
                 e.printStackTrace();
                 myBookingsPane = createPlaceholder("My Profile", "Error: " + e.getMessage());
             }
@@ -163,9 +159,6 @@ public class CustomerNavigationManager {
         loadContentPane(myProfilePane);
     }
 
-    /**
-     * Show Settings view
-     */
     public void showSettingsView() {
         if (settingsPane == null) {
             try {
@@ -186,9 +179,6 @@ public class CustomerNavigationManager {
 
     // ===== HELPER METHODS =====
 
-    /**
-     * Load a pane into the main content container
-     */
     private void loadContentPane(Pane pane) {
         try {
             StackPane container = homeView.getPanesContainer();
@@ -201,10 +191,23 @@ public class CustomerNavigationManager {
     }
 
     /**
-     * Logout and return to authentication screen
+     * ✅ UPDATED: Logout with proper session token
      */
     public void logoutAndReturnToAuth() {
-        cleanup(); // 🆕 ADD THIS LINE
+        cleanup();
+
+        try {
+            if (CustomerParentModel.clientServices != null && sessionToken != null) {
+                CustomerParentModel.clientServices.logoutCustomer(
+                        customer.customerId,
+                        sessionToken // ✅ Use the stored token
+                );
+                System.out.println("✅ Server session cleared for customer: " + customer.customerId);
+            }
+        } catch (Exception e) {
+            System.err.println("⚠️ Error during server logout: " + e.getMessage());
+        }
+
         try {
             homeStage.close();
             authNavManager.reopenAuthStage();
@@ -215,26 +218,20 @@ public class CustomerNavigationManager {
         }
     }
 
-    /**
-     * Create a placeholder pane for sections not yet implemented
-     */
     private Pane createPlaceholder(String title, String description) {
         Pane placeholder = new Pane();
         placeholder.setStyle("-fx-background-color: #1A1A1A;");
 
-        // Title
         javafx.scene.control.Label titleLabel = new javafx.scene.control.Label(title);
         titleLabel.setStyle("-fx-text-fill: white; -fx-font-size: 32px; -fx-font-weight: bold;");
         titleLabel.setLayoutX(50);
         titleLabel.setLayoutY(50);
 
-        // Description
         javafx.scene.control.Label descLabel = new javafx.scene.control.Label(description);
         descLabel.setStyle("-fx-text-fill: #CCCCCC; -fx-font-size: 16px;");
         descLabel.setLayoutX(50);
         descLabel.setLayoutY(100);
 
-        // Coming Soon message
         javafx.scene.control.Label statusLabel = new javafx.scene.control.Label("🔨 Coming Soon...");
         statusLabel.setStyle("-fx-text-fill: #CCCCCC; -fx-font-size: 14px; -fx-font-style: italic;");
         statusLabel.setLayoutX(50);
@@ -244,6 +241,9 @@ public class CustomerNavigationManager {
         return placeholder;
     }
 
+    /**
+     * ✅ UPDATED: Session validation with concurrent login detection
+     */
     private void startSessionValidation() {
         sessionValidator = new SessionValidator(
                 customer.customerId,
@@ -251,8 +251,7 @@ public class CustomerNavigationManager {
                 new SessionValidator.SessionValidationCallback() {
                     @Override
                     public boolean validateSession() {
-                        // Create a temporary instance since CustomerParentModel is abstract
-                        CustomerParentModel tempModel = new CustomerLoginModel(); // or any concrete subclass
+                        CustomerLoginModel tempModel = new CustomerLoginModel();
                         return tempModel.validateSession(customer.customerId);
                     }
 
@@ -264,19 +263,37 @@ public class CustomerNavigationManager {
         );
 
         sessionValidator.start();
-        System.out.println("Session validation started for customer: " + customer.customerId);
+        System.out.println("🔄 Session validation started for customer: " + customer.customerId);
     }
 
+    /**
+     * ✅ UPDATED: Shows alert for concurrent login
+     */
     private void handleSessionExpired() {
-        System.out.println("Customer session expired: " + customer.customerId);
+        System.out.println("🚨 Customer session expired: " + customer.customerId);
         cleanup();
+
         Platform.runLater(() -> {
             try {
-                logoutAndReturnToAuth();
+                // Show alert dialog
+                Alert alert = new Alert(Alert.AlertType.WARNING);
+                alert.setTitle("Session Terminated");
+                alert.setHeaderText("You have been logged out");
+                alert.setContentText("Your account has been logged in from another location. " +
+                        "You have been automatically logged out for security reasons.");
+                alert.showAndWait();
+
+                // Close home stage
+                homeStage.close();
+
+                // Reopen auth stage with message
+                authNavManager.reopenAuthStage(
+                        "Your account was logged in from another location. Please log in again."
+                );
+
             } catch (Exception e) {
-                System.err.println("Error during logout: " + e.getMessage());
+                System.err.println("❌ Error during forced logout: " + e.getMessage());
                 e.printStackTrace();
-                // Fallback: try to close stage directly
                 if (homeStage != null) {
                     homeStage.close();
                 }

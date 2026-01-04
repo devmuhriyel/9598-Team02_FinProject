@@ -16,6 +16,9 @@ import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject
 
 import java.io.IOException;
 
+/**
+ * ✅ UPDATED: CustomerAuthNavManager with concurrent login support
+ */
 public class CustomerAuthNavManager {
     private Stage authStage;
     private StackPane authStackPane;
@@ -25,6 +28,7 @@ public class CustomerAuthNavManager {
 
     private CustomerLoginController loginController;
     private CustomerSignupController signupController;
+    private CustomerLoginView loginView;
 
     public CustomerAuthNavManager(Stage authStage) {
         this.authStage = authStage;
@@ -39,7 +43,7 @@ public class CustomerAuthNavManager {
             // Load Login View
             FXMLLoader loginLoader = new FXMLLoader(getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/Customer/CustomerLogin.fxml"));
             loginPane = loginLoader.load();
-            CustomerLoginView loginView = loginLoader.getController();
+            loginView = loginLoader.getController();
             CustomerLoginModel loginModel = new CustomerLoginModel();
             loginController = new CustomerLoginController(loginView, loginModel, this);
 
@@ -71,19 +75,46 @@ public class CustomerAuthNavManager {
         authStage.setTitle("Customer Signup");
     }
 
-    public void openCustomerHome(Customer customer) {
+    /**
+     * ✅ UPDATED: Now accepts sessionToken parameter
+     */
+    public void openCustomerHome(Customer customer, String sessionToken) {
         // Close auth stage and open home in new stage
         Stage homeStage = new Stage();
-        new CustomerNavigationManager(homeStage, this, customer);
+        CustomerNavigationManager navManager = new CustomerNavigationManager(
+                homeStage,
+                this,
+                customer,
+                sessionToken // ✅ Pass the session token
+        );
         authStage.close();
     }
 
-    public void reopenAuthStage() {
+    /**
+     * ✅ UPDATED: Can now show concurrent login message
+     */
+    public void reopenAuthStage(String message) {
         // Create fresh instances for returning to auth
         authStage = new Stage();
         authStackPane = new StackPane();
         authScene = new Scene(authStackPane, 600, 400);
         authStage.setScene(authScene);
+
+        // Reinitialize views
+        initializeAuthViews();
+
+        // Show message if provided
+        if (message != null && !message.isEmpty() && loginView != null) {
+            loginView.showError(message);
+        }
+
         showLoginView();
+    }
+
+    /**
+     * ✅ NEW: Overload for backward compatibility
+     */
+    public void reopenAuthStage() {
+        reopenAuthStage(null);
     }
 }
