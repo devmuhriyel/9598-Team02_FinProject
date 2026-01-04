@@ -32,6 +32,10 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     // ===== AUTHENTICATION METHODS =====
+    // ========================================
+// REPLACE loginAdmin() in MBAdminServant.java
+// ========================================
+
     @Override
     public AdminLoginResponse loginAdmin(String username, String password) throws AuthenticationException {
         try (Connection connection = DatabaseAccess.getConnection()) {
@@ -46,16 +50,13 @@ public class MBAdminServant extends AdminServicePOA {
                     int adminId = rs.getInt("admin_id");
 
                     synchronized (SessionManager.getAdminSessionsLock()) {
-                        // ✅ FIX: Check if already logged in BEFORE creating session
-                        if (SessionManager.isAdminLoggedIn(adminId)) {
-                            System.out.println("⚠️ Concurrent login rejected: Admin " + adminId + " already logged in");
-                            throw new AuthenticationException(
-                                    "This account is already logged in from another device. " +
-                                            "Please log out from the other device first, or wait 30 minutes for the session to expire."
-                            );
-                        }
+                        // 🔥 REMOVE THE CHECK - Let SessionManager handle concurrent login
+                        // OLD (WRONG):
+                        // if (SessionManager.isAdminLoggedIn(adminId)) {
+                        //     throw new AuthenticationException("Already logged in...");
+                        // }
 
-                        // Create new session and get token
+                        // 🔥 FIX: Just create session - SessionManager will remove old one
                         String sessionToken = SessionManager.createAdminSession(adminId, rs.getString("username"));
 
                         // Build response
@@ -2632,8 +2633,10 @@ public class MBAdminServant extends AdminServicePOA {
             connection = DatabaseAccess.getConnection();
             connection.setAutoCommit(false); // ✅ START TRANSACTION
 
-            // 1️⃣ Get the booking_id for this payment
-            String getBookingQuery = "SELECT booking_id FROM payments WHERE payment_id = ?";
+            // 1️⃣ Get the booking_id AND schedule_id for this payment
+            String getBookingQuery = "SELECT b.booking_id, b.schedule_id FROM bookings b " +
+                    "JOIN payments p ON b.booking_id = p.booking_id " +
+                    "WHERE p.payment_id = ?";
             PreparedStatement getBookingStmt = connection.prepareStatement(getBookingQuery);
             getBookingStmt.setInt(1, paymentId);
             ResultSet bookingRs = getBookingStmt.executeQuery();
@@ -2644,6 +2647,7 @@ public class MBAdminServant extends AdminServicePOA {
             }
 
             int bookingId = bookingRs.getInt("booking_id");
+            int scheduleId = bookingRs.getInt("schedule_id");
 
             // 2️⃣ Update payment status
             String updatePaymentQuery = "UPDATE payments SET payment_status = ?, updated_at = NOW() WHERE payment_id = ?";
@@ -2693,12 +2697,13 @@ public class MBAdminServant extends AdminServicePOA {
                         "status = 'available', " +
                         "booking_id = NULL, " +
                         "updated_at = NOW() " +
-                        "WHERE booking_id = ?";
+                        "WHERE booking_id = ? AND schedule_id = ?";
                 PreparedStatement releaseStmt = connection.prepareStatement(releaseSeatsQuery);
                 releaseStmt.setInt(1, bookingId);
+                releaseStmt.setInt(2, scheduleId); // 🔥 FIX: Include schedule_id for proper targeting
                 int seatsReleased = releaseStmt.executeUpdate();
 
-                System.out.println("✅ Released " + seatsReleased + " seats back to available");
+                System.out.println("✅ Released " + seatsReleased + " seats back to available (Schedule " + scheduleId + ")");
             }
 
             connection.commit(); // ✅ COMMIT TRANSACTION

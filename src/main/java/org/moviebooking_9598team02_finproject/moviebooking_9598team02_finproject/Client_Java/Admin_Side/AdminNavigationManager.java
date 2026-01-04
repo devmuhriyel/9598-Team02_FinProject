@@ -112,7 +112,8 @@ public class AdminNavigationManager {
                     @Override
                     public boolean validateSession() {
                         AdminParentModel tempModel = new AdminHomeModel();
-                        return tempModel.validateSession(admin.adminId);
+                        // 🔥 Pass sessionToken directly
+                        return tempModel.validateSession(admin.adminId, sessionToken);
                     }
 
                     @Override
@@ -148,7 +149,7 @@ public class AdminNavigationManager {
 
                 // Reopen auth stage with message
                 authNavManager.reopenAuthStage(
-                        "Your account was logged in from another location. Please log in again."
+                        "Your account was logged in from another location."
                 );
 
             } catch (Exception e) {
@@ -170,7 +171,7 @@ public class AdminNavigationManager {
         // Call logout on server to invalidate session
         if (admin != null && AdminParentModel.adminServices != null) {
             try {
-                AdminParentModel.adminServices.logoutAdmin(admin.adminId);
+                AdminParentModel.adminServices.logoutAdmin(admin.adminId, sessionToken);
                 System.out.println("✅ Admin " + admin.adminId + " logged out from server");
             } catch (Exception e) {
                 System.err.println("⚠️ Error calling logout on server: " + e.getMessage());

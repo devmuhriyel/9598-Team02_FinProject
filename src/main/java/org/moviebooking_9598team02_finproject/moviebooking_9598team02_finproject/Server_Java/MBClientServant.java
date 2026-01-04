@@ -70,16 +70,13 @@ public class MBClientServant extends ClientServicePOA {
                     int customerId = rs.getInt("customer_id");
 
                     synchronized (SessionManager.getCustomerSessionsLock()) {
-                        // ✅ FIX: Prevent concurrent logins
-                        if (SessionManager.isCustomerLoggedIn(customerId)) {
-                            System.out.println("⚠️ Concurrent login rejected: Customer " + customerId + " already logged in");
-                            throw new AuthenticationException(
-                                    "This account is already logged in from another device. " +
-                                            "Please log out from the other device first, or wait 30 minutes for the session to expire."
-                            );
-                        }
+                        // 🔥 REMOVE THE CHECK - Let SessionManager handle concurrent login
+                        // OLD (WRONG):
+                        // if (SessionManager.isCustomerLoggedIn(customerId)) {
+                        //     throw new AuthenticationException("Already logged in...");
+                        // }
 
-                        // Create session and get token
+                        // 🔥 FIX: Just create session - SessionManager will remove old one
                         String sessionToken = SessionManager.createCustomerSession(customerId, rs.getString("username"));
 
                         // Build response

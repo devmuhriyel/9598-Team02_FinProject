@@ -46,7 +46,7 @@ abstract public class GenreNameListHelper
   public static String[] read (org.omg.CORBA.portable.InputStream istream)
   {
     String value[] = null;
-    value = GenreNameListHelper.read (istream);
+    value = org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.GenreNameListHelper.read (istream);
     return value;
   }
 

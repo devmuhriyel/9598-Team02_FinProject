@@ -30,7 +30,7 @@ abstract public class BookingListHelper
   {
     if (__typeCode == null)
     {
-      __typeCode = BookingHelper.type ();
+      __typeCode = org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.BookingHelper.type ();
       __typeCode = org.omg.CORBA.ORB.init ().create_sequence_tc (0, __typeCode);
       __typeCode = org.omg.CORBA.ORB.init ().create_alias_tc (BookingListHelper.id (), "BookingList", __typeCode);
       __typeCode = org.omg.CORBA.ORB.init ().create_alias_tc (org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingAdmin.BookingListHelper.id (), "BookingList", __typeCode);

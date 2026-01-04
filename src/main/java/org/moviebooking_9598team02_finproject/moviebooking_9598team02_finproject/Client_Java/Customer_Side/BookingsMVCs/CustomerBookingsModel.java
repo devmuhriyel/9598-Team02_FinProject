@@ -13,19 +13,28 @@ import java.util.List;
 public class CustomerBookingsModel extends CustomerParentModel {
     private final String customerName;
 
-    public CustomerBookingsModel( String customerName) {
+    // ✅ FIX: Constructor that initializes session data
+    public CustomerBookingsModel(int customerId, String sessionToken, String customerName) {
+        // Set parent class fields
+        this.customerId = customerId;
+        this.sessionToken = sessionToken;
+        this.username = customerName; // or leave null if not needed
         this.customerName = customerName;
+
+        System.out.println("✅ CustomerBookingsModel initialized with customerId: " + customerId +
+                ", sessionToken: " + (sessionToken != null ? sessionToken.substring(0, 8) + "..." : "NULL"));
     }
 
     public List<BookingDetails> fetchHistory() throws AuthenticationException {
-        // Calls your existing server method
+        // ✅ Now customerId and sessionToken are properly set!
         BookingDetails[] results = clientServices.getCustomerBookingsWithDetails(customerId, sessionToken);
         return Arrays.asList(results);
     }
 
+    // ... rest of existing methods unchanged ...
+
     public boolean isUpcoming(BookingDetails item) {
         try {
-            // JDK 8 LocalDateTime parsing
             String dateTimeStr = item.screeningDate + " " + item.screeningTime;
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
             LocalDateTime showTime = LocalDateTime.parse(dateTimeStr, formatter);
@@ -38,7 +47,6 @@ public class CustomerBookingsModel extends CustomerParentModel {
     public List<BookingDetails> filter(List<BookingDetails> all, String timeFilter, String statusFilter) {
         List<BookingDetails> filtered = new ArrayList<>();
         for (BookingDetails b : all) {
-            // Always exclude cancelled and failed bookings from the main list
             String status = b.bookingStatus.toLowerCase();
             if ("cancelled".equals(status) || "failed".equals(status)) {
                 continue;

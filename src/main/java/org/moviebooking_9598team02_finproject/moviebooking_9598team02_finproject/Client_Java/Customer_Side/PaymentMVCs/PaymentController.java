@@ -10,6 +10,9 @@ public class PaymentController {
     private int bookingId;
     private double totalAmount;
 
+    // 🔥 NEW: Track payment state
+    private boolean paymentSubmitted = false;
+
     public PaymentController(PaymentView view, PaymentModel model) {
         this.view = view;
         this.model = model;
@@ -22,13 +25,11 @@ public class PaymentController {
         view.setPaymentMethodChangeAction(this::handleMethodChange);
     }
 
-    // ✅ FIXED: Accepts 4 arguments (Name included)
     public void setPaymentData(int custId, String custName, int bookId, double amount) {
         this.customerId = custId;
         this.bookingId = bookId;
         this.totalAmount = amount;
 
-        // ✅ FIXED: Calls valid methods in PaymentView
         view.setCustomerDetails(custName, String.valueOf(bookId));
         view.setFinancials(amount);
     }
@@ -64,6 +65,10 @@ public class PaymentController {
         new Thread(() -> {
             try {
                 int paymentId = model.processPayment(customerId, model.getSessionToken(), bookingId, totalAmount, method, txnId);
+
+                // 🔥 FIX: Mark payment as submitted
+                paymentSubmitted = true;
+
                 view.runOnUIThread(() -> {
                     view.showStatus("SUCCESS! Payment ID: " + paymentId + " (Status: PENDING)", false);
                     view.setCancelButtonText("Close Receipt");
@@ -81,16 +86,21 @@ public class PaymentController {
     }
 
     private void handleCancel() {
+        // 🔥 FIX: If payment was already submitted, just close window
+        if (paymentSubmitted) {
+            view.closeWindow();
+            return;
+        }
+
+        // Otherwise, cancel the booking
         view.setConfirmButtonEnabled(false);
         view.showStatus("Cancelling booking...", false);
 
         new Thread(() -> {
             try {
-                // Call the server to cancel the booking
                 model.cancelBooking(customerId, bookingId);
                 view.runOnUIThread(() -> {
                     view.showStatus("Booking cancelled successfully!", false);
-                    // Close window after showing the message for 2 seconds
                     new Thread(() -> {
                         try { Thread.sleep(2000); }
                         catch (InterruptedException e) { e.printStackTrace(); }

@@ -19,6 +19,7 @@ public class MovieNavigationManager {
 
     private Customer customer;
     private Pane movieBrowsePane;
+    private String sessionToken; // ✅ ADD
     private Pane scheduleSelectionPane;
     private Pane seatSelectionPane;
 
@@ -32,8 +33,9 @@ public class MovieNavigationManager {
     private CustomerSeatSelectionModel seatModel;
     private CustomerSeatSelectionView seatView;
 
-    public MovieNavigationManager(Customer customer) {
+    public MovieNavigationManager(Customer customer, String sessionToken) {
         this.customer = customer;
+        this.sessionToken = sessionToken;
     }
 
     /**
@@ -153,10 +155,12 @@ public class MovieNavigationManager {
             Pane paymentPane = loader.load();
 
             PaymentView view = loader.getController();
-            PaymentModel model = new PaymentModel();
-            PaymentController controller = new PaymentController(view, model);
 
-            // ✅ FIXED: Passing 4 Arguments (Matches PaymentController)
+            // ✅ FIX: Initialize model with session data
+            // We need to get sessionToken from somewhere - add it to MovieNavigationManager
+            PaymentModel model = new PaymentModel(customer.customerId, getSessionToken());
+
+            PaymentController controller = new PaymentController(view, model);
             controller.setPaymentData(customer.customerId, customer.fullName, bookingId, totalAmount);
 
             Stage stage = new Stage();
@@ -202,6 +206,10 @@ public class MovieNavigationManager {
 
     public Customer getCustomer() {
         return customer;
+    }
+
+    private String getSessionToken() {
+        return sessionToken;
     }
 
     public CustomerMovieController getMovieController() {

@@ -9,34 +9,39 @@ import java.io.IOException;
 public class CustomerBookingNavManager {
 
     private Customer customer;
+    private String sessionToken; // ✅ ADD: Store session token
     private Pane bookingsViewPane;
 
-    public CustomerBookingNavManager(Customer customer) {
+    // ✅ FIX: Constructor now accepts sessionToken
+    public CustomerBookingNavManager(Customer customer, String sessionToken) {
         this.customer = customer;
+        this.sessionToken = sessionToken;
     }
 
     public Pane getMyBookingsView() {
         if (bookingsViewPane == null) {
             try {
-                // 1. Define the path string
                 String fxmlPath = "/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/Customer/CustomerBookings.fxml";
 
-                // 2. Check if resource exists
                 java.net.URL resource = getClass().getResource(fxmlPath);
                 if (resource == null) {
                     System.err.println("❌ FXML FILE NOT FOUND AT: " + fxmlPath);
-                    System.err.println("Please check your src/main/resources folder structure!");
                     return null;
                 }
 
                 FXMLLoader loader = new FXMLLoader(resource);
 
-                // Strict MVC Setup
                 CustomerBookingsView view = new CustomerBookingsView();
                 loader.setController(view);
                 VBox root = loader.load();
 
-                CustomerBookingsModel model = new CustomerBookingsModel(customer.fullName);
+                // ✅ FIX: Pass session data to model
+                CustomerBookingsModel model = new CustomerBookingsModel(
+                        customer.customerId,
+                        sessionToken,
+                        customer.fullName
+                );
+
                 new CustomerBookingsController(view, model);
 
                 bookingsViewPane = root;

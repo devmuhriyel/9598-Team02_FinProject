@@ -30,7 +30,7 @@ abstract public class MovieScheduleListHelper
   {
     if (__typeCode == null)
     {
-      __typeCode = MovieScheduleHelper.type ();
+      __typeCode = org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.MovieScheduleHelper.type ();
       __typeCode = org.omg.CORBA.ORB.init ().create_sequence_tc (0, __typeCode);
       __typeCode = org.omg.CORBA.ORB.init ().create_alias_tc (MovieScheduleListHelper.id (), "MovieScheduleList", __typeCode);
       __typeCode = org.omg.CORBA.ORB.init ().create_alias_tc (org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingAdmin.MovieScheduleListHelper.id (), "MovieScheduleList", __typeCode);
@@ -46,13 +46,13 @@ abstract public class MovieScheduleListHelper
   public static MovieSchedule[] read (org.omg.CORBA.portable.InputStream istream)
   {
     MovieSchedule value[] = null;
-    value = MovieScheduleListHelper.read (istream);
+    value = org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.MovieScheduleListHelper.read (istream);
     return value;
   }
 
   public static void write (org.omg.CORBA.portable.OutputStream ostream, MovieSchedule[] value)
   {
-    MovieScheduleListHelper.write (ostream, value);
+    org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.MovieScheduleListHelper.write (ostream, value);
   }
 
 }

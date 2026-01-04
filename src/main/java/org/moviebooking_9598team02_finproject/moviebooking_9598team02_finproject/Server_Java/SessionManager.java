@@ -10,21 +10,13 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 /**
- * ✅ UPDATED SessionManager - Handles concurrent login detection
- *
- * NEW FEATURE: When a user logs in from another device:
- * 1. Old session is marked as "forcibly terminated"
- * 2. SessionValidator on the old client detects this
- * 3. Old client is logged out with notification
- * 4. New session is created successfully
+ * ✅ FIXED SessionManager - Proper concurrent login prevention
  */
 public class SessionManager {
 
-    // Maps userId -> SessionInfo (stores active sessions)
     private static final ConcurrentMap<Integer, SessionInfo> adminSessions = new ConcurrentHashMap<>();
     private static final ConcurrentMap<Integer, SessionInfo> customerSessions = new ConcurrentHashMap<>();
 
-    // Maps sessionToken -> userId (for fast token validation)
     private static final ConcurrentMap<String, Integer> adminTokens = new ConcurrentHashMap<>();
     private static final ConcurrentMap<String, Integer> customerTokens = new ConcurrentHashMap<>();
 
@@ -39,7 +31,7 @@ public class SessionManager {
         public LocalDateTime loginTime;
         public LocalDateTime lastActivityTime;
         public String ipAddress;
-        public boolean forciblyTerminated; // 🆕 NEW: Flag for concurrent login detection
+        public boolean forciblyTerminated;
 
         public SessionInfo(int userId, String username, String sessionToken) {
             this.userId = userId;
@@ -47,7 +39,7 @@ public class SessionManager {
             this.sessionToken = sessionToken;
             this.loginTime = LocalDateTime.now();
             this.lastActivityTime = LocalDateTime.now();
-            this.forciblyTerminated = false; // 🆕 Default: not terminated
+            this.forciblyTerminated = false;
         }
 
         public boolean isExpired() {
@@ -58,7 +50,6 @@ public class SessionManager {
             this.lastActivityTime = LocalDateTime.now();
         }
 
-        // 🆕 NEW: Mark session as forcibly terminated
         public void markAsTerminated() {
             this.forciblyTerminated = true;
         }
@@ -75,7 +66,7 @@ public class SessionManager {
                 }
             }, CLEANUP_INTERVAL_MINUTES * 60 * 1000, CLEANUP_INTERVAL_MINUTES * 60 * 1000);
 
-            System.out.println("✅ SessionManager initialized - 30min timeout, concurrent login detection enabled");
+            System.out.println("✅ SessionManager initialized - 30min timeout, concurrent login prevention enabled");
         }
     }
 
@@ -94,26 +85,30 @@ public class SessionManager {
     // ===== ADMIN SESSION MANAGEMENT =====
 
     /**
-     * 🆕 UPDATED: Creates admin session - MARKS OLD SESSION AS TERMINATED
-     * Old session is NOT destroyed immediately - client will detect it
+     * 🔥 FIXED: Completely removes old session before creating new one
      */
     public static String createAdminSession(int adminId, String username) {
         synchronized (adminSessions) {
-            // 🆕 FIX: Mark old session as terminated (don't destroy it yet)
+            // 🔥 FIX: FULLY REMOVE old session (don't just mark as terminated)
             SessionInfo existingSession = adminSessions.get(adminId);
             if (existingSession != null) {
-                existingSession.markAsTerminated();
-                System.out.println("⚠️ Admin " + adminId + " logged in from another location - marking old session as terminated");
+                System.out.println("⚠️ Admin " + adminId + " logged in from another location - REMOVING old session");
 
                 // Remove old token mapping
                 adminTokens.remove(existingSession.sessionToken);
+
+                // Mark as terminated (for any ongoing validation checks)
+                existingSession.markAsTerminated();
+
+                // 🔥 CRITICAL: Remove old session immediately
+                adminSessions.remove(adminId);
             }
 
             // Generate new token and create new session
             String sessionToken = UUID.randomUUID().toString();
             SessionInfo sessionInfo = new SessionInfo(adminId, username, sessionToken);
 
-            // Store new session (overwrites old one)
+            // Store new session
             adminSessions.put(adminId, sessionInfo);
             adminTokens.put(sessionToken, adminId);
 
@@ -123,8 +118,7 @@ public class SessionManager {
     }
 
     /**
-     * 🆕 UPDATED: Validates admin session - DETECTS CONCURRENT LOGIN
-     * Returns false if session was forcibly terminated (concurrent login)
+     * ✅ FIXED: Better validation with proper concurrent login detection
      */
     public static boolean validateAdminSession(int adminId, String sessionToken) {
         // Check if token exists and maps to correct user
@@ -142,9 +136,11 @@ public class SessionManager {
             return false;
         }
 
-        // 🆕 NEW: Check if session was forcibly terminated (concurrent login)
-        if (session.forciblyTerminated && !session.sessionToken.equals(sessionToken)) {
+        // 🔥 FIX: Check if THIS specific session was terminated
+        if (session.forciblyTerminated) {
             System.out.println("🚨 Admin " + adminId + " session terminated - concurrent login detected");
+            adminSessions.remove(adminId);
+            adminTokens.remove(sessionToken);
             return false;
         }
 
@@ -166,17 +162,11 @@ public class SessionManager {
         return true;
     }
 
-    /**
-     * Checks if admin is logged in (WITHOUT token validation)
-     */
     public static boolean isAdminLoggedIn(int adminId) {
         SessionInfo session = adminSessions.get(adminId);
         return session != null && !session.isExpired() && !session.forciblyTerminated;
     }
 
-    /**
-     * Overloaded method that validates with token
-     */
     public static boolean isAdminLoggedIn(int adminId, String sessionToken) {
         return validateAdminSession(adminId, sessionToken);
     }
@@ -196,18 +186,23 @@ public class SessionManager {
     // ===== CUSTOMER SESSION MANAGEMENT =====
 
     /**
-     * 🆕 UPDATED: Creates customer session - MARKS OLD SESSION AS TERMINATED
+     * 🔥 FIXED: Completely removes old session before creating new one
      */
     public static String createCustomerSession(int customerId, String username) {
         synchronized (customerSessions) {
-            // 🆕 FIX: Mark old session as terminated (don't destroy it yet)
+            // 🔥 FIX: FULLY REMOVE old session
             SessionInfo existingSession = customerSessions.get(customerId);
             if (existingSession != null) {
-                existingSession.markAsTerminated();
-                System.out.println("⚠️ Customer " + customerId + " logged in from another location - marking old session as terminated");
+                System.out.println("⚠️ Customer " + customerId + " logged in from another location - REMOVING old session");
 
                 // Remove old token mapping
                 customerTokens.remove(existingSession.sessionToken);
+
+                // Mark as terminated
+                existingSession.markAsTerminated();
+
+                // 🔥 CRITICAL: Remove old session immediately
+                customerSessions.remove(customerId);
             }
 
             String sessionToken = UUID.randomUUID().toString();
@@ -222,7 +217,7 @@ public class SessionManager {
     }
 
     /**
-     * 🆕 UPDATED: Validates customer session - DETECTS CONCURRENT LOGIN
+     * ✅ FIXED: Better validation
      */
     public static boolean validateCustomerSession(int customerId, String sessionToken) {
         Integer tokenUserId = customerTokens.get(sessionToken);
@@ -238,9 +233,11 @@ public class SessionManager {
             return false;
         }
 
-        // 🆕 NEW: Check if session was forcibly terminated (concurrent login)
-        if (session.forciblyTerminated && !session.sessionToken.equals(sessionToken)) {
+        // 🔥 FIX: Check if THIS specific session was terminated
+        if (session.forciblyTerminated) {
             System.out.println("🚨 Customer " + customerId + " session terminated - concurrent login detected");
+            customerSessions.remove(customerId);
+            customerTokens.remove(sessionToken);
             return false;
         }
 
@@ -259,32 +256,13 @@ public class SessionManager {
         return true;
     }
 
-    /**
-     * Checks if customer is logged in (WITHOUT token validation)
-     */
     public static boolean isCustomerLoggedIn(int customerId) {
         SessionInfo session = customerSessions.get(customerId);
         return session != null && !session.isExpired() && !session.forciblyTerminated;
     }
 
-    /**
-     * Overloaded method that validates with token
-     */
     public static boolean isCustomerLoggedIn(int customerId, String sessionToken) {
         return validateCustomerSession(customerId, sessionToken);
-    }
-
-    public static boolean validateCustomerToken(String token) {
-        Integer customerId = sessionTokens.get(token);
-        return customerId != null && isCustomerLoggedIn(customerId);
-    }
-
-    public static Integer getCustomerIdFromToken(String token) {
-        Integer customerId = sessionTokens.get(token);
-        if (customerId != null && isCustomerLoggedIn(customerId)) {
-            return customerId;
-        }
-        return null;
     }
 
     public static void removeCustomerSession(int customerId) {
