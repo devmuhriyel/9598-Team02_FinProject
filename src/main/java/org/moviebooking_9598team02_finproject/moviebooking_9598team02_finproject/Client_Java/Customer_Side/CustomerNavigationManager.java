@@ -310,7 +310,7 @@ public class CustomerNavigationManager {
         // Call logout on server to invalidate session
         if (customer != null && CustomerParentModel.clientServices != null) {
             try {
-                CustomerParentModel.clientServices.logoutCustomer(customer.customerId);
+                CustomerParentModel.clientServices.logoutCustomer(customer.customerId, sessionToken);
                 System.out.println("✅ Customer " + customer.customerId + " logged out from server");
             } catch (Exception e) {
                 System.err.println("⚠️ Error calling logout on server: " + e.getMessage());
