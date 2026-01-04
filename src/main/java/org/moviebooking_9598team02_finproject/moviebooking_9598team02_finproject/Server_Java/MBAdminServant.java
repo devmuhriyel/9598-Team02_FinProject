@@ -87,7 +87,7 @@ public class MBAdminServant extends AdminServicePOA {
         }
         
         SessionManager.removeAdminSession(adminId);
-        System.out.println("Admin " + adminId + " logged out successfully");
+        System.out.println("Admin " + adminId + " logged out successfully - session invalidated");
     }
 
     @Override

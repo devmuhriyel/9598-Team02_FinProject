@@ -289,6 +289,16 @@ public class CustomerNavigationManager {
             sessionValidator.stop();
             System.out.println("🛑 Session validator stopped for customer: " + customer.customerId);
         }
+        
+        // Call logout on server to invalidate session
+        if (customer != null && CustomerParentModel.clientServices != null) {
+            try {
+                CustomerParentModel.clientServices.logoutCustomer(customer.customerId);
+                System.out.println("✅ Customer " + customer.customerId + " logged out from server");
+            } catch (Exception e) {
+                System.err.println("⚠️ Error calling logout on server: " + e.getMessage());
+            }
+        }
     }
 
     // ===== GETTERS =====

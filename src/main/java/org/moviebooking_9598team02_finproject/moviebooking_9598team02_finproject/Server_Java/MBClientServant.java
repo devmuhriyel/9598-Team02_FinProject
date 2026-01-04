@@ -110,7 +110,7 @@ public class MBClientServant extends ClientServicePOA {
         }
         
         SessionManager.removeCustomerSession(customerId);
-        System.out.println("Customer " + customerId + " logged out successfully");
+        System.out.println("Customer " + customerId + " logged out successfully - session invalidated");
     }
 
     // ===== ACCOUNT MANAGEMENT METHODS =====

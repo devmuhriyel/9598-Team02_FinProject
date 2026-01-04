@@ -292,6 +292,19 @@ public class SessionManager {
         return sessionToken;
     }
 
+    public static boolean validateCustomerToken(String token) {
+        Integer customerId = sessionTokens.get(token);
+        return customerId != null && isCustomerLoggedIn(customerId);
+    }
+
+    public static Integer getCustomerIdFromToken(String token) {
+        Integer customerId = sessionTokens.get(token);
+        if (customerId != null && isCustomerLoggedIn(customerId)) {
+            return customerId;
+        }
+        return null;
+    }
+
     public static void removeCustomerSession(int customerId) {
         SessionInfo session = customerSessions.remove(customerId);
         if (session != null) {
