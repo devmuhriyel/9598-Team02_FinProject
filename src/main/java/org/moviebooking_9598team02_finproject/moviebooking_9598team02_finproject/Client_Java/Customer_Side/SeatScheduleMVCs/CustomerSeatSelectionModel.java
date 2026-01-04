@@ -7,11 +7,9 @@ import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject
 public class CustomerSeatSelectionModel extends CustomerParentModel {
 
     private ClientService clientService;
-    private int currentCustomerId;
     private int currentScheduleId;
 
-    public CustomerSeatSelectionModel(int customerId, int scheduleId) {
-        this.currentCustomerId = customerId;
+    public CustomerSeatSelectionModel( int scheduleId) {
         this.currentScheduleId = scheduleId;
         this.clientService = clientServices;
     }
@@ -27,17 +25,14 @@ public class CustomerSeatSelectionModel extends CustomerParentModel {
     }
 
     // Create booking
-    public int createBooking(int[] scheduleListSeatIds) throws AuthenticationException, SeatNotAvailableException, BookingException {
-        return clientService.createBooking(currentCustomerId, currentScheduleId, scheduleListSeatIds);
+    public int createBooking(int customerId, String sessionToken, int scheduleId, int[] scheduleListSeatIds)
+            throws AuthenticationException, SeatNotAvailableException, BookingException {
+        return clientService.createBooking(customerId, sessionToken, scheduleId, scheduleListSeatIds);
     }
 
     // Get schedule details with seat availability info
     public ScheduleDetails getScheduleDetailsView() throws ScheduleNotFoundException {
         return clientService.getScheduleDetailsView(currentScheduleId);
-    }
-
-    public int getCurrentCustomerId() {
-        return currentCustomerId;
     }
 }
 

@@ -7,10 +7,10 @@ import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject
 public class CustomerMovieModel extends CustomerParentModel {
 
     private ClientService clientService;
-    private int currentCustomerId;
 
-    public CustomerMovieModel(int customerId) {
-        this.currentCustomerId = customerId;
+
+    public CustomerMovieModel() {
+
         this.clientService = clientServices;
     }
 
@@ -110,16 +110,4 @@ public class CustomerMovieModel extends CustomerParentModel {
     public ScheduleDetails[] getAllSchedulesWithDetails() {
         return clientService.getAllSchedulesWithDetails();
     }
-
-    // ===== CUSTOMER ID SETTER =====
-
-    public void setCurrentCustomerId(int customerId) {
-        this.currentCustomerId = customerId;
-    }
-
-    public int getCurrentCustomerId() {
-        return currentCustomerId;
-    }
-
-
 }

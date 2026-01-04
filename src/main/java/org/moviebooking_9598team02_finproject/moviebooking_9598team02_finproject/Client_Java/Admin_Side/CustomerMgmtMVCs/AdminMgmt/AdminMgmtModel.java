@@ -4,28 +4,24 @@ import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.AdminParentModel;
 
 public class AdminMgmtModel extends AdminParentModel {
-    private int adminId;
 
     public AdminMgmtModel(int adminId) {
         this.adminId = adminId;
     }
 
-    public void setAdminId(int adminId) {
-        this.adminId = adminId;
-    }
 
     // ===== DATA OPERATIONS =====
 
     public Admin[] loadAllAdmins() throws AuthenticationException {
-        return adminServices.getAllAdmins(adminId);
+        return adminServices.getAllAdmins(adminId,  sessionToken);
     }
 
     public Admin[] searchAdmins(String searchString) throws AuthenticationException {
-        return adminServices.searchAdmins(adminId, searchString.trim());
+        return adminServices.searchAdmins(adminId, sessionToken, searchString.trim());
     }
 
     public Admin getAdminById(String requestedAdminId) throws AuthenticationException {
-        return adminServices.getAdminById(Integer.parseInt(requestedAdminId), adminId);
+        return adminServices.getAdminById(Integer.parseInt(requestedAdminId),  sessionToken, adminId);
     }
 
     public int createAdmin(String username, String email, String password, String fullName, String phoneNumber)
@@ -37,7 +33,7 @@ public class AdminMgmtModel extends AdminParentModel {
             throw new InvalidInputException(error, "validation");
         }
 
-        return adminServices.createAdmin(adminId, username.trim(), email.trim(), password,
+        return adminServices.createAdmin(adminId, sessionToken, username.trim(), email.trim(), password,
                 fullName.trim(), phoneNumber.trim());
     }
 
@@ -50,7 +46,7 @@ public class AdminMgmtModel extends AdminParentModel {
             throw new AuthenticationException(error);
         }
 
-        adminServices.updateAdminProfile(targetAdminId, fullName.trim(), phoneNumber.trim());
+        adminServices.updateAdminProfile(targetAdminId, sessionToken, fullName.trim(), phoneNumber.trim());
     }
 
     public void updateAdminEmail(int targetAdminId, String newEmail, String password)
@@ -62,7 +58,7 @@ public class AdminMgmtModel extends AdminParentModel {
             throw new AuthenticationException(error);
         }
 
-        adminServices.updateAdminEmail(targetAdminId, newEmail.trim(), password);
+        adminServices.updateAdminEmail(targetAdminId, sessionToken, newEmail.trim(), password);
     }
 
     public void changeAdminPassword(int targetAdminId, String oldPassword, String newPassword)
@@ -74,11 +70,11 @@ public class AdminMgmtModel extends AdminParentModel {
             throw new AuthenticationException(error);
         }
 
-        adminServices.changeAdminPassword(targetAdminId, oldPassword, newPassword);
+        adminServices.changeAdminPassword(targetAdminId, sessionToken, oldPassword, newPassword);
     }
 
     public void deleteAdmin(int targetAdminId) throws AuthenticationException {
-        adminServices.deleteAdmin(adminId, targetAdminId);
+        adminServices.deleteAdmin(adminId, sessionToken, targetAdminId);
     }
 
     // ===== VALIDATION METHODS =====

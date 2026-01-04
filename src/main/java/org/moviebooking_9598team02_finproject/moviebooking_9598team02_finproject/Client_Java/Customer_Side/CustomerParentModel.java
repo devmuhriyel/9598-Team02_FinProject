@@ -13,7 +13,7 @@ import java.util.Properties;
 
 /**
  * CustomerParentModel - Base class for all customer models
- * Provides CORBA connection and session validation
+ * ✅ FIXED: Now stores sessionToken AND customer profile data
  */
 public abstract class CustomerParentModel {
 
@@ -21,6 +21,16 @@ public abstract class CustomerParentModel {
     protected static CommonService commonServices;
     private static String hostIP;
     private static int hostPort;
+
+    // ✅ Session storage - accessible by all child models
+    protected int customerId;
+    protected String sessionToken;
+    protected String username;
+
+    // ✅ NEW: Customer profile data
+    protected String fullName;
+    protected String email;
+    protected String phoneNumber;
 
     public static void initializeCORBAConnection(String[] args) {
         try {
@@ -30,11 +40,9 @@ public abstract class CustomerParentModel {
 
             ORB orb = ORB.init(args, props);
 
-            // Get naming service
             org.omg.CORBA.Object objRef = orb.resolve_initial_references("NameService");
             NamingContextExt ncRef = NamingContextExtHelper.narrow(objRef);
 
-            // Resolve ClientService
             clientServices = ClientServiceHelper.narrow(ncRef.resolve_str("ClientService"));
 
             String commonName = "CommonService";
@@ -59,8 +67,106 @@ public abstract class CustomerParentModel {
         hostPort = port;
     }
 
+    // ✅ UPDATED: Session management methods
+
     /**
-     * 🆕 Validate if the customer session is still active
+     * Set session credentials after login
+     * Called by login model after successful authentication
+     *
+     * @param customerId Customer ID
+     * @param sessionToken Session token
+     * @param username Username
+     * @param fullName Full name
+     * @param email Email address
+     * @param phoneNumber Phone number
+     */
+    public void setSession(int customerId, String sessionToken, String username, String fullName, String email, String phoneNumber) {
+        this.customerId = customerId;
+        this.sessionToken = sessionToken;
+        this.username = username;
+        this.fullName = fullName;
+        this.email = email;
+        this.phoneNumber = phoneNumber;
+        System.out.println("✅ Customer session set: " + username + " (ID: " + customerId + ")");
+    }
+
+    /**
+     * Clear session on logout
+     */
+    public void clearSession() {
+        this.customerId = 0;
+        this.sessionToken = null;
+        this.username = null;
+        this.fullName = null;
+        this.email = null;
+        this.phoneNumber = null;
+        System.out.println("🔓 Customer session cleared");
+    }
+
+    public void logout() throws AuthenticationException {
+        if (hasSession() && clientServices != null) {
+            try {
+                clientServices.logoutCustomer(customerId, sessionToken);
+                clearSession();
+                System.out.println("✅ Logged out successfully from server");
+            } catch (AuthenticationException e) {
+                System.out.println("⚠️ Logout warning: " + e.message);
+                clearSession(); // Clear local session anyway
+            }
+        }
+    }
+
+    /**
+     * Check if session is active
+     */
+    public boolean hasSession() {
+        return sessionToken != null && !sessionToken.isEmpty() && customerId > 0;
+    }
+
+    /**
+     * Get current customer ID
+     */
+    public int getCustomerId() {
+        return customerId;
+    }
+
+    /**
+     * Get current session token
+     */
+    public String getSessionToken() {
+        return sessionToken;
+    }
+
+    /**
+     * Get current username
+     */
+    public String getUsername() {
+        return username;
+    }
+
+    /**
+     * Get current full name
+     */
+    public String getFullName() {
+        return fullName;
+    }
+
+    /**
+     * Get current email
+     */
+    public String getEmail() {
+        return email;
+    }
+
+    /**
+     * Get current phone number
+     */
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    /**
+     * Validate if the customer session is still active
      * This is called by SessionValidator every 5 seconds
      *
      * @param customerId The customer ID to validate
@@ -68,25 +174,20 @@ public abstract class CustomerParentModel {
      */
     public boolean validateSession(int customerId) {
         try {
-            // Check if we have a connection first
             if (clientServices == null) {
                 System.err.println("⚠️ ClientServices not initialized");
                 return false;
             }
 
             // Try to get customer bookings - if session is invalid, this will throw exception
-            // This is a lightweight call to check session validity
-            clientServices.getCustomerBookings(customerId);
+            clientServices.getCustomerBookings(customerId, sessionToken);
             return true;
 
         } catch (AuthenticationException e) {
-            // Session is no longer valid (concurrent login detected)
             System.out.println("⚠️ Session validation failed for customer " + customerId + ": " + e.message);
             return false;
 
         } catch (Exception e) {
-            // Network error or other issue - treat as session still valid
-            // Don't logout on network glitches
             System.err.println("⚠️ Session validation error (network?): " + e.getMessage());
             return true;
         }

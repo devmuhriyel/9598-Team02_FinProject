@@ -2,9 +2,8 @@ package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finprojec
 
 import javafx.fxml.FXMLLoader;
 import javafx.scene.layout.Pane;
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Admin;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingAdmin.AdminService;
-
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Admin;
 import java.io.IOException;
 
 public class AdminMMNavManager {

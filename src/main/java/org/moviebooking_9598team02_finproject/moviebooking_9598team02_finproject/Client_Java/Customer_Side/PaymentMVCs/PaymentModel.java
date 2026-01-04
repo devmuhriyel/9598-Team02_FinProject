@@ -7,15 +7,15 @@ import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject
 
 public class PaymentModel extends CustomerParentModel {
     //not sure if im correct on this part :>
-    public int processPayment(int customerId, int bookingId, double amount, String method, String txnId)
+    public int processPayment(int customerId, String sessionToken, int bookingId, double amount, String method, String txnId)
             throws AuthenticationException, BookingException, PaymentException {
 
-        return clientServices.processPayment(customerId, bookingId, amount, method, txnId);
+        return clientServices.processPayment(customerId, sessionToken, bookingId, amount, method, txnId);
     }
 
     public void cancelBooking(int customerId, int bookingId)
             throws AuthenticationException, BookingException {
 
-        clientServices.cancelBooking(customerId, bookingId);
+        clientServices.cancelBooking(customerId, sessionToken, bookingId);
     }
 }

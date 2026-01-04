@@ -36,7 +36,7 @@ public class CustomerBookingNavManager {
                 loader.setController(view);
                 VBox root = loader.load();
 
-                CustomerBookingsModel model = new CustomerBookingsModel(customer.customerId, customer.fullName);
+                CustomerBookingsModel model = new CustomerBookingsModel(customer.fullName);
                 new CustomerBookingsController(view, model);
 
                 bookingsViewPane = root;

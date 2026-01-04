@@ -57,66 +57,75 @@ public class MBClientServant extends ClientServicePOA {
     }
 
     @Override
-    public Customer loginCustomer(String username, String password) throws AuthenticationException {
-        Customer customer = new Customer();
-        try(Connection connection = DatabaseAccess.getConnection()){
-            String query = "SELECT * FROM customers where username = ?";
+    public CustomerLoginResponse loginCustomer(String username, String password) throws AuthenticationException {
+        try (Connection connection = DatabaseAccess.getConnection()) {
+            String query = "SELECT * FROM customers WHERE username = ?";
             PreparedStatement statement = connection.prepareStatement(query);
             statement.setString(1, username);
             ResultSet rs = statement.executeQuery();
 
-            if(rs.next()){
+            if (rs.next()) {
                 String hashedPassword = rs.getString("password");
-                if(PasswordManager.checkPassword(password, hashedPassword)){
-                    int customer_id = rs.getInt("customer_id");
+                if (PasswordManager.checkPassword(password, hashedPassword)) {
+                    int customerId = rs.getInt("customer_id");
 
                     synchronized (SessionManager.getCustomerSessionsLock()) {
-                        if (SessionManager.isCustomerLoggedIn(customer_id)) {
-                            System.out.println("Concurrent login rejected: Customer " + customer_id + " is already logged in.");
-                            throw new AuthenticationException("This account is already logged in. Please log out from other devices before logging in again.");
+                        // ✅ FIX: Prevent concurrent logins
+                        if (SessionManager.isCustomerLoggedIn(customerId)) {
+                            System.out.println("⚠️ Concurrent login rejected: Customer " + customerId + " already logged in");
+                            throw new AuthenticationException(
+                                    "This account is already logged in from another device. " +
+                                            "Please log out from the other device first, or wait 30 minutes for the session to expire."
+                            );
                         }
 
-                        String sessionToken = SessionManager.createCustomerSessionUnsafe(customer_id, rs.getString("username"));
-                        System.out.println("Customer " + customer_id + " logged in successfully. Session token: " + sessionToken.substring(0, 8) + "...");
-                    }
+                        // Create session and get token
+                        String sessionToken = SessionManager.createCustomerSession(customerId, rs.getString("username"));
 
-                    customer.customerId = rs.getInt("customer_id");
-                    customer.username = rs.getString("username");
-                    customer.email = rs.getString("email");
-                    customer.password = "";
-                    customer.fullName = rs.getString("full_name");
-                    customer.phoneNumber = rs.getString("phone_number");
-                    customer.createdAt = rs.getString("created_at");
-                    customer.updatedAt = rs.getString("updated_at");
+                        // Build response
+                        Customer customer = new Customer();
+                        customer.customerId = customerId;
+                        customer.username = rs.getString("username");
+                        customer.email = rs.getString("email");
+                        customer.password = ""; // NEVER send password
+                        customer.phoneNumber = rs.getString("phone_number");
+                        customer.fullName = rs.getString("full_name");
+                        customer.createdAt = rs.getString("created_at");
+                        customer.updatedAt = rs.getString("updated_at");
+
+                        CustomerLoginResponse response = new CustomerLoginResponse();
+                        response.customer = customer;
+                        response.sessionToken = sessionToken;
+
+                        System.out.println("✅ Customer " + customerId + " logged in successfully");
+                        return response;
+                    }
                 } else {
                     throw new AuthenticationException("Incorrect password");
                 }
             } else {
                 throw new AuthenticationException("Account does not exist");
             }
-        } catch (SQLException e){
+        } catch (SQLException e) {
             e.printStackTrace();
-            throw new AuthenticationException("Database error:" + e.getMessage());
+            throw new AuthenticationException("Database error: " + e.getMessage());
         }
-        return customer;
     }
 
     @Override
-    public void logoutCustomer(int customerId) {
-        SessionManager.SessionInfo session = SessionManager.getCustomerSession(customerId);
-        if (session == null) {
-            System.out.println("Customer " + customerId + " not logged in - logout ignored");
-            return;
+    public void logoutCustomer(int customerId, String sessionToken) throws AuthenticationException {
+        if (!SessionManager.validateCustomerSession(customerId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - already logged out or session expired");
         }
-        
+
         SessionManager.removeCustomerSession(customerId);
-        System.out.println("Customer " + customerId + " logged out successfully");
+        System.out.println("✅ Customer " + customerId + " logged out successfully");
     }
 
     // ===== ACCOUNT MANAGEMENT METHODS =====
     @Override
-    public void updateCustomerProfile(int customerId, String phoneNumber, String fullName) throws AuthenticationException {
-        if (!SessionManager.isCustomerLoggedIn(customerId)) {
+    public void updateCustomerProfile(int customerId, String sessionToken, String phoneNumber, String fullName) throws AuthenticationException {
+        if (!SessionManager.isCustomerLoggedIn(customerId, sessionToken)) {
             throw new AuthenticationException("Customer not logged in");
         }
 
@@ -139,8 +148,8 @@ public class MBClientServant extends ClientServicePOA {
     }
 
     @Override
-    public void changePassword(int customerId, String oldPassword, String newPassword) throws AuthenticationException {
-        if (!SessionManager.isCustomerLoggedIn(customerId)) {
+    public void changePassword(int customerId, String sessionToken, String oldPassword, String newPassword) throws AuthenticationException {
+        if (!SessionManager.isCustomerLoggedIn(customerId, sessionToken)) {
             throw new AuthenticationException("Customer not logged in");
         }
 
@@ -661,30 +670,32 @@ public class MBClientServant extends ClientServicePOA {
 
     // ===== BOOKING METHODS =====
     @Override
-    public int createBooking(int customerId, int scheduleId, int[] scheduleListSeatIds)
+    public int createBooking(int customerId, String sessionToken, int scheduleId, int[] scheduleListSeatIds)
             throws AuthenticationException, SeatNotAvailableException, BookingException {
 
-        // Validate customer session
-        if (!SessionManager.isCustomerLoggedIn(customerId)) {
-            throw new AuthenticationException("Customer not logged in");
+        // ✅ Validate session token FIRST
+        if (!SessionManager.validateCustomerSession(customerId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
         }
 
+        // Rest of booking logic...
         Connection connection = null;
         try {
             connection = DatabaseAccess.getConnection();
-            connection.setAutoCommit(false); // Start transaction
+            connection.setAutoCommit(false);
 
-            // 1. Validate schedule exists
+            // Validate schedule exists
             String checkSchedule = "SELECT COUNT(*) FROM schedules WHERE schedule_id = ?";
             PreparedStatement checkStmt = connection.prepareStatement(checkSchedule);
             checkStmt.setInt(1, scheduleId);
             ResultSet checkRs = checkStmt.executeQuery();
 
             if (checkRs.next() && checkRs.getInt(1) == 0) {
+                connection.rollback();
                 throw new BookingException("Schedule not found", 404);
             }
 
-            // 2. Validate all seats are available and calculate total price
+            // Validate seats and calculate total
             double totalPrice = 0.0;
             String checkSeatsQuery = "SELECT sls.schedule_list_seat_id, sls.status, s.seat_price " +
                     "FROM schedule_list_seats sls " +
@@ -710,23 +721,19 @@ public class MBClientServant extends ClientServicePOA {
                 }
             }
 
-            // 3. Get next booking ID
+            // Get next booking ID
             int nextBookingId = getLatestBookingID(connection) + 1;
 
-            // 4. Insert booking
+            // Insert booking
             String insertBooking = "INSERT INTO bookings (booking_id, customer_id, schedule_id, " +
                     "booking_status, total_price, booking_date, created_at, updated_at) " +
-                    "VALUES (?, ?, ?, 'pending', ?, ?, ?, ?)";
+                    "VALUES (?, ?, ?, 'pending', ?, NOW(), NOW(), NOW())";
 
             PreparedStatement bookingStmt = connection.prepareStatement(insertBooking);
-            LocalDateTime now = LocalDateTime.now();
             bookingStmt.setInt(1, nextBookingId);
             bookingStmt.setInt(2, customerId);
             bookingStmt.setInt(3, scheduleId);
             bookingStmt.setDouble(4, totalPrice);
-            bookingStmt.setString(5, now.toString());
-            bookingStmt.setString(6, now.toString());
-            bookingStmt.setString(7, now.toString());
 
             int rowsInserted = bookingStmt.executeUpdate();
             if (rowsInserted == 0) {
@@ -734,23 +741,22 @@ public class MBClientServant extends ClientServicePOA {
                 throw new BookingException("Failed to create booking", 500);
             }
 
-            // 5. Update seat statuses to 'booked' and link to booking
-            String updateSeats = "UPDATE schedule_list_seats SET status = 'booked', booking_id = ?, updated_at = ? " +
+            // Update seat statuses
+            String updateSeats = "UPDATE schedule_list_seats SET " +
+                    "status = 'booked', booking_id = ?, updated_at = NOW() " +
                     "WHERE schedule_list_seat_id = ? AND schedule_id = ?";
 
             for (int seatId : scheduleListSeatIds) {
                 PreparedStatement updateStmt = connection.prepareStatement(updateSeats);
                 updateStmt.setInt(1, nextBookingId);
-                updateStmt.setString(2, now.toString());
-                updateStmt.setInt(3, seatId);
-                updateStmt.setInt(4, scheduleId);
+                updateStmt.setInt(2, seatId);
+                updateStmt.setInt(3, scheduleId);
                 updateStmt.executeUpdate();
             }
 
-            // Commit transaction
             connection.commit();
-            System.out.println("✅ Booking created successfully! ID: " + nextBookingId +
-                    " | Customer: " + customerId + " | Total: ₱" + totalPrice);
+            System.out.println("✅ Booking created: " + nextBookingId + " | Customer: " + customerId +
+                    " | Total: ₱" + totalPrice + " | Seats: " + scheduleListSeatIds.length);
 
             return nextBookingId;
 
@@ -832,8 +838,8 @@ public class MBClientServant extends ClientServicePOA {
 
     // FIX 1: Line ~809 - getCustomerBookings method
     @Override
-    public Booking[] getCustomerBookings(int customerId) throws AuthenticationException {
-        if (!SessionManager.isCustomerLoggedIn(customerId)) {
+    public Booking[] getCustomerBookings(int customerId, String sessionToken) throws AuthenticationException {
+        if (!SessionManager.isCustomerLoggedIn(customerId, sessionToken)) {
             throw new AuthenticationException("Customer not logged in");
         }
 
@@ -885,18 +891,22 @@ public class MBClientServant extends ClientServicePOA {
         return bookingList.toArray(new Booking[0]);
     }
     @Override
-    public void cancelBooking(int customerId, int bookingId) throws AuthenticationException, BookingException {
-        if (!SessionManager.isCustomerLoggedIn(customerId)) {
-            throw new AuthenticationException("Customer not logged in");
+    public void cancelBooking(int customerId, String sessionToken, int bookingId)
+            throws AuthenticationException, BookingException {
+
+        // Validate session
+        if (!SessionManager.validateCustomerSession(customerId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
         }
 
         Connection connection = null;
         try {
             connection = DatabaseAccess.getConnection();
-            connection.setAutoCommit(false);
+            connection.setAutoCommit(false); // ✅ START TRANSACTION
 
-            // Verify booking belongs to customer and is cancellable
-            String checkQuery = "SELECT booking_status FROM bookings WHERE booking_id = ? AND customer_id = ?";
+            // 1️⃣ Verify booking belongs to customer and can be cancelled
+            String checkQuery = "SELECT booking_status, schedule_id FROM bookings " +
+                    "WHERE booking_id = ? AND customer_id = ?";
             PreparedStatement checkStmt = connection.prepareStatement(checkQuery);
             checkStmt.setInt(1, bookingId);
             checkStmt.setInt(2, customerId);
@@ -908,29 +918,50 @@ public class MBClientServant extends ClientServicePOA {
             }
 
             String status = rs.getString("booking_status");
+            int scheduleId = rs.getInt("schedule_id");
+
             if ("cancelled".equals(status)) {
                 connection.rollback();
-                throw new BookingException("Booking already cancelled", 400);
+                throw new BookingException("Booking is already cancelled", 400);
             }
 
-            // Update booking status
-            String updateBooking = "UPDATE bookings SET booking_status = 'cancelled', " +
-                    "cancellation_reason = 'Cancelled by customer', updated_at = ? WHERE booking_id = ?";
+            // 2️⃣ ✅ FIX: Update booking status to 'cancelled'
+            String updateBooking = "UPDATE bookings SET " +
+                    "booking_status = 'cancelled', " +
+                    "cancellation_reason = 'Cancelled by customer', " +
+                    "updated_at = NOW() " +
+                    "WHERE booking_id = ?";
             PreparedStatement updateStmt = connection.prepareStatement(updateBooking);
-            updateStmt.setString(1, LocalDateTime.now().toString());
-            updateStmt.setInt(2, bookingId);
-            updateStmt.executeUpdate();
+            updateStmt.setInt(1, bookingId);
+            int bookingUpdated = updateStmt.executeUpdate();
 
-            // Release seats
-            String releaseSeats = "UPDATE schedule_list_seats SET status = 'available', " +
-                    "booking_id = NULL, updated_at = ? WHERE booking_id = ?";
+            // 3️⃣ ✅ FIX: Release ALL seats linked to this booking
+            String releaseSeats = "UPDATE schedule_list_seats SET " +
+                    "status = 'available', " +
+                    "booking_id = NULL, " +
+                    "updated_at = NOW() " +
+                    "WHERE booking_id = ? AND schedule_id = ?";
             PreparedStatement releaseStmt = connection.prepareStatement(releaseSeats);
-            releaseStmt.setString(1, LocalDateTime.now().toString());
-            releaseStmt.setInt(2, bookingId);
-            releaseStmt.executeUpdate();
+            releaseStmt.setInt(1, bookingId);
+            releaseStmt.setInt(2, scheduleId);
+            int seatsReleased = releaseStmt.executeUpdate();
 
-            connection.commit();
-            System.out.println("✅ Booking cancelled: " + bookingId);
+            // 4️⃣ ✅ FIX: Update payment status to 'refunded' if exists
+            String updatePayment = "UPDATE payments SET " +
+                    "payment_status = 'refunded', " +
+                    "refund_reason = 'Booking cancelled by customer', " +
+                    "updated_at = NOW() " +
+                    "WHERE booking_id = ?";
+            PreparedStatement paymentStmt = connection.prepareStatement(updatePayment);
+            paymentStmt.setInt(1, bookingId);
+            int paymentsUpdated = paymentStmt.executeUpdate();
+
+            connection.commit(); // ✅ COMMIT TRANSACTION
+
+            System.out.println("✅ Booking " + bookingId + " cancelled successfully");
+            System.out.println("   - Booking updated: " + bookingUpdated);
+            System.out.println("   - Seats released: " + seatsReleased);
+            System.out.println("   - Payments refunded: " + paymentsUpdated);
 
         } catch (SQLException e) {
             if (connection != null) {
@@ -955,8 +986,8 @@ public class MBClientServant extends ClientServicePOA {
     }
 
     @Override
-    public void confirmPayment(int customerId, int bookingId) throws AuthenticationException, BookingException {
-        if (!SessionManager.isCustomerLoggedIn(customerId)) {
+    public void confirmPayment(int customerId, String sessionToken, int bookingId) throws AuthenticationException, BookingException {
+        if (!SessionManager.isCustomerLoggedIn(customerId, sessionToken)) {
             throw new AuthenticationException("Customer not logged in");
         }
 
@@ -988,16 +1019,16 @@ public class MBClientServant extends ClientServicePOA {
     }
 
     @Override
-    public void updateBooking(int customerId, int bookingId, int[] newSeatIds)
+    public void updateBooking(int customerId, String sessionToken, int bookingId, int[] newSeatIds)
             throws AuthenticationException, BookingException, SeatNotAvailableException {
         // TODO: Implement if needed - allows changing seats before confirmation
         throw new BookingException("Feature not yet implemented", 501);
     }
 
     @Override
-    public void updateBookingStatus(int customerId, int bookingId, String status)
+    public void updateBookingStatus(int customerId, String sessionToken, int bookingId, String status)
             throws AuthenticationException, BookingException {
-        if (!SessionManager.isCustomerLoggedIn(customerId)) {
+        if (!SessionManager.isCustomerLoggedIn(customerId, sessionToken)) {
             throw new AuthenticationException("Customer not logged in");
         }
 
@@ -1022,8 +1053,8 @@ public class MBClientServant extends ClientServicePOA {
     }
 
     @Override
-    public Booking[] getBookingHistory(int customerId) throws AuthenticationException {
-        if (!SessionManager.isCustomerLoggedIn(customerId)) {
+    public Booking[] getBookingHistory(int customerId, String sessionToken) throws AuthenticationException {
+        if (!SessionManager.isCustomerLoggedIn(customerId, sessionToken)) {
             throw new AuthenticationException("Customer not logged in");
         }
 
@@ -1081,8 +1112,8 @@ public class MBClientServant extends ClientServicePOA {
     }
 
     @Override
-    public Booking[] getActiveBookings(int customerId) throws AuthenticationException {
-        if (!SessionManager.isCustomerLoggedIn(customerId)) {
+    public Booking[] getActiveBookings(int customerId, String sessionToken) throws AuthenticationException {
+        if (!SessionManager.isCustomerLoggedIn(customerId, sessionToken)) {
             throw new AuthenticationException("Customer not logged in");
         }
 
@@ -1141,9 +1172,9 @@ public class MBClientServant extends ClientServicePOA {
     }
 
     @Override
-    public BookingDetails getBookingDetailsView(int customerId, int bookingId)
+    public BookingDetails getBookingDetailsView(int customerId, String sessionToken, int bookingId)
             throws AuthenticationException, BookingException {
-        if (!SessionManager.isCustomerLoggedIn(customerId)) {
+        if (!SessionManager.isCustomerLoggedIn(customerId, sessionToken)) {
             throw new AuthenticationException("Customer not logged in");
         }
 
@@ -1184,8 +1215,8 @@ public class MBClientServant extends ClientServicePOA {
     }
 
     @Override
-    public BookingDetails[] getCustomerBookingsWithDetails(int customerId) throws AuthenticationException {
-        if (!SessionManager.isCustomerLoggedIn(customerId)) {
+    public BookingDetails[] getCustomerBookingsWithDetails(int customerId, String sessionToken) throws AuthenticationException {
+        if (!SessionManager.isCustomerLoggedIn(customerId, sessionToken)) {
             throw new AuthenticationException("Customer not logged in");
         }
 
@@ -1229,10 +1260,10 @@ public class MBClientServant extends ClientServicePOA {
 
     // ===== PAYMENT METHODS =====
     @Override
-    public int processPayment(int customerId, int bookingId, double amount, String paymentMethod, String transactionId)
+    public int processPayment(int customerId, String sessionToken, int bookingId, double amount, String paymentMethod, String transactionId)
             throws AuthenticationException, BookingException, PaymentException {
 
-        if (!SessionManager.isCustomerLoggedIn(customerId)) {
+        if (!SessionManager.isCustomerLoggedIn(customerId, sessionToken)) {
             throw new AuthenticationException("Customer not logged in");
         }
 
@@ -1330,9 +1361,9 @@ public class MBClientServant extends ClientServicePOA {
     }
 
     @Override
-    public Payment getPaymentDetails(int customerId, int paymentId)
+    public Payment getPaymentDetails(int customerId, String sessionToken, int paymentId)
             throws AuthenticationException, PaymentNotFoundException {
-        if (!SessionManager.isCustomerLoggedIn(customerId)) {
+        if (!SessionManager.isCustomerLoggedIn(customerId, sessionToken)) {
             throw new AuthenticationException("Customer not logged in");
         }
 
@@ -1368,8 +1399,8 @@ public class MBClientServant extends ClientServicePOA {
     }
 
     @Override
-    public Payment[] getCustomerPayments(int customerId) throws AuthenticationException {
-        if (!SessionManager.isCustomerLoggedIn(customerId)) {
+    public Payment[] getCustomerPayments(int customerId, String sessionToken) throws AuthenticationException {
+        if (!SessionManager.isCustomerLoggedIn(customerId, sessionToken)) {
             throw new AuthenticationException("Customer not logged in");
         }
 
@@ -1403,9 +1434,9 @@ public class MBClientServant extends ClientServicePOA {
     }
 
     @Override
-    public Payment getBookingPayment(int customerId, int bookingId)
+    public Payment getBookingPayment(int customerId, String sessionToken, int bookingId)
             throws AuthenticationException, BookingException {
-        if (!SessionManager.isCustomerLoggedIn(customerId)) {
+        if (!SessionManager.isCustomerLoggedIn(customerId, sessionToken)) {
             throw new AuthenticationException("Customer not logged in");
         }
 
@@ -1443,9 +1474,9 @@ public class MBClientServant extends ClientServicePOA {
     // Continue from getPaymentDetailsView - the part that was cut off
 
     @Override
-    public PaymentDetails getPaymentDetailsView(int customerId, int paymentId)
+    public PaymentDetails getPaymentDetailsView(int customerId, String sessionToken, int paymentId)
             throws AuthenticationException, PaymentNotFoundException {
-        if (!SessionManager.isCustomerLoggedIn(customerId)) {
+        if (!SessionManager.isCustomerLoggedIn(customerId, sessionToken)) {
             throw new AuthenticationException("Customer not logged in");
         }
 
@@ -1485,8 +1516,8 @@ public class MBClientServant extends ClientServicePOA {
     }
 
     @Override
-    public PaymentDetails[] getCustomerPaymentsWithDetails(int customerId) throws AuthenticationException {
-        if (!SessionManager.isCustomerLoggedIn(customerId)) {
+    public PaymentDetails[] getCustomerPaymentsWithDetails(int customerId, String sessionToken) throws AuthenticationException {
+        if (!SessionManager.isCustomerLoggedIn(customerId, sessionToken)) {
             throw new AuthenticationException("Customer not logged in");
         }
 
@@ -1544,14 +1575,15 @@ public class MBClientServant extends ClientServicePOA {
     private int getLatestBookingID(Connection connection) throws SQLException {
         String query = "SELECT MAX(booking_id) as max_id FROM bookings";
         PreparedStatement statement = connection.prepareStatement(query);
-        ResultSet resultSet = statement.executeQuery();
+        ResultSet rs = statement.executeQuery();
 
-        if(resultSet.next()){
-            int maxID = resultSet.getInt("max_id");
-            return resultSet.wasNull() ? 0 : maxID;
+        if (rs.next()) {
+            int maxId = rs.getInt("max_id");
+            return rs.wasNull() ? 0 : maxId;
         }
         return 0;
     }
+
 
     private int getLatestPaymentID(Connection connection) throws SQLException {
         String query = "SELECT MAX(payment_id) as max_id FROM payments";
