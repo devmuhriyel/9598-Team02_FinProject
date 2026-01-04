@@ -227,6 +227,10 @@ public class CustomerMovieController {
         for (Schedule schedule : schedulesOnPage) {
             try {
                 ScheduleDetails details = model.getScheduleDetailsView(schedule.scheduleId);
+
+                System.out.println("SCHEDULE: " + details.scheduleId +
+                "AVAILABLE: " + details.availableSeats +
+                        "TOTAL: " + details.totalSeats);
                 Runnable selectAction = () -> handleScheduleSelection(schedule);
 
                 view.createAndAddScheduleCard(

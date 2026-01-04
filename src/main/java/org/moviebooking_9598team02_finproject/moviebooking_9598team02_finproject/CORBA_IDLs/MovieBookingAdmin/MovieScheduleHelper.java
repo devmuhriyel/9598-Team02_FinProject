@@ -30,7 +30,7 @@ abstract public class MovieScheduleHelper
   {
     if (__typeCode == null)
     {
-      __typeCode = MovieScheduleHelper.type ();
+      __typeCode = org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.MovieScheduleHelper.type ();
       __typeCode = org.omg.CORBA.ORB.init ().create_alias_tc (org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingAdmin.MovieScheduleHelper.id (), "MovieSchedule", __typeCode);
     }
     return __typeCode;
@@ -44,13 +44,13 @@ abstract public class MovieScheduleHelper
   public static MovieSchedule read (org.omg.CORBA.portable.InputStream istream)
   {
     MovieSchedule value = null;
-    value = MovieScheduleHelper.read (istream);
+    value = org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.MovieScheduleHelper.read (istream);
     return value;
   }
 
   public static void write (org.omg.CORBA.portable.OutputStream ostream, MovieSchedule value)
   {
-    MovieScheduleHelper.write (ostream, value);
+    org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.MovieScheduleHelper.write (ostream, value);
   }
 
 }

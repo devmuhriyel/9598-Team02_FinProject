@@ -46,13 +46,13 @@ abstract public class BookingListHelper
   public static Booking[] read (org.omg.CORBA.portable.InputStream istream)
   {
     Booking value[] = null;
-    value = BookingListHelper.read (istream);
+    value = org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.BookingListHelper.read (istream);
     return value;
   }
 
   public static void write (org.omg.CORBA.portable.OutputStream ostream, Booking[] value)
   {
-    BookingListHelper.write (ostream, value);
+    org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.BookingListHelper.write (ostream, value);
   }
 
 }
