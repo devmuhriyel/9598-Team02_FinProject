@@ -166,6 +166,16 @@ public class AdminNavigationManager {
             sessionValidator.stop();
             System.out.println("🛑 Session validator stopped for admin: " + admin.adminId);
         }
+        
+        // Call logout on server to invalidate session
+        if (admin != null && AdminParentModel.adminServices != null) {
+            try {
+                AdminParentModel.adminServices.logoutAdmin(admin.adminId);
+                System.out.println("✅ Admin " + admin.adminId + " logged out from server");
+            } catch (Exception e) {
+                System.err.println("⚠️ Error calling logout on server: " + e.getMessage());
+            }
+        }
     }
 
     // === NAVIGATION METHODS (UNCHANGED) ===
