@@ -9,8 +9,9 @@ import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject
 public class GenreMgmtModel extends AdminParentModel {
     private int adminId;
 
-    public GenreMgmtModel(int adminId) {
+    public GenreMgmtModel(int adminId, String sessionToken) {
         this.adminId = adminId;
+        this.sessionToken = sessionToken;
     }
 
     public void setAdminId(int adminId) {

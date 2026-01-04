@@ -8,9 +8,10 @@ public class MovieModel extends AdminParentModel {
 
     private final AdminService adminService;
 
-    public MovieModel(AdminService adminService, int adminId) {
+    public MovieModel(AdminService adminService, int adminId, String sessionToken) {
         this.adminService = adminService;
-
+        this.adminId = adminId;
+        this.sessionToken = sessionToken;
     }
 
     // === MOVIE MANAGEMENT METHODS ===

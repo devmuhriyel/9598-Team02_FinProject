@@ -8,14 +8,16 @@ import java.io.IOException;
 
 public class AdminDashboardNavManager {
     private final int currentAdminId;
+    private final String sessionToken; // ✅ ADD
     private Pane dashboardPane;
 
     private DashboardController dashboardController;
     private DashboardModel dashboardModel;
     private DashboardView dashboardView;
 
-    public AdminDashboardNavManager(Admin admin) {
+    public AdminDashboardNavManager(Admin admin, String sessionToken) {
         this.currentAdminId = admin.adminId;
+        this.sessionToken = sessionToken; // ✅ STORE
         try {
             initializeDashboardView(); // Initialize immediately
         } catch (IOException e) {
@@ -26,7 +28,7 @@ public class AdminDashboardNavManager {
 
     private void initializeDashboardView() throws IOException {
         // Initialize model
-        dashboardModel = new DashboardModel(currentAdminId);
+        dashboardModel = new DashboardModel(currentAdminId, sessionToken);
         // Load FXML
         FXMLLoader loader = new FXMLLoader(
                 getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/Admin/AdminDashboard.fxml")

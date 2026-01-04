@@ -10,15 +10,17 @@ public class AdminMMNavManager {
 
     private final AdminService adminService;
     private final int currentAdminId;
+    private final String sessionToken;
     private Pane movieMgmtPane;
 
     private MovieController movieController;
     private MovieModel movieModel;
     private MovieView movieView;
 
-    public AdminMMNavManager(AdminService adminService, Admin admin) {
+    public AdminMMNavManager(AdminService adminService, Admin admin, String sessionToken) {
         this.adminService = adminService;
         this.currentAdminId = admin.adminId;
+        this.sessionToken = sessionToken; // ✅ STORE
     }
 
     private void initializeMovieMgmtView() throws IOException {
@@ -37,7 +39,7 @@ public class AdminMMNavManager {
         System.out.println("âœ… View obtained from FXML");
 
         // 3. Create Model
-        movieModel = new MovieModel(adminService, currentAdminId);
+        movieModel = new MovieModel(adminService, currentAdminId, sessionToken);
         System.out.println("âœ… Model created");
 
         // 4. Create Controller and pass View + Model

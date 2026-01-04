@@ -322,6 +322,23 @@ public class CustomerNavigationManager {
         }
     }
 
+    public void refreshCustomerData(String newFullName, String newEmail, String newPhoneNumber) {
+        // Update the customer object
+        this.customer.fullName = newFullName;
+        this.customer.email = newEmail;
+        this.customer.phoneNumber = newPhoneNumber;
+
+        // Update window title if needed
+        if (homeStage != null) {
+            homeStage.setTitle("FilmBook - " + customer.username);
+        }
+
+        // Clear cached profile pane to force reload with new data
+        myProfilePane = null;
+
+        System.out.println("✅ Customer data refreshed: " + newFullName);
+    }
+
     // ===== GETTERS =====
 
     public Customer getCustomer() {

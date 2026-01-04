@@ -7,6 +7,12 @@ import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject
 
 public class AdminPaymentModel extends AdminParentModel {
 
+    public AdminPaymentModel(int adminId, String sessionToken) {
+        this.adminId = adminId;
+        this.sessionToken = sessionToken;
+        System.out.println("✅ AdminPaymentModel initialized with adminId: " + adminId);
+    }
+
     // Fetch all payments sa Server
     public Payment[] getAllPayments(int adminId) throws AuthenticationException {
         return adminServices.getAllPayments(adminId, sessionToken);

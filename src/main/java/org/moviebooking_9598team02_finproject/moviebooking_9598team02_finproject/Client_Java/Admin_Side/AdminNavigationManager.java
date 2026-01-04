@@ -61,18 +61,17 @@ public class AdminNavigationManager {
         this.homeStage = homeStage;
         this.authNavManager = authNavManager;
         this.admin = admin;
-        this.sessionToken = sessionToken; // ✅ Properly store the token
+        this.sessionToken = sessionToken;
 
         System.out.println("🔑 Session token stored: " +
                 (sessionToken != null ? sessionToken.substring(0, 8) + "..." : "NULL"));
 
         AdminParentModel.initializeCORBAConnection(new String[]{});
 
-        this.seatNavManager = new AdminSMNavManager(admin);
-        this.paymentNavManager = new AdminPaymentNavManager(admin);
-        this.bookingNavManager = new AdminBookingNavManager(admin);
-        this.dashboardNavManager = new AdminDashboardNavManager(admin);
-
+        this.seatNavManager = new AdminSMNavManager(admin, sessionToken);
+        this.paymentNavManager = new AdminPaymentNavManager(admin, sessionToken);
+        this.bookingNavManager = new AdminBookingNavManager(admin, sessionToken);
+        this.dashboardNavManager = new AdminDashboardNavManager(admin, sessionToken);
         startSessionValidation();
 
         initializeHomeView();
@@ -189,7 +188,12 @@ public class AdminNavigationManager {
     public void showMovieMgmtView() {
         if (movieMgmtPane == null) {
             try {
-                movieNavManager = new AdminMMNavManager(AdminParentModel.adminServices, admin);
+                // ✅ FIX: Pass sessionToken
+                movieNavManager = new AdminMMNavManager(
+                        AdminParentModel.adminServices,
+                        admin,
+                        sessionToken // ✅ ADD
+                );
                 movieMgmtPane = movieNavManager.getMovieMgmtView();
 
                 if (movieMgmtPane == null) {
@@ -214,7 +218,7 @@ public class AdminNavigationManager {
 
     public void showBookingMgmtView() {
         if (bookingNavManager == null) {
-            bookingNavManager = new AdminBookingNavManager(admin);
+            bookingNavManager = new AdminBookingNavManager(admin, sessionToken);
         }
 
         Pane bookingViewContent = bookingNavManager.getBookingMgmtView();
@@ -229,7 +233,11 @@ public class AdminNavigationManager {
 
     public void showCustomerMgmtView() {
         if (customerMgmtPane == null) {
-            AccountNavigationManager customerNavManager = new AccountNavigationManager(admin.adminId, false);
+            AccountNavigationManager customerNavManager = new AccountNavigationManager(
+                    admin.adminId,
+                    sessionToken,  // ✅ ADD
+                    false
+            );
             customerMgmtPane = customerNavManager.getCustomerPane();
 
             if (customerMgmtPane == null) {
@@ -258,7 +266,8 @@ public class AdminNavigationManager {
 
     public void showAdminMgmtView(){
         if (adminMgmtPane == null) {
-            accNavManager = new AccountNavigationManager(admin.adminId);
+            // ✅ FIX: Pass sessionToken
+            accNavManager = new AccountNavigationManager(admin.adminId, sessionToken); // ✅ ADD
             adminMgmtPane = accNavManager.getAdminPane();
 
             if (adminMgmtPane == null) {

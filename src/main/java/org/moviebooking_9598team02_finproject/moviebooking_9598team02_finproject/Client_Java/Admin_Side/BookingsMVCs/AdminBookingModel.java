@@ -8,6 +8,12 @@ import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject
 
 public class AdminBookingModel extends AdminParentModel {
 
+    public AdminBookingModel(int adminId, String sessionToken) {
+        this.adminId = adminId;
+        this.sessionToken = sessionToken;
+        System.out.println("✅ AdminBookingModel initialized with adminId: " + adminId);
+    }
+
     //Get All Bookings
     public Booking[] getAllBookings(int adminId) throws AuthenticationException {
         return adminServices.getAllBookings(adminId, sessionToken);
