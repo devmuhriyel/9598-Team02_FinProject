@@ -9,12 +9,12 @@ public class AdminPaymentModel extends AdminParentModel {
 
     // Fetch all payments sa Server
     public Payment[] getAllPayments(int adminId) throws AuthenticationException {
-        return adminServices.getAllPayments(adminId);
+        return adminServices.getAllPayments(adminId, sessionToken);
     }
 
     // Update status like updated or failed
     public void updatePaymentStatus(int adminId, int paymentId, String status)
             throws AuthenticationException, PaymentNotFoundException {
-        adminServices.updatePaymentStatus(adminId, paymentId, status);
+        adminServices.updatePaymentStatus(adminId, sessionToken, paymentId, status);
     }
 }

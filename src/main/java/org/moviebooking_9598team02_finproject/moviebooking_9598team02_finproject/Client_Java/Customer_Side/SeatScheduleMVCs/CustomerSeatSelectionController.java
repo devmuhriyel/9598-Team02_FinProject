@@ -196,8 +196,13 @@ public class CustomerSeatSelectionController {
 
             showStatus("Creating booking...");
 
-            // 2. Create Booking (CORBA)
-            int bookingId = model.createBooking(scheduleListSeatIds);
+            // 2. ✅ FIX: Pass all 4 required parameters
+            int bookingId = model.createBooking(
+                    model.getCustomerId(),      // customerId from parent model
+                    model.getSessionToken(),    // sessionToken from parent model
+                    currentScheduleId,          // scheduleId (already stored)
+                    scheduleListSeatIds         // selected seat IDs
+            );
 
             // 3. Calculate Total Price
             double totalPrice = calculateTotalPrice(scheduleListSeatIds);

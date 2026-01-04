@@ -2,8 +2,12 @@ package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finprojec
 
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.AuthenticationException;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Customer;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.CustomerLoginResponse;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Customer_Side.AuthenticationMVCs.CustomerAuthNavManager;
 
+/**
+ * ✅ UPDATED: Now passes sessionToken to navigation manager
+ */
 public class CustomerLoginController {
     private CustomerLoginView view;
     private CustomerLoginModel model;
@@ -36,12 +40,17 @@ public class CustomerLoginController {
         }
 
         try {
-            customer = model.logInCustomer(username, password);
+            // Get full response with sessionToken
+            CustomerLoginResponse response = model.logInCustomer(username, password);
+            customer = response.customer;
+
             view.clearFields();
             view.clearError();
-            authManager.openCustomerHome(customer);
+
+            // ✅ FIX: Pass BOTH customer and sessionToken to home
+            authManager.openCustomerHome(customer, response.sessionToken);
+
         } catch (AuthenticationException e) {
-            // ✅ FIX: Show actual error message from server (e.g., "Account already logged in")
             view.showError(e.message != null && !e.message.isEmpty() ? e.message : "Invalid username or password");
         }
     }

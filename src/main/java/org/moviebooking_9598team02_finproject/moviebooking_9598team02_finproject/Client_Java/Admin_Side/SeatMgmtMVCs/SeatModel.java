@@ -6,30 +6,20 @@ import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject
 
 public class SeatModel extends AdminParentModel {
 
-    private int currentAdminId;
-
-    public SeatModel(int adminId) {
-        this.currentAdminId = adminId;
+    public SeatModel() {
     }
 
     // === SEAT MANAGEMENT METHODS ===
 
     public void updateSeatPrice(int seatId, double newPrice) throws AuthenticationException {
-        adminServices.updateSeatPrice(currentAdminId, seatId, newPrice);
+        adminServices.updateSeatPrice(adminId, sessionToken, seatId, newPrice);
     }
 
     public void updateSeatType(int seatId, String newType) throws AuthenticationException {
-        adminServices.updateSeatType(currentAdminId, seatId, newType);
+        adminServices.updateSeatType(adminId, sessionToken, seatId, newType);
     }
 
     public Seat[] getAllSeats() throws AuthenticationException {
-        System.out.println(currentAdminId);
-        return adminServices.getAllSeats(currentAdminId);
-    }
-
-    // === FOR ADMIN ID ===
-
-    public void setCurrentAdminId(int adminId) {
-        this.currentAdminId = adminId;
+        return adminServices.getAllSeats(adminId, sessionToken);
     }
 }

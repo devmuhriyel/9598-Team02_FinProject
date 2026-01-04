@@ -10,16 +10,16 @@ public class AdminBookingModel extends AdminParentModel {
 
     //Get All Bookings
     public Booking[] getAllBookings(int adminId) throws AuthenticationException {
-        return adminServices.getAllBookings(adminId);
+        return adminServices.getAllBookings(adminId, sessionToken);
     }
 
     //Get Bookings by Movie
     public Booking[] getBookingsByMovie(int adminId, int movieId) throws AuthenticationException, MovieNotFoundException {
-        return adminServices.getBookingsByMovie(adminId, movieId);
+        return adminServices.getBookingsByMovie(adminId, sessionToken, movieId);
     }
 
     // Get All Movies
     public Movie[] getAllMovies(int adminId) throws AuthenticationException {
-        return adminServices.getAllMovies(adminId);
+        return adminServices.getAllMovies(adminId, sessionToken);
     }
 }

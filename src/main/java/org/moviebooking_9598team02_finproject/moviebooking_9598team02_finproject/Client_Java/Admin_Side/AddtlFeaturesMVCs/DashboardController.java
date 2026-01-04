@@ -60,7 +60,7 @@ public class DashboardController {
 
     private String getGenreNamesForMovie(int movieId) {
         try {
-            Genre[] genres = AdminParentModel.adminServices.getMovieGenres(currentAdminId, movieId);
+            Genre[] genres = AdminParentModel.adminServices.getMovieGenres(currentAdminId, dashboardModel.getSessionToken(), movieId);
             if (genres == null || genres.length == 0) return "No Genre";
 
             return Arrays.stream(genres)
@@ -85,7 +85,7 @@ public class DashboardController {
 
     private void loadGenres() {
         try {
-            cachedGenres = AdminParentModel.adminServices.getAllGenres(currentAdminId);
+            cachedGenres = AdminParentModel.adminServices.getAllGenres(currentAdminId, dashboardModel.getSessionToken());
             List<String> genreNames = Arrays.stream(cachedGenres)
                     .map(g -> g.genreName)
                     .collect(Collectors.toList());
@@ -104,7 +104,7 @@ public class DashboardController {
         try {
             // Load all movies from server if not cached
             if (cachedAllMovies.length == 0) {
-                cachedAllMovies = AdminParentModel.adminServices.getAllMovies(currentAdminId);
+                cachedAllMovies = AdminParentModel.adminServices.getAllMovies(currentAdminId, dashboardModel.getSessionToken());
             }
 
             List<Movie> moviesToDisplay = new ArrayList<>(Arrays.asList(cachedAllMovies));
@@ -127,7 +127,7 @@ public class DashboardController {
 
                     for (Movie movie : moviesToDisplay) {
                         try {
-                            Genre[] movieGenres = AdminParentModel.adminServices.getMovieGenres(currentAdminId, movie.movieId);
+                            Genre[] movieGenres = AdminParentModel.adminServices.getMovieGenres(currentAdminId, dashboardModel.getSessionToken(), movie.movieId);
                             if (movieGenres != null) {
                                 for (Genre g : movieGenres) {
                                     if (g.genreId == genreIdToFilter) {

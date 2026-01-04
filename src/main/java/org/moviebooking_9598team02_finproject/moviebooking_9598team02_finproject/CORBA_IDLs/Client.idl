@@ -41,10 +41,10 @@ module MovieBookingClient {
         void logoutCustomer(in long customerId, in string sessionToken) raises (MovieBookingCommon::AuthenticationException);
 
         // Update customer profile
-        void updateCustomerProfile(in long customerId, in string phoneNumber, in string fullName) raises (MovieBookingCommon::AuthenticationException);
+        void updateCustomerProfile(in long customerId, in string sessionToken, in string phoneNumber, in string fullName) raises (MovieBookingCommon::AuthenticationException);
 
         // Change password
-        void changePassword(in long customerId, in string oldPassword, in string newPassword) raises (MovieBookingCommon::AuthenticationException);
+        void changePassword(in long customerId, in string sessionToken, in string oldPassword, in string newPassword) raises (MovieBookingCommon::AuthenticationException);
 
         // ===== GENRE BROWSING =====
 
@@ -99,59 +99,59 @@ module MovieBookingClient {
         // Create a new booking
         // Returns the booking ID
         // seatIds parameter contains schedule_list_seat_ids
-        long createBooking(in long customerId, in long scheduleId, in IdList scheduleListSeatIds) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::SeatNotAvailableException, MovieBookingCommon::BookingException);
+        long createBooking(in long customerId, in string sessionToken, in long scheduleId, in IdList scheduleListSeatIds) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::SeatNotAvailableException, MovieBookingCommon::BookingException);
 
         // Get booking details
         Booking getBookingDetails(in long bookingId) raises (MovieBookingCommon::BookingException);
 
         // Get all bookings for a customer
-        BookingList getCustomerBookings(in long customerId) raises (MovieBookingCommon::AuthenticationException);
+        BookingList getCustomerBookings(in long customerId, in string sessionToken) raises (MovieBookingCommon::AuthenticationException);
 
         // Cancel a booking (must be customer's own booking)
-        void cancelBooking(in long customerId, in long bookingId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::BookingException);
+        void cancelBooking(in long customerId, in string sessionToken, in long bookingId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::BookingException);
 
         // Confirm payment for a booking (changes status from pending to confirmed)
-        void confirmPayment(in long customerId, in long bookingId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::BookingException);
+        void confirmPayment(in long customerId, in string sessionToken, in long bookingId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::BookingException);
 
         // Modify booking (change seats, before confirmation)
-        void updateBooking(in long customerId, in long bookingId, in IdList newScheduleListSeatIds) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::BookingException, MovieBookingCommon::SeatNotAvailableException);
+        void updateBooking(in long customerId, in string sessionToken, in long bookingId, in IdList newScheduleListSeatIds) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::BookingException, MovieBookingCommon::SeatNotAvailableException);
 
         // Update booking status
-        void updateBookingStatus(in long customerId, in long bookingId, in string status) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::BookingException);
+        void updateBookingStatus(in long customerId, in string sessionToken, in long bookingId, in string status) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::BookingException);
 
         // ===== BOOKING HISTORY =====
 
         // Get customer's booking history (completed bookings)
-        BookingList getBookingHistory(in long customerId) raises (MovieBookingCommon::AuthenticationException);
+        BookingList getBookingHistory(in long customerId, in string sessionToken) raises (MovieBookingCommon::AuthenticationException);
 
         // Get customer's active bookings (pending/confirmed)
-        BookingList getActiveBookings(in long customerId) raises (MovieBookingCommon::AuthenticationException);
+        BookingList getActiveBookings(in long customerId, in string sessionToken) raises (MovieBookingCommon::AuthenticationException);
 
         // Get booking with full details
-        BookingDetails getBookingDetailsView(in long customerId, in long bookingId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::BookingException);
+        BookingDetails getBookingDetailsView(in long customerId, in string sessionToken, in long bookingId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::BookingException);
 
         // Get all customer's bookings with details
-        BookingDetailsList getCustomerBookingsWithDetails(in long customerId) raises (MovieBookingCommon::AuthenticationException);
+        BookingDetailsList getCustomerBookingsWithDetails(in long customerId, in string sessionToken) raises (MovieBookingCommon::AuthenticationException);
 
         // ===== PAYMENT PROCESSING =====
 
         // Process payment for booking
-        long processPayment(in long customerId, in long bookingId, in double amount, in string paymentMethod, in string transactionId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::BookingException, MovieBookingCommon::PaymentException);
+        long processPayment(in long customerId, in string sessionToken, in long bookingId, in double amount, in string paymentMethod, in string transactionId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::BookingException, MovieBookingCommon::PaymentException);
 
         // Get payment details
-        Payment getPaymentDetails(in long customerId, in long paymentId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::PaymentNotFoundException);
+        Payment getPaymentDetails(in long customerId, in string sessionToken, in long paymentId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::PaymentNotFoundException);
 
         // Get all payments for customer
-        PaymentList getCustomerPayments(in long customerId) raises (MovieBookingCommon::AuthenticationException);
+        PaymentList getCustomerPayments(in long customerId, in string sessionToken) raises (MovieBookingCommon::AuthenticationException);
 
         // Get payment for specific booking
-        Payment getBookingPayment(in long customerId, in long bookingId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::BookingException);
+        Payment getBookingPayment(in long customerId, in string sessionToken, in long bookingId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::BookingException);
 
         // Get payment with full context
-        PaymentDetails getPaymentDetailsView(in long customerId, in long paymentId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::PaymentNotFoundException);
+        PaymentDetails getPaymentDetailsView(in long customerId, in string sessionToken, in long paymentId) raises (MovieBookingCommon::AuthenticationException, MovieBookingCommon::PaymentNotFoundException);
 
         // Get all customer's payments with details
-        PaymentDetailsList getCustomerPaymentsWithDetails(in long customerId) raises (MovieBookingCommon::AuthenticationException);
+        PaymentDetailsList getCustomerPaymentsWithDetails(in long customerId, in string sessionToken) raises (MovieBookingCommon::AuthenticationException);
     };
 
     // ==================== CLIENT CALLBACK INTERFACE ====================

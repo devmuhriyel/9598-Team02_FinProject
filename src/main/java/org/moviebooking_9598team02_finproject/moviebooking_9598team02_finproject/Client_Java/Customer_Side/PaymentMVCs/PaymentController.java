@@ -63,7 +63,7 @@ public class PaymentController {
 
         new Thread(() -> {
             try {
-                int paymentId = model.processPayment(customerId, bookingId, totalAmount, method, txnId);
+                int paymentId = model.processPayment(customerId, model.getSessionToken(), bookingId, totalAmount, method, txnId);
                 view.runOnUIThread(() -> {
                     view.showStatus("SUCCESS! Payment ID: " + paymentId + " (Status: PENDING)", false);
                     view.setCancelButtonText("Close Receipt");

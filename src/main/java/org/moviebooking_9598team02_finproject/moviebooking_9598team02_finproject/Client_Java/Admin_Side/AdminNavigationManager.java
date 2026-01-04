@@ -3,36 +3,36 @@ package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finprojec
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Admin;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.AddtlFeaturesMVCs.AdminDashboardNavManager;
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.AddtlFeaturesMVCs.DashboardController;
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.AddtlFeaturesMVCs.DashboardModel;
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.AddtlFeaturesMVCs.DashboardView;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.AuthenticationMVCs.AdminAuthNavManager;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.AuthenticationMVCs.Login.AdminLoginModel;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.BookingsMVCs.AdminBookingNavManager;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.CustomerMgmtMVCs.AccountNavigationManager;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.MovieMVCs.AdminMMNavManager;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.SeatMgmtMVCs.AdminSMNavManager;
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingAdmin.AdminService;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.PaymentMVCs.AdminPaymentNavManager;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.GenreMgmtMVCs.AdminGenreManager;
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.SessionValidator; // 🆕 ADD THIS
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.SessionValidator;
 
 import java.io.IOException;
 
+/**
+ * ✅ UPDATED: AdminNavigationManager with concurrent login detection
+ */
 public class AdminNavigationManager {
     private Stage homeStage;
     private AdminAuthNavManager authNavManager;
     private Admin admin;
+    private String sessionToken; // ✅ Now properly stored
 
     private Pane homePane;
     private AdminHomeController homeController;
     private AdminHomeView homeView;
-    private DashboardController dashboardController;
-    private DashboardView dashboardView;
 
     // Cache for main section panes
     private Pane dashboardPane;
@@ -51,13 +51,21 @@ public class AdminNavigationManager {
     private AdminDashboardNavManager dashboardNavManager;
     private AdminGenreManager genreManager;
 
-    // 🆕 ADD THIS - Session validator
     private SessionValidator sessionValidator;
 
-    public AdminNavigationManager(Stage homeStage, AdminAuthNavManager authNavManager, Admin admin) {
+    /**
+     * ✅ UPDATED: Now accepts sessionToken parameter
+     */
+    public AdminNavigationManager(Stage homeStage, AdminAuthNavManager authNavManager,
+                                  Admin admin, String sessionToken) {
         this.homeStage = homeStage;
         this.authNavManager = authNavManager;
         this.admin = admin;
+        this.sessionToken = sessionToken; // ✅ Properly store the token
+
+        System.out.println("🔑 Session token stored: " +
+                (sessionToken != null ? sessionToken.substring(0, 8) + "..." : "NULL"));
+
         AdminParentModel.initializeCORBAConnection(new String[]{});
 
         this.seatNavManager = new AdminSMNavManager(admin);
@@ -65,13 +73,11 @@ public class AdminNavigationManager {
         this.bookingNavManager = new AdminBookingNavManager(admin);
         this.dashboardNavManager = new AdminDashboardNavManager(admin);
 
-        // 🆕 START SESSION VALIDATION
         startSessionValidation();
 
         initializeHomeView();
-        showDashboardView(); // To load the dashboard directly
+        showDashboardView();
 
-        // 🆕 HANDLE WINDOW CLOSE
         homeStage.setOnCloseRequest(event -> {
             cleanup();
         });
@@ -95,7 +101,9 @@ public class AdminNavigationManager {
         }
     }
 
-    // 🆕 START SESSION VALIDATION
+    /**
+     * ✅ UPDATED: Session validation with concurrent login detection
+     */
     private void startSessionValidation() {
         sessionValidator = new SessionValidator(
                 admin.adminId,
@@ -103,9 +111,7 @@ public class AdminNavigationManager {
                 new SessionValidator.SessionValidationCallback() {
                     @Override
                     public boolean validateSession() {
-                        // Create a temporary instance to call the method
-                        // since AdminParentModel is abstract, we need a concrete implementation
-                        AdminParentModel tempModel = new AdminHomeModel(); // or any concrete subclass
+                        AdminParentModel tempModel = new AdminHomeModel();
                         return tempModel.validateSession(admin.adminId);
                     }
 
@@ -117,22 +123,37 @@ public class AdminNavigationManager {
         );
 
         sessionValidator.start();
-        System.out.println("Session validation started for admin: " + admin.adminId);
+        System.out.println("🔄 Session validation started for admin: " + admin.adminId);
     }
 
-    // 🆕 HANDLE CONCURRENT LOGIN
+    /**
+     * ✅ UPDATED: Shows alert for concurrent login
+     */
     private void handleSessionExpired() {
-        System.out.println("Admin session invalidated (concurrent login): " + admin.adminId);
-
-        // Clean up and return to login
+        System.out.println("🚨 Admin session expired: " + admin.adminId);
         cleanup();
+
         Platform.runLater(() -> {
             try {
-                logoutAndReturnToAuth();
+                // Show alert dialog
+                Alert alert = new Alert(Alert.AlertType.WARNING);
+                alert.setTitle("Session Terminated");
+                alert.setHeaderText("You have been logged out");
+                alert.setContentText("Your account has been logged in from another location. " +
+                        "You have been automatically logged out for security reasons.");
+                alert.showAndWait();
+
+                // Close home stage
+                homeStage.close();
+
+                // Reopen auth stage with message
+                authNavManager.reopenAuthStage(
+                        "Your account was logged in from another location. Please log in again."
+                );
+
             } catch (Exception e) {
-                System.err.println("Error during logout: " + e.getMessage());
+                System.err.println("❌ Error during forced logout: " + e.getMessage());
                 e.printStackTrace();
-                // Fallback: try to close stage directly
                 if (homeStage != null) {
                     homeStage.close();
                 }
@@ -140,15 +161,24 @@ public class AdminNavigationManager {
         });
     }
 
-    // 🆕 CLEANUP METHOD
     private void cleanup() {
         if (sessionValidator != null && sessionValidator.isRunning()) {
             sessionValidator.stop();
             System.out.println("🛑 Session validator stopped for admin: " + admin.adminId);
         }
+        
+        // Call logout on server to invalidate session
+        if (admin != null && AdminParentModel.adminServices != null) {
+            try {
+                AdminParentModel.adminServices.logoutAdmin(admin.adminId);
+                System.out.println("✅ Admin " + admin.adminId + " logged out from server");
+            } catch (Exception e) {
+                System.err.println("⚠️ Error calling logout on server: " + e.getMessage());
+            }
+        }
     }
 
-    // === YOUR EXISTING METHODS (UNCHANGED) ===
+    // === NAVIGATION METHODS (UNCHANGED) ===
 
     public void showDashboardView() {
         Pane pane = dashboardNavManager.getDashboardView();
@@ -165,7 +195,7 @@ public class AdminNavigationManager {
                     System.err.println("ERROR: Movie Management returned null pane!");
                     movieMgmtPane = createPlaceholder("Movie Management - Error Loading");
                 } else {
-                    System.out.println("✅ Movie Management loaded successfully with MVC wiring");
+                    System.out.println("✅ Movie Management loaded successfully");
                 }
             } catch (Exception e) {
                 System.err.println("❌ ERROR initializing Movie Management:");
@@ -182,8 +212,6 @@ public class AdminNavigationManager {
     }
 
     public void showBookingMgmtView() {
-        // Use the existing bookingNavManager instead of manually loading FXML
-        // This ensures the Controller and Model are wired correctly!
         if (bookingNavManager == null) {
             bookingNavManager = new AdminBookingNavManager(admin);
         }
@@ -207,7 +235,7 @@ public class AdminNavigationManager {
                 System.err.println("ERROR: Customer Management returned null pane!");
                 customerMgmtPane = createPlaceholder("Customer Management - Error Loading");
             } else {
-                System.out.println("Customer Management loaded successfully with MVC wiring");
+                System.out.println("✅ Customer Management loaded successfully");
             }
         }
         loadContentPane(customerMgmtPane);
@@ -222,7 +250,7 @@ public class AdminNavigationManager {
             System.err.println("ERROR: Genre Management returned null pane!");
             genreViewContent = createPlaceholder("Genre Management - Error Loading");
         } else {
-            System.out.println("✅ Genre Management loaded successfully with MVC wiring");
+            System.out.println("✅ Genre Management loaded successfully");
         }
         loadContentPane(genreViewContent);
     }
@@ -236,7 +264,7 @@ public class AdminNavigationManager {
                 System.err.println("ERROR: AdminAccountManager returned null pane!");
                 adminMgmtPane = createPlaceholder("Admin Management - Error Loading");
             } else {
-                System.out.println("✅ Admin Management loaded successfully with MVC wiring");
+                System.out.println("✅ Admin Management loaded successfully");
             }
         }
         loadContentPane(adminMgmtPane);
@@ -253,9 +281,24 @@ public class AdminNavigationManager {
         container.getChildren().add(pane);
     }
 
-    // 🆕 UPDATED - Now calls cleanup() before returning to auth
+    /**
+     * ✅ UPDATED: Logout with proper session token
+     */
     public void logoutAndReturnToAuth() {
-        cleanup(); // Stop session validator
+        cleanup();
+
+        try {
+            if (AdminParentModel.adminServices != null && sessionToken != null) {
+                AdminParentModel.adminServices.logoutAdmin(
+                        admin.adminId,
+                        sessionToken // ✅ Use the stored token
+                );
+                System.out.println("✅ Server session cleared for admin: " + admin.adminId);
+            }
+        } catch (Exception e) {
+            System.err.println("⚠️ Error during server logout: " + e.getMessage());
+        }
+
         homeStage.close();
         authNavManager.reopenAuthStage();
     }

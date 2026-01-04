@@ -10,34 +10,27 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 /**
- * SessionManager - Manages active admin and customer sessions
- * Thread-safe implementation using ConcurrentHashMap
+ * ✅ UPDATED SessionManager - Handles concurrent login detection
+ *
+ * NEW FEATURE: When a user logs in from another device:
+ * 1. Old session is marked as "forcibly terminated"
+ * 2. SessionValidator on the old client detects this
+ * 3. Old client is logged out with notification
+ * 4. New session is created successfully
  */
 public class SessionManager {
 
-    // ===== SESSION STORAGE =====
-
-    // Stores active admin sessions: adminId -> SessionInfo
+    // Maps userId -> SessionInfo (stores active sessions)
     private static final ConcurrentMap<Integer, SessionInfo> adminSessions = new ConcurrentHashMap<>();
-
-    // Stores active customer sessions: customerId -> SessionInfo
     private static final ConcurrentMap<Integer, SessionInfo> customerSessions = new ConcurrentHashMap<>();
 
-    // Stores session tokens: token -> userId (for token-based auth)
-    private static final ConcurrentMap<String, Integer> sessionTokens = new ConcurrentHashMap<>();
+    // Maps sessionToken -> userId (for fast token validation)
+    private static final ConcurrentMap<String, Integer> adminTokens = new ConcurrentHashMap<>();
+    private static final ConcurrentMap<String, Integer> customerTokens = new ConcurrentHashMap<>();
 
-    // ===== CONFIGURATION =====
-
-    // Session timeout in minutes (default: 30 minutes)
     private static final int SESSION_TIMEOUT_MINUTES = 30;
-
-    // Cleanup interval in minutes (default: 5 minutes)
     private static final int CLEANUP_INTERVAL_MINUTES = 5;
-
-    // Timer for automatic session cleanup
     private static Timer cleanupTimer;
-
-    // ===== SESSION INFO CLASS =====
 
     public static class SessionInfo {
         public int userId;
@@ -46,7 +39,7 @@ public class SessionManager {
         public LocalDateTime loginTime;
         public LocalDateTime lastActivityTime;
         public String ipAddress;
-        public String userAgent;
+        public boolean forciblyTerminated; // 🆕 NEW: Flag for concurrent login detection
 
         public SessionInfo(int userId, String username, String sessionToken) {
             this.userId = userId;
@@ -54,11 +47,7 @@ public class SessionManager {
             this.sessionToken = sessionToken;
             this.loginTime = LocalDateTime.now();
             this.lastActivityTime = LocalDateTime.now();
-        }
-
-        public SessionInfo(int userId, String username, String sessionToken, String ipAddress) {
-            this(userId, username, sessionToken);
-            this.ipAddress = ipAddress;
+            this.forciblyTerminated = false; // 🆕 Default: not terminated
         }
 
         public boolean isExpired() {
@@ -69,10 +58,9 @@ public class SessionManager {
             this.lastActivityTime = LocalDateTime.now();
         }
 
-        @Override
-        public String toString() {
-            return String.format("Session[userId=%d, username=%s, loginTime=%s, lastActivity=%s]",
-                    userId, username, loginTime, lastActivityTime);
+        // 🆕 NEW: Mark session as forcibly terminated
+        public void markAsTerminated() {
+            this.forciblyTerminated = true;
         }
     }
 
@@ -87,10 +75,9 @@ public class SessionManager {
                 }
             }, CLEANUP_INTERVAL_MINUTES * 60 * 1000, CLEANUP_INTERVAL_MINUTES * 60 * 1000);
 
-            System.out.println("SessionManager initialized with " + SESSION_TIMEOUT_MINUTES + " min timeout");
+            System.out.println("✅ SessionManager initialized - 30min timeout, concurrent login detection enabled");
         }
     }
-
 
     public static void shutdown() {
         if (cleanupTimer != null) {
@@ -99,212 +86,217 @@ public class SessionManager {
         }
         adminSessions.clear();
         customerSessions.clear();
-        sessionTokens.clear();
+        adminTokens.clear();
+        customerTokens.clear();
         System.out.println("SessionManager shutdown complete");
     }
 
     // ===== ADMIN SESSION MANAGEMENT =====
 
+    /**
+     * 🆕 UPDATED: Creates admin session - MARKS OLD SESSION AS TERMINATED
+     * Old session is NOT destroyed immediately - client will detect it
+     */
     public static String createAdminSession(int adminId, String username) {
-        return createAdminSession(adminId, username, null);
-    }
-
-    public static String createAdminSession(int adminId, String username, String ipAddress) {
         synchronized (adminSessions) {
+            // 🆕 FIX: Mark old session as terminated (don't destroy it yet)
             SessionInfo existingSession = adminSessions.get(adminId);
             if (existingSession != null) {
-                if (existingSession.sessionToken != null) {
-                    sessionTokens.remove(existingSession.sessionToken);
-                }
-                adminSessions.remove(adminId);
+                existingSession.markAsTerminated();
+                System.out.println("⚠️ Admin " + adminId + " logged in from another location - marking old session as terminated");
+
+                // Remove old token mapping
+                adminTokens.remove(existingSession.sessionToken);
             }
 
+            // Generate new token and create new session
             String sessionToken = UUID.randomUUID().toString();
-            SessionInfo sessionInfo = new SessionInfo(adminId, username, sessionToken, ipAddress);
+            SessionInfo sessionInfo = new SessionInfo(adminId, username, sessionToken);
 
+            // Store new session (overwrites old one)
             adminSessions.put(adminId, sessionInfo);
-            sessionTokens.put(sessionToken, adminId);
+            adminTokens.put(sessionToken, adminId);
 
-            System.out.println("Admin session created: " + sessionInfo);
+            System.out.println("✅ Admin session created: " + adminId + " | Token: " + sessionToken.substring(0, 8) + "...");
             return sessionToken;
         }
     }
 
+    /**
+     * 🆕 UPDATED: Validates admin session - DETECTS CONCURRENT LOGIN
+     * Returns false if session was forcibly terminated (concurrent login)
+     */
+    public static boolean validateAdminSession(int adminId, String sessionToken) {
+        // Check if token exists and maps to correct user
+        Integer tokenUserId = adminTokens.get(sessionToken);
+        if (tokenUserId == null || tokenUserId != adminId) {
+            System.out.println("❌ Invalid token for admin " + adminId);
+            return false;
+        }
+
+        // Check if session exists
+        SessionInfo session = adminSessions.get(adminId);
+        if (session == null) {
+            System.out.println("❌ No session found for admin " + adminId);
+            adminTokens.remove(sessionToken);
+            return false;
+        }
+
+        // 🆕 NEW: Check if session was forcibly terminated (concurrent login)
+        if (session.forciblyTerminated && !session.sessionToken.equals(sessionToken)) {
+            System.out.println("🚨 Admin " + adminId + " session terminated - concurrent login detected");
+            return false;
+        }
+
+        // Check if session expired
+        if (session.isExpired()) {
+            System.out.println("⏰ Session expired for admin " + adminId);
+            removeAdminSession(adminId);
+            return false;
+        }
+
+        // Verify token matches current session
+        if (!session.sessionToken.equals(sessionToken)) {
+            System.out.println("❌ Token mismatch for admin " + adminId + " - concurrent login");
+            return false;
+        }
+
+        // Update activity time
+        session.updateActivity();
+        return true;
+    }
+
+    /**
+     * Checks if admin is logged in (WITHOUT token validation)
+     */
     public static boolean isAdminLoggedIn(int adminId) {
         SessionInfo session = adminSessions.get(adminId);
-        if (session != null && !session.isExpired()) {
-            session.updateActivity();
-            return true;
-        }
-        // Remove expired session
-        if (session != null) {
-            removeAdminSession(adminId);
-        }
-        return false;
+        return session != null && !session.isExpired() && !session.forciblyTerminated;
     }
 
-    public static SessionInfo getAdminSession(int adminId) {
-        SessionInfo session = adminSessions.get(adminId);
-        if (session != null && !session.isExpired()) {
-            session.updateActivity();
-            return session;
-        }
-        return null;
-    }
-
-    // ✅ FIX: Get raw session from map (for concurrent login prevention - checks ALL sessions, not just active)
-    public static SessionInfo getAdminSessionRaw(int adminId) {
-        return adminSessions.get(adminId);
-    }
-
-    // ✅ FIX: Internal method to create admin session WITHOUT synchronization (caller must synchronize)
-    // This is used when the caller already holds the lock (e.g., in loginAdmin)
-    public static String createAdminSessionUnsafe(int adminId, String username) {
-        return createAdminSessionUnsafe(adminId, username, null);
-    }
-
-    public static String createAdminSessionUnsafe(int adminId, String username, String ipAddress) {
-        SessionInfo existingSession = adminSessions.get(adminId);
-        if (existingSession != null) {
-            removeAdminSession(adminId);
-        }
-
-        String sessionToken = UUID.randomUUID().toString();
-        SessionInfo sessionInfo = new SessionInfo(adminId, username, sessionToken, ipAddress);
-
-        adminSessions.put(adminId, sessionInfo);
-        sessionTokens.put(sessionToken, adminId);
-
-        System.out.println("Admin session created: " + sessionInfo);
-        return sessionToken;
-    }
-
-    public static boolean validateAdminToken(String token) {
-        Integer adminId = sessionTokens.get(token);
-        return adminId != null && isAdminLoggedIn(adminId);
-    }
-
-    public static Integer getAdminIdFromToken(String token) {
-        Integer adminId = sessionTokens.get(token);
-        if (adminId != null && isAdminLoggedIn(adminId)) {
-            return adminId;
-        }
-        return null;
+    /**
+     * Overloaded method that validates with token
+     */
+    public static boolean isAdminLoggedIn(int adminId, String sessionToken) {
+        return validateAdminSession(adminId, sessionToken);
     }
 
     public static void removeAdminSession(int adminId) {
         SessionInfo session = adminSessions.remove(adminId);
         if (session != null) {
-            sessionTokens.remove(session.sessionToken);
+            adminTokens.remove(session.sessionToken);
+            System.out.println("🔓 Admin " + adminId + " logged out");
         }
     }
 
-    public static Map<Integer, SessionInfo> getAllAdminSessions() {
-        return new ConcurrentHashMap<>(adminSessions);
-    }
-
-    public static int getActiveAdminCount() {
-        return adminSessions.size();
-    }
-
-    // ===== CUSTOMER SESSION MANAGEMENT =====
-
-    public static String createCustomerSession(int customerId, String username) {
-        return createCustomerSession(customerId, username, null);
-    }
-
-    public static String createCustomerSession(int customerId, String username, String ipAddress) {
-        synchronized (customerSessions) {
-            SessionInfo existingSession = customerSessions.get(customerId);
-            if (existingSession != null) {
-                if (existingSession.sessionToken != null) {
-                    sessionTokens.remove(existingSession.sessionToken);
-                }
-                customerSessions.remove(customerId);
-            }
-
-            String sessionToken = UUID.randomUUID().toString();
-            SessionInfo sessionInfo = new SessionInfo(customerId, username, sessionToken, ipAddress);
-
-            customerSessions.put(customerId, sessionInfo);
-            sessionTokens.put(sessionToken, customerId);
-
-            System.out.println("Customer session created: " + sessionInfo);
-            return sessionToken;
-        }
-    }
-
-    public static boolean isCustomerLoggedIn(int customerId) {
-        SessionInfo session = customerSessions.get(customerId);
-        if (session != null && !session.isExpired()) {
-            session.updateActivity();
-            return true;
-        }
-        if (session != null) {
-            removeCustomerSession(customerId);
-        }
-        return false;
-    }
-
-    public static SessionInfo getCustomerSession(int customerId) {
-        SessionInfo session = customerSessions.get(customerId);
-        if (session != null && !session.isExpired()) {
-            session.updateActivity();
-            return session;
-        }
-        return null;
-    }
-
-    // ✅ FIX: Get raw session from map (for concurrent login prevention - checks ALL sessions, not just active)
-    public static SessionInfo getCustomerSessionRaw(int customerId) {
-        return customerSessions.get(customerId);
-    }
-
-    // ✅ FIX: Get lock object for synchronizing login operations
-    public static Object getCustomerSessionsLock() {
-        return customerSessions;
-    }
-
-    // ✅ FIX: Get lock object for synchronizing admin login operations
     public static Object getAdminSessionsLock() {
         return adminSessions;
     }
 
-    // ✅ FIX: Internal method to create customer session WITHOUT synchronization (caller must synchronize)
-    // This is used when the caller already holds the lock (e.g., in loginCustomer)
-    public static String createCustomerSessionUnsafe(int customerId, String username) {
-        return createCustomerSessionUnsafe(customerId, username, null);
+    // ===== CUSTOMER SESSION MANAGEMENT =====
+
+    /**
+     * 🆕 UPDATED: Creates customer session - MARKS OLD SESSION AS TERMINATED
+     */
+    public static String createCustomerSession(int customerId, String username) {
+        synchronized (customerSessions) {
+            // 🆕 FIX: Mark old session as terminated (don't destroy it yet)
+            SessionInfo existingSession = customerSessions.get(customerId);
+            if (existingSession != null) {
+                existingSession.markAsTerminated();
+                System.out.println("⚠️ Customer " + customerId + " logged in from another location - marking old session as terminated");
+
+                // Remove old token mapping
+                customerTokens.remove(existingSession.sessionToken);
+            }
+
+            String sessionToken = UUID.randomUUID().toString();
+            SessionInfo sessionInfo = new SessionInfo(customerId, username, sessionToken);
+
+            customerSessions.put(customerId, sessionInfo);
+            customerTokens.put(sessionToken, customerId);
+
+            System.out.println("✅ Customer session created: " + customerId + " | Token: " + sessionToken.substring(0, 8) + "...");
+            return sessionToken;
+        }
     }
 
-    public static String createCustomerSessionUnsafe(int customerId, String username, String ipAddress) {
-        SessionInfo existingSession = customerSessions.get(customerId);
-        if (existingSession != null) {
-            removeCustomerSession(customerId);
+    /**
+     * 🆕 UPDATED: Validates customer session - DETECTS CONCURRENT LOGIN
+     */
+    public static boolean validateCustomerSession(int customerId, String sessionToken) {
+        Integer tokenUserId = customerTokens.get(sessionToken);
+        if (tokenUserId == null || tokenUserId != customerId) {
+            System.out.println("❌ Invalid token for customer " + customerId);
+            return false;
         }
 
-        String sessionToken = UUID.randomUUID().toString();
-        SessionInfo sessionInfo = new SessionInfo(customerId, username, sessionToken, ipAddress);
+        SessionInfo session = customerSessions.get(customerId);
+        if (session == null) {
+            System.out.println("❌ No session found for customer " + customerId);
+            customerTokens.remove(sessionToken);
+            return false;
+        }
 
-        customerSessions.put(customerId, sessionInfo);
-        sessionTokens.put(sessionToken, customerId);
+        // 🆕 NEW: Check if session was forcibly terminated (concurrent login)
+        if (session.forciblyTerminated && !session.sessionToken.equals(sessionToken)) {
+            System.out.println("🚨 Customer " + customerId + " session terminated - concurrent login detected");
+            return false;
+        }
 
-        System.out.println("Customer session created: " + sessionInfo);
-        return sessionToken;
+        if (session.isExpired()) {
+            System.out.println("⏰ Session expired for customer " + customerId);
+            removeCustomerSession(customerId);
+            return false;
+        }
+
+        if (!session.sessionToken.equals(sessionToken)) {
+            System.out.println("❌ Token mismatch for customer " + customerId + " - concurrent login");
+            return false;
+        }
+
+        session.updateActivity();
+        return true;
+    }
+
+    /**
+     * Checks if customer is logged in (WITHOUT token validation)
+     */
+    public static boolean isCustomerLoggedIn(int customerId) {
+        SessionInfo session = customerSessions.get(customerId);
+        return session != null && !session.isExpired() && !session.forciblyTerminated;
+    }
+
+    /**
+     * Overloaded method that validates with token
+     */
+    public static boolean isCustomerLoggedIn(int customerId, String sessionToken) {
+        return validateCustomerSession(customerId, sessionToken);
+    }
+
+    public static boolean validateCustomerToken(String token) {
+        Integer customerId = sessionTokens.get(token);
+        return customerId != null && isCustomerLoggedIn(customerId);
+    }
+
+    public static Integer getCustomerIdFromToken(String token) {
+        Integer customerId = sessionTokens.get(token);
+        if (customerId != null && isCustomerLoggedIn(customerId)) {
+            return customerId;
+        }
+        return null;
     }
 
     public static void removeCustomerSession(int customerId) {
         SessionInfo session = customerSessions.remove(customerId);
         if (session != null) {
-            sessionTokens.remove(session.sessionToken);
+            customerTokens.remove(session.sessionToken);
+            System.out.println("🔓 Customer " + customerId + " logged out");
         }
     }
 
-    public static Map<Integer, SessionInfo> getAllCustomerSessions() {
-        return new ConcurrentHashMap<>(customerSessions);
-    }
-
-    public static int getActiveCustomerCount() {
-        return customerSessions.size();
+    public static Object getCustomerSessionsLock() {
+        return customerSessions;
     }
 
     // ===== SESSION CLEANUP =====
@@ -328,47 +320,22 @@ public class SessionManager {
         }
 
         if (expiredAdmin > 0 || expiredCustomer > 0) {
-            System.out.println(String.format("🧹 Session cleanup: removed %d admin, %d customer sessions",
+            System.out.println(String.format("🧹 Cleaned up %d admin, %d customer expired sessions",
                     expiredAdmin, expiredCustomer));
         }
     }
 
-    public static void forceCleanup() {
-        cleanupExpiredSessions();
-    }
-
-    public static void clearAllSessions() {
-        adminSessions.clear();
-        customerSessions.clear();
-        sessionTokens.clear();
-        System.out.println("🗑️ All sessions cleared");
-    }
-
-    // ===== STATISTICS & MONITORING =====
-
     public static String getSessionStats() {
         return String.format(
-                "SessionManager Statistics:\n" +
+                "📊 SessionManager Stats:\n" +
                         "  Active Admins: %d\n" +
                         "  Active Customers: %d\n" +
-                        "  Total Sessions: %d\n" +
-                        "  Session Timeout: %d minutes",
+                        "  Active Tokens: %d\n" +
+                        "  Timeout: %d minutes",
                 adminSessions.size(),
                 customerSessions.size(),
-                adminSessions.size() + customerSessions.size(),
+                adminTokens.size() + customerTokens.size(),
                 SESSION_TIMEOUT_MINUTES
         );
-    }
-
-    public static void printActiveSessions() {
-        System.out.println("\n=== Active Admin Sessions ===");
-        adminSessions.forEach((id, session) ->
-                System.out.println("  " + id + ": " + session));
-
-        System.out.println("\n=== Active Customer Sessions ===");
-        customerSessions.forEach((id, session) ->
-                System.out.println("  " + id + ": " + session));
-
-        System.out.println();
     }
 }

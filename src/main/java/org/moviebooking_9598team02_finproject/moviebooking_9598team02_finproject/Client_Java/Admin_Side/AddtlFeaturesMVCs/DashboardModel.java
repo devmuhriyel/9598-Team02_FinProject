@@ -11,22 +11,22 @@ public class DashboardModel extends AdminParentModel {
     // === DASHBOARD METHODS FROM THE SERVANT===
 
     public String generateSalesReport(int adminId, String startDate, String endDate) throws AuthenticationException {
-        return adminServices.generateSalesReport(adminId, startDate, endDate);
+        return adminServices.generateSalesReport(adminId, sessionToken, startDate, endDate);
     }
 
     public double getMovieRevenue(int adminId, int movieId) throws AuthenticationException, MovieNotFoundException {
-        return adminServices.getMovieRevenue(adminId, movieId);
+        return adminServices.getMovieRevenue(adminId, sessionToken, movieId);
     }
 
     public double getScheduleOccupancy(int adminId, int scheduleId) throws AuthenticationException, ScheduleNotFoundException {
-        return adminServices.getScheduleOccupancy(adminId, scheduleId);
+        return adminServices.getScheduleOccupancy(adminId, sessionToken, scheduleId);
     }
 
     public Movie[] getPopularMovies(int adminId, int top) throws AuthenticationException {
-        return adminServices.getPopularMovies(adminId, top);
+        return adminServices.getPopularMovies(adminId, sessionToken, top);
     }
 
     public Movie[] getMoviesByGenre(int adminId, int genreId) throws AuthenticationException {
-        return adminServices.getMoviesByGenre(adminId, genreId);
+        return adminServices.getMoviesByGenre(adminId, sessionToken, genreId);
     }
 }

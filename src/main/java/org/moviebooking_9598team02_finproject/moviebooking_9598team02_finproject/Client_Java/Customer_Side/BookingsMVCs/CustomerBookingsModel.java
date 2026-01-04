@@ -11,17 +11,15 @@ import java.util.Arrays;
 import java.util.List;
 
 public class CustomerBookingsModel extends CustomerParentModel {
-    private final int customerId;
     private final String customerName;
 
-    public CustomerBookingsModel(int customerId, String customerName) {
-        this.customerId = customerId;
+    public CustomerBookingsModel( String customerName) {
         this.customerName = customerName;
     }
 
     public List<BookingDetails> fetchHistory() throws AuthenticationException {
         // Calls your existing server method
-        BookingDetails[] results = clientServices.getCustomerBookingsWithDetails(customerId);
+        BookingDetails[] results = clientServices.getCustomerBookingsWithDetails(customerId, sessionToken);
         return Arrays.asList(results);
     }
 

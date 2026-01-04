@@ -18,7 +18,6 @@ public class DashboardView {
 
     @FXML public TableView<Movie> allMoviesTableView;
 
-    @FXML private TableColumn<Movie, Integer> allColId;
     @FXML private TableColumn<Movie, String> allColTitle;
     @FXML private TableColumn<Movie, String> allColGenre;
     @FXML private TableColumn<Movie, String> allColStatus;
@@ -35,11 +34,6 @@ public class DashboardView {
     }
 
     private void setupTableColumns() {
-        if (allColId != null) {
-            allColId.setCellValueFactory(cellData ->
-                    new SimpleIntegerProperty(cellData.getValue().movieId).asObject()
-            );
-        }
         if (allColTitle != null) {
             allColTitle.setCellValueFactory(cellData ->
                     new SimpleStringProperty(cellData.getValue().movieTitle)

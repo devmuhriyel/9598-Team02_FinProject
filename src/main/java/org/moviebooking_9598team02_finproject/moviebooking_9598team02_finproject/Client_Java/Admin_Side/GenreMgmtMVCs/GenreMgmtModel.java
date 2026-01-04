@@ -18,22 +18,22 @@ public class GenreMgmtModel extends AdminParentModel {
     }
 
     public Genre[] loadAllGenres() throws AuthenticationException {
-        return adminServices.getAllGenres(adminId);
+        return adminServices.getAllGenres(adminId, sessionToken);
     }
 
     public Genre getGenreById(int genreId) throws AuthenticationException {
-        return adminServices.getGenreById(adminId, genreId);
+        return adminServices.getGenreById(adminId, sessionToken, genreId);
     }
 
     public int addGenre(String genreName, String genreDescription) throws AuthenticationException, InvalidInputException {
-        return adminServices.addGenre(adminId, genreName, genreDescription);
+        return adminServices.addGenre(adminId, sessionToken, genreName, genreDescription);
     }
 
     public void updateGenre(int genreId, String genreName, String genreDescription) throws AuthenticationException {
-        adminServices.updateGenre(adminId, genreId, genreName, genreDescription);
+        adminServices.updateGenre(adminId, sessionToken, genreId, genreName, genreDescription);
     }
 
     public void deleteGenre(int genreId) throws AuthenticationException {
-        adminServices.deleteGenre(adminId, genreId);
+        adminServices.deleteGenre(adminId, sessionToken, genreId);
     }
 }

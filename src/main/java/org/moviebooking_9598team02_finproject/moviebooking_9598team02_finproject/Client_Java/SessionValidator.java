@@ -1,38 +1,38 @@
 package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java;
 
 import javafx.application.Platform;
-import javafx.scene.control.Alert;
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.AuthenticationException;
-
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * SessionValidator - Periodically validates if the user's session is still active
- * Checks for expired sessions only (concurrent logins are prevented at login level)
+ * ✅ SessionValidator - Validates user session every 5 seconds
+ *
+ * DETECTS:
+ * - Session expiration (30 min timeout)
+ * - Concurrent login from another device
+ *
+ * When detected, automatically logs user out with notification
  */
 public class SessionValidator {
 
-    private Timer timer;
     private final int userId;
     private final String userType; // "admin" or "customer"
     private final SessionValidationCallback callback;
-    private final AtomicBoolean isRunning = new AtomicBoolean(false);
-    private final AtomicBoolean alertShown = new AtomicBoolean(false);
+    private Thread validationThread;
+    private volatile boolean running = false;
 
-    // Check interval for session validation (every 30 seconds - less frequent since we only check for expired sessions)
-    private static final long CHECK_INTERVAL_MS = 30000;
+    private static final int VALIDATION_INTERVAL_MS = 5000; // 5 seconds
 
+    /**
+     * Callback interface for session validation
+     */
     public interface SessionValidationCallback {
         /**
-         * Check if the session is still valid on the server
-         * @return true if valid, false if session was terminated or expired
+         * Called every 5 seconds to validate the session
+         * @return true if session is valid, false if invalidated
          */
         boolean validateSession();
 
         /**
-         * Called when session is invalidated (expired session)
+         * Called when session is invalidated (expired or concurrent login)
          */
         void onSessionInvalidated();
     }
@@ -44,118 +44,86 @@ public class SessionValidator {
     }
 
     /**
-     * Start monitoring the session
+     * Start the session validation loop
      */
     public void start() {
-        if (isRunning.getAndSet(true)) {
-            return; // Already running
+        if (running) {
+            System.out.println("⚠️ SessionValidator already running for " + userType + " " + userId);
+            return;
         }
 
-        timer = new Timer("SessionValidator-" + userType + "-" + userId, true);
-        timer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                checkSession();
-            }
-        }, CHECK_INTERVAL_MS, CHECK_INTERVAL_MS);
+        running = true;
+        validationThread = new Thread(() -> {
+            System.out.println("🔄 SessionValidator started for " + userType + " " + userId);
 
-        System.out.println("Session validator started for " + userType + " " + userId);
+            while (running) {
+                try {
+                    // Wait 5 seconds before next validation
+                    Thread.sleep(VALIDATION_INTERVAL_MS);
+
+                    if (!running) break; // Check again after sleep
+
+                    // Validate session
+                    boolean isValid = callback.validateSession();
+
+                    if (!isValid) {
+                        System.out.println("🚨 Session invalidated for " + userType + " " + userId +
+                                " (expired or concurrent login)");
+                        running = false;
+
+                        // Notify on JavaFX thread
+                        Platform.runLater(() -> {
+                            callback.onSessionInvalidated();
+                        });
+
+                        break;
+                    }
+
+                } catch (InterruptedException e) {
+                    System.out.println("⚠️ SessionValidator interrupted for " + userType + " " + userId);
+                    running = false;
+                    break;
+                } catch (Exception e) {
+                    System.err.println("❌ Error in SessionValidator for " + userType + " " + userId);
+                    e.printStackTrace();
+                    // Continue running despite error
+                }
+            }
+
+            System.out.println("🛑 SessionValidator stopped for " + userType + " " + userId);
+        });
+
+        validationThread.setDaemon(true);
+        validationThread.setName("SessionValidator-" + userType + "-" + userId);
+        validationThread.start();
     }
 
     /**
-     * Stop monitoring the session
+     * Stop the session validation loop
      */
     public void stop() {
-        if (!isRunning.getAndSet(false)) {
-            return; // Already stopped
+        if (!running) {
+            return;
         }
 
-        if (timer != null) {
-            timer.cancel();
-            timer = null;
+        running = false;
+
+        if (validationThread != null) {
+            validationThread.interrupt();
+            try {
+                validationThread.join(1000); // Wait max 1 second
+            } catch (InterruptedException e) {
+                System.err.println("⚠️ Error stopping SessionValidator thread");
+            }
         }
 
-        System.out.println("Session validator stopped for " + userType + " " + userId);
+        System.out.println("✅ SessionValidator stopped for " + userType + " " + userId);
     }
 
     /**
-     * Check if session is still valid
-     * Only checks for expired sessions (concurrent logins are prevented at login level)
-     */
-    private void checkSession() {
-        // Check if validator is still running before proceeding
-        if (!isRunning.get()) {
-            return; // Already stopped, exit immediately
-        }
-
-        try {
-            boolean isValid = callback.validateSession();
-
-            // If session is invalid (expired), notify and stop checking
-            if (!isValid) {
-                System.out.println("Session expired for " + userType + " " + userId);
-                stop(); // Stop checking - prevents non-terminating loop
-
-                // Only show alert once
-                if (alertShown.compareAndSet(false, true)) {
-                    // Use Platform.runLater to ensure UI thread safety
-                    Platform.runLater(() -> {
-                        showSessionExpiredAlert();
-                        callback.onSessionInvalidated();
-                    });
-                }
-            }
-
-        } catch (Exception e) {
-            // If validation fails (e.g., user logged out or session expired)
-            if (e instanceof AuthenticationException) {
-                System.out.println("Session validation failed for " + userType + " " + userId + " - session expired or invalid");
-                stop();
-                if (alertShown.compareAndSet(false, true)) {
-                    Platform.runLater(() -> {
-                        showSessionExpiredAlert();
-                        callback.onSessionInvalidated();
-                    });
-                }
-            } else {
-                // Network error - don't logout on network glitches, just log it
-                System.err.println("Session validation error (network?): " + e.getMessage());
-            }
-        }
-    }
-
-    /**
-     * Show alert to user about expired session
-     */
-    private void showSessionExpiredAlert() {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Session Expired");
-        alert.setHeaderText("Your session has expired");
-        alert.setContentText(
-                "Your session has expired due to inactivity.\n\n" +
-                        "You will be logged out."
-        );
-
-        alert.show();
-
-        // Auto-close after 5 seconds
-        Timer autoCloseTimer = new Timer(true);
-        autoCloseTimer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                Platform.runLater(() -> {
-                    if (alert.isShowing()) {
-                        alert.close();
-                    }
-                });
-            }
-        }, 5000);
-    }
-
-    /**
-     * Check if validator is running
+     * Check if validator is currently running
      */
     public boolean isRunning() {
-        return isRunning.get();
+        return running;
     }
 }

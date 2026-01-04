@@ -57,7 +57,7 @@ public class MovieNavigationManager {
                 System.out.println("✅ View obtained from FXML");
 
                 // 3. Create Model
-                movieModel = new CustomerMovieModel(customer.customerId);
+                movieModel = new CustomerMovieModel();
                 System.out.println("✅ Model created");
 
                 // 4. Create Controller and pass View + Model + this manager
@@ -111,7 +111,7 @@ public class MovieNavigationManager {
             seatView = loader.getController();
 
             // Create Model
-            seatModel = new CustomerSeatSelectionModel(customer.customerId, scheduleId);
+            seatModel = new CustomerSeatSelectionModel(scheduleId);
 
             // Create Controller (pass null for navigation manager since we're using modal window)
             seatController = new CustomerSeatSelectionController(seatView, seatModel, this);

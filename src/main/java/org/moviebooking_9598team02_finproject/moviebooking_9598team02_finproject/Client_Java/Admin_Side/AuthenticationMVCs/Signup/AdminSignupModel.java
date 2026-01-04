@@ -17,6 +17,6 @@ public class AdminSignupModel extends AdminParentModel {
                  throw new IllegalArgumentException("Email address is invalid");
              }
         }
-        return adminServices.createAdmin(0, userName, emailAddress, password, fullName, phoneNumber);
+        return adminServices.createAdmin(0, sessionToken,userName, emailAddress, password, fullName, phoneNumber);
     }
 }

@@ -10,22 +10,18 @@ public class CustomerMgmtModel extends AdminParentModel {
         this.adminId = adminId;
     }
 
-    public void setAdminId(int adminId) {
-        this.adminId = adminId;
-    }
-
     // ===== DATA OPERATIONS =====
 
     public Customer[] loadAllCustomers() throws AuthenticationException {
-        return adminServices.getAllCustomers(adminId);
+        return adminServices.getAllCustomers(adminId, sessionToken);
     }
 
     public Customer[] searchCustomers(String searchString) throws AuthenticationException {
-        return adminServices.searchCustomers(adminId, searchString.trim());
+        return adminServices.searchCustomers(adminId, sessionToken, searchString.trim());
     }
 
     public Customer getCustomerDetails(String requestedCustomerId) throws AuthenticationException {
-        return adminServices.getCustomerDetails(adminId, Integer.parseInt(requestedCustomerId));
+        return adminServices.getCustomerDetails(adminId, sessionToken, Integer.parseInt(requestedCustomerId));
     }
 
     public void updateCustomerInfo(int targetCustomerId, String email, String phoneNumber, String fullName)
@@ -37,7 +33,7 @@ public class CustomerMgmtModel extends AdminParentModel {
             throw new AuthenticationException(error);
         }
 
-        adminServices.updateCustomerInfo(adminId, targetCustomerId, email.trim(), phoneNumber.trim(), fullName.trim());
+        adminServices.updateCustomerInfo(adminId, sessionToken, targetCustomerId, email.trim(), phoneNumber.trim(), fullName.trim());
     }
 
     // ===== VALIDATION METHODS =====

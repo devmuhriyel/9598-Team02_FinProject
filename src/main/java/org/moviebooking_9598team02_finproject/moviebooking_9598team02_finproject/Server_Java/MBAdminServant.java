@@ -33,10 +33,9 @@ public class MBAdminServant extends AdminServicePOA {
 
     // ===== AUTHENTICATION METHODS =====
     @Override
-    public Admin loginAdmin(String username, String password) throws AuthenticationException {
-        Admin admin = new Admin();
+    public AdminLoginResponse loginAdmin(String username, String password) throws AuthenticationException {
         try (Connection connection = DatabaseAccess.getConnection()) {
-            String query = "SELECT * FROM admins where username = ?";
+            String query = "SELECT * FROM admins WHERE username = ?";
             PreparedStatement statement = connection.prepareStatement(query);
             statement.setString(1, username);
             ResultSet rs = statement.executeQuery();
@@ -44,27 +43,39 @@ public class MBAdminServant extends AdminServicePOA {
             if (rs.next()) {
                 String hashedPassword = rs.getString("password");
                 if (PasswordManager.checkPassword(password, hashedPassword)) {
-                    int admin_id = rs.getInt("admin_id");
+                    int adminId = rs.getInt("admin_id");
 
                     synchronized (SessionManager.getAdminSessionsLock()) {
-                        if (SessionManager.isAdminLoggedIn(admin_id)) {
-                            System.out.println("Concurrent login rejected: Admin " + admin_id + " is already logged in.");
-                            throw new AuthenticationException("This account is already logged in. Please log out from other devices before logging in again.");
+                        // ✅ FIX: Check if already logged in BEFORE creating session
+                        if (SessionManager.isAdminLoggedIn(adminId)) {
+                            System.out.println("⚠️ Concurrent login rejected: Admin " + adminId + " already logged in");
+                            throw new AuthenticationException(
+                                    "This account is already logged in from another device. " +
+                                            "Please log out from the other device first, or wait 30 minutes for the session to expire."
+                            );
                         }
 
-                        String sessionToken = SessionManager.createAdminSessionUnsafe(admin_id, rs.getString("username"));
-                        System.out.println("Admin " + admin_id + " logged in successfully. Session token: " + sessionToken.substring(0, 8) + "...");
-                    }
+                        // Create new session and get token
+                        String sessionToken = SessionManager.createAdminSession(adminId, rs.getString("username"));
 
-                    // Populate admin object
-                    admin.adminId = rs.getInt("admin_id");
-                    admin.username = rs.getString("username");
-                    admin.email = rs.getString("email");
-                    admin.password = "";
-                    admin.fullName = rs.getString("full_name");
-                    admin.phoneNumber = rs.getString("phone_number");
-                    admin.createdAt = rs.getString("created_at");
-                    admin.updatedAt = rs.getString("updated_at");
+                        // Build response
+                        Admin admin = new Admin();
+                        admin.adminId = adminId;
+                        admin.username = rs.getString("username");
+                        admin.email = rs.getString("email");
+                        admin.password = ""; // NEVER send password
+                        admin.fullName = rs.getString("full_name");
+                        admin.phoneNumber = rs.getString("phone_number");
+                        admin.createdAt = rs.getString("created_at");
+                        admin.updatedAt = rs.getString("updated_at");
+
+                        AdminLoginResponse response = new AdminLoginResponse();
+                        response.admin = admin;
+                        response.sessionToken = sessionToken;
+
+                        System.out.println("✅ Admin " + adminId + " logged in successfully");
+                        return response;
+                    }
                 } else {
                     throw new AuthenticationException("Incorrect password");
                 }
@@ -73,25 +84,28 @@ public class MBAdminServant extends AdminServicePOA {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new AuthenticationException("Database error:" + e.getMessage());
+            throw new AuthenticationException("Database error: " + e.getMessage());
         }
-        return admin;
     }
 
     @Override
-    public void logoutAdmin(int adminId) {
-        SessionManager.SessionInfo session = SessionManager.getAdminSession(adminId);
-        if (session == null) {
-            System.out.println("Admin " + adminId + " not logged in - logout ignored");
-            return;
+    public void logoutAdmin(int adminId, String sessionToken) throws AuthenticationException {
+        // Validate token before logout
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - already logged out or session expired");
         }
-        
+
         SessionManager.removeAdminSession(adminId);
-        System.out.println("Admin " + adminId + " logged out successfully");
+        System.out.println("✅ Admin " + adminId + " logged out successfully");
     }
 
     @Override
-    public int createAdmin(int creatorAdminId, String username, String email, String password, String fullName, String phoneNumber) throws AuthenticationException, InvalidInputException {
+    public int createAdmin(int creatorAdminId, String sessionToken, String username, String email, String password, String fullName, String phoneNumber) throws AuthenticationException, InvalidInputException {
+
+        if (!SessionManager.validateAdminSession(creatorAdminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
+        }
+
         try (Connection connection = DatabaseAccess.getConnection()) {
             int nextAdminID = getLatestAdminID() + 1;
             String hashedPassword = PasswordManager.hashPassword(password);
@@ -128,68 +142,65 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public int addGenre(int adminId, String genreName, String genreDescription) throws AuthenticationException, InvalidInputException {
-        if (!SessionManager.isAdminLoggedIn(adminId)) {
-            throw new AuthenticationException("Admin not logged in or session expired");
+    public int addGenre(int adminId, String sessionToken, String genreName, String genreDescription)
+            throws AuthenticationException, InvalidInputException {
+
+        // ✅ CRITICAL: Validate session token BEFORE processing
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
         }
 
         // Validate input
         if (genreName == null || genreName.trim().isEmpty()) {
-            throw new InvalidInputException("Genre name cannot be empty", "Genre name is required");
-        }
-        if (genreDescription == null) {
-            genreDescription = "";
+            throw new InvalidInputException("Genre name cannot be empty", "genreName");
         }
 
         try (Connection connection = DatabaseAccess.getConnection()) {
-            // Check if genre name already exists
+            // Check if genre exists
             String checkQuery = "SELECT genre_id FROM genres WHERE genre_name = ?";
-            PreparedStatement checkStatement = connection.prepareStatement(checkQuery);
-            checkStatement.setString(1, genreName.trim());
-            ResultSet checkRs = checkStatement.executeQuery();
+            PreparedStatement checkStmt = connection.prepareStatement(checkQuery);
+            checkStmt.setString(1, genreName.trim());
+            ResultSet checkRs = checkStmt.executeQuery();
+
             if (checkRs.next()) {
-                throw new InvalidInputException("Genre already exists", "A genre with this name already exists");
+                throw new InvalidInputException("Genre already exists", "genreName");
             }
 
-            // Get next genre ID
+            // Get next ID
             int nextGenreId = getLatestGenreId() + 1;
-            LocalDateTime timeOfCreation = LocalDateTime.now();
 
-            // Insert new genre
-            String query = "INSERT INTO genres (genre_id, genre_name, genre_description, created_at, updated_at) VALUES (?, ?, ?, ?, ?)";
-            PreparedStatement statement = connection.prepareStatement(query);
-            statement.setInt(1, nextGenreId);
-            statement.setString(2, genreName.trim());
-            statement.setString(3, genreDescription.trim());
-            statement.setString(4, timeOfCreation.toString());
-            statement.setString(5, timeOfCreation.toString());
+            // Insert genre
+            String query = "INSERT INTO genres (genre_id, genre_name, genre_description, created_at, updated_at) " +
+                    "VALUES (?, ?, ?, NOW(), NOW())";
+            PreparedStatement stmt = connection.prepareStatement(query);
+            stmt.setInt(1, nextGenreId);
+            stmt.setString(2, genreName.trim());
+            stmt.setString(3, genreDescription.trim());
 
-            int rowsAffected = statement.executeUpdate();
+            int rowsAffected = stmt.executeUpdate();
 
             if (rowsAffected > 0) {
-                System.out.println("Successfully created genre: " + genreName + " with ID: " + nextGenreId);
+                System.out.println("✅ Genre created: " + genreName + " (ID: " + nextGenreId + ") by admin " + adminId);
                 return nextGenreId;
             } else {
-                throw new InvalidInputException("Failed to create genre", "Database insert failed");
+                throw new InvalidInputException("Failed to create genre", "database");
             }
 
         } catch (SQLException e) {
             e.printStackTrace();
-            if (e.getMessage().contains("Duplicate entry")) {
-                throw new InvalidInputException("Genre already exists", "A genre with this name already exists");
-            }
-            throw new InvalidInputException("Database Error", "Failed to create genre: " + e.getMessage());
+            throw new InvalidInputException("Database error: " + e.getMessage(), "database");
         }
     }
 
     @Override
-    public void updateGenre(int adminId, int genreId, String genreName, String genreDescription) throws AuthenticationException {
-        // Check authentication
-        if (!SessionManager.isAdminLoggedIn(adminId)) {
-            throw new AuthenticationException("Admin not logged in or session expired");
+    public void updateGenre(int adminId, String sessionToken, int genreId, String genreName, String genreDescription)
+            throws AuthenticationException {
+
+        // ✅ CRITICAL: Validate session token FIRST
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
         }
 
-        // Validate input
         if (genreName == null || genreName.trim().isEmpty()) {
             throw new AuthenticationException("Genre name cannot be empty");
         }
@@ -198,7 +209,6 @@ public class MBAdminServant extends AdminServicePOA {
         }
 
         try (Connection connection = DatabaseAccess.getConnection()) {
-            // Check if genre exists
             String checkQuery = "SELECT genre_id FROM genres WHERE genre_id = ?";
             PreparedStatement checkStatement = connection.prepareStatement(checkQuery);
             checkStatement.setInt(1, genreId);
@@ -207,7 +217,6 @@ public class MBAdminServant extends AdminServicePOA {
                 throw new AuthenticationException("Genre not found");
             }
 
-            // Check if another genre with the same name exists
             String duplicateQuery = "SELECT genre_id FROM genres WHERE genre_name = ? AND genre_id != ?";
             PreparedStatement duplicateStatement = connection.prepareStatement(duplicateQuery);
             duplicateStatement.setString(1, genreName.trim());
@@ -217,7 +226,6 @@ public class MBAdminServant extends AdminServicePOA {
                 throw new AuthenticationException("A genre with this name already exists");
             }
 
-            // Update genre
             LocalDateTime timeOfUpdate = LocalDateTime.now();
             String query = "UPDATE genres SET genre_name = ?, genre_description = ?, updated_at = ? WHERE genre_id = ?";
             PreparedStatement statement = connection.prepareStatement(query);
@@ -227,7 +235,6 @@ public class MBAdminServant extends AdminServicePOA {
             statement.setInt(4, genreId);
 
             int rowsAffected = statement.executeUpdate();
-
             if (rowsAffected > 0) {
                 System.out.println("Successfully updated genre ID: " + genreId);
             } else {
@@ -241,14 +248,15 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public void deleteGenre(int adminId, int genreId) throws AuthenticationException {
-        // Check authentication
-        if (!SessionManager.isAdminLoggedIn(adminId)) {
-            throw new AuthenticationException("Admin not logged in or session expired");
+    public void deleteGenre(int adminId, String sessionToken, int genreId)
+            throws AuthenticationException {
+
+        // ✅ CRITICAL: Validate session token FIRST
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
         }
 
         try (Connection connection = DatabaseAccess.getConnection()) {
-            // Check if genre exists
             String checkQuery = "SELECT genre_id FROM genres WHERE genre_id = ?";
             PreparedStatement checkStatement = connection.prepareStatement(checkQuery);
             checkStatement.setInt(1, genreId);
@@ -257,7 +265,6 @@ public class MBAdminServant extends AdminServicePOA {
                 throw new AuthenticationException("Genre not found");
             }
 
-            // Check if genre is being used by any movies
             String usageQuery = "SELECT COUNT(*) as count FROM movie_genres WHERE genre_id = ?";
             PreparedStatement usageStatement = connection.prepareStatement(usageQuery);
             usageStatement.setInt(1, genreId);
@@ -266,13 +273,11 @@ public class MBAdminServant extends AdminServicePOA {
                 throw new AuthenticationException("Cannot delete genre: It is currently assigned to one or more movies");
             }
 
-            // Delete genre
             String query = "DELETE FROM genres WHERE genre_id = ?";
             PreparedStatement statement = connection.prepareStatement(query);
             statement.setInt(1, genreId);
 
             int rowsAffected = statement.executeUpdate();
-
             if (rowsAffected > 0) {
                 System.out.println("Successfully deleted genre ID: " + genreId);
             } else {
@@ -286,10 +291,12 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public Genre[] getAllGenres(int adminId) throws AuthenticationException {
-        // Check authentication
-        if (!SessionManager.isAdminLoggedIn(adminId)) {
-            throw new AuthenticationException("Admin not logged in or session expired");
+    public Genre[] getAllGenres(int adminId, String sessionToken)
+            throws AuthenticationException {
+
+        // ✅ CRITICAL: Validate session token FIRST
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
         }
 
         try (Connection connection = DatabaseAccess.getConnection()) {
@@ -316,11 +323,14 @@ public class MBAdminServant extends AdminServicePOA {
         }
     }
 
+
     @Override
-    public Genre getGenreById(int adminId, int genreId) throws AuthenticationException {
-        // Check authentication
-        if (!SessionManager.isAdminLoggedIn(adminId)) {
-            throw new AuthenticationException("Admin not logged in or session expired");
+    public Genre getGenreById(int adminId, String sessionToken, int genreId)
+            throws AuthenticationException {
+
+        // ✅ CRITICAL: Validate session token FIRST
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
         }
 
         try (Connection connection = DatabaseAccess.getConnection()) {
@@ -350,13 +360,14 @@ public class MBAdminServant extends AdminServicePOA {
     // ===== ADMIN MANAGEMENT METHODS IMPLEMENTATION =====
 
     @Override
-    public Admin getAdminById(int adminId, int requestingAdminId) throws AuthenticationException {
-        // 1. Check Authentication
-        if (!SessionManager.isAdminLoggedIn(requestingAdminId)) {
-            throw new AuthenticationException("Unauthorized access: Admin must be logged in.");
+    public Admin getAdminById(int adminId, String sessionToken, int requestingAdminId)
+            throws AuthenticationException {
+
+        // ✅ STEP 1: Validate session token
+        if (!SessionManager.validateAdminSession(requestingAdminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
         }
 
-        // 2. Database Query
         try (Connection connection = DatabaseAccess.getConnection()) {
             String query = "SELECT admin_id, username, email, full_name, phone_number, created_at, updated_at " +
                     "FROM admins WHERE admin_id = ?";
@@ -369,17 +380,15 @@ public class MBAdminServant extends AdminServicePOA {
                 admin.adminId = rs.getInt("admin_id");
                 admin.username = rs.getString("username");
                 admin.email = rs.getString("email");
-                admin.password = ""; // Never return password
+                admin.password = "";
                 admin.fullName = rs.getString("full_name");
                 admin.phoneNumber = rs.getString("phone_number");
                 admin.createdAt = rs.getString("created_at");
                 admin.updatedAt = rs.getString("updated_at");
-
                 return admin;
             } else {
                 throw new AuthenticationException("Admin not found with ID: " + adminId);
             }
-
         } catch (SQLException e) {
             e.printStackTrace();
             throw new AuthenticationException("Database error: " + e.getMessage());
@@ -387,11 +396,11 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public Admin[] getAllAdmins(int adminId) throws AuthenticationException {
+    public Admin[] getAllAdmins(int adminId, String sessionToken) throws AuthenticationException {
         System.out.println("IS RUNNING");
         // 1. Check Authentication
-        if (!SessionManager.isAdminLoggedIn(adminId)) {
-            throw new AuthenticationException("Unauthorized access: Admin must be logged in.");
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
         }
 
         // 2. Database Query
@@ -441,10 +450,10 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public Admin[] searchAdmins(int adminId, String searchString) throws AuthenticationException {
+    public Admin[] searchAdmins(int adminId, String sessionToken, String searchString) throws AuthenticationException {
         // 1. Check Authentication
-        if (!SessionManager.isAdminLoggedIn(adminId)) {
-            throw new AuthenticationException("Unauthorized access: Admin must be logged in.");
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
         }
 
         // 2. Database Query
@@ -502,10 +511,13 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public void updateAdminProfile(int adminId, String fullName, String phoneNumber) throws AuthenticationException {
+    public void updateAdminProfile(int adminId, String sessionToken, String fullName, String phoneNumber) throws AuthenticationException {
         // NOTE: adminId here is the admin BEING UPDATED, not necessarily the requester
         // In a production system, you'd want to verify the requester has permission
 
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
+        }
         // For now, we just check if the target admin exists by trying to update
         try (Connection connection = DatabaseAccess.getConnection()) {
             String query = "UPDATE admins SET full_name = ?, phone_number = ?, updated_at = NOW() " +
@@ -531,9 +543,13 @@ public class MBAdminServant extends AdminServicePOA {
 
 
     @Override
-    public void updateAdminEmail(int adminId, String newEmail, String password)
+    public void updateAdminEmail(int adminId, String sessionToken, String newEmail, String password)
             throws AuthenticationException, InvalidInputException {
         // adminId is the admin BEING UPDATED
+
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
+        }
 
         // 1. Verify password first
         try (Connection connection = DatabaseAccess.getConnection()) {
@@ -574,9 +590,13 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public void changeAdminPassword(int adminId, String oldPassword, String newPassword)
+    public void changeAdminPassword(int adminId, String sessionToken, String oldPassword, String newPassword)
             throws AuthenticationException {
         // adminId is the admin BEING UPDATED
+
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
+        }
 
         // 1. Verify old password
         try (Connection connection = DatabaseAccess.getConnection()) {
@@ -614,11 +634,11 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public void deactivateAdmin(int superAdminId, int targetAdminId, String reason)
+    public void deactivateAdmin(int superAdminId, String sessionToken, int targetAdminId, String reason)
             throws AuthenticationException {
         // 1. Check Authentication
-        if (!SessionManager.isAdminLoggedIn(superAdminId)) {
-            throw new AuthenticationException("Unauthorized access: Super admin must be logged in.");
+        if (!SessionManager.validateAdminSession(superAdminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
         }
 
         // 2. Prevent self-deactivation
@@ -629,15 +649,8 @@ public class MBAdminServant extends AdminServicePOA {
         // 3. Log the deactivation
         try (Connection connection = DatabaseAccess.getConnection()) {
             // Create audit log
-            String auditQuery = "INSERT INTO admin_audit_log (admin_id, performed_by_admin_id, action, reason, created_at) " +
-                    "VALUES (?, ?, 'DEACTIVATED', ?, NOW())";
-            PreparedStatement auditStmt = connection.prepareStatement(auditQuery);
-            auditStmt.setInt(1, targetAdminId);
-            auditStmt.setInt(2, superAdminId);
-            auditStmt.setString(3, reason);
-
-            auditStmt.executeUpdate();
-
+            System.out.println("🔒 Admin " + superAdminId + " deactivated Admin " + targetAdminId +
+                    " | Reason: " + reason);
             // Remove active session
             SessionManager.removeAdminSession(targetAdminId);
 
@@ -650,10 +663,10 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public void deleteAdmin(int superAdminId, int targetAdminId) throws AuthenticationException {
+    public void deleteAdmin(int superAdminId, String sessionToken, int targetAdminId) throws AuthenticationException {
         // 1. Check Authentication
-        if (!SessionManager.isAdminLoggedIn(superAdminId)) {
-            throw new AuthenticationException("Unauthorized access: Super admin must be logged in.");
+        if (!SessionManager.validateAdminSession(superAdminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
         }
 
         // 2. Prevent self-deletion
@@ -692,15 +705,15 @@ public class MBAdminServant extends AdminServicePOA {
     // ===== MOVIE METHODS - CORBA EXCEPTIONS (NO PARAMETERS) =====
 
     @Override
-    public int addMovie(int adminId, String movieTitle, int[] genreIds, String movieDescription,
-                        int movieRating, String moviePosterURL)
+    public int addMovie(int adminId, String sessionToken, String movieTitle, int[] genreIds,
+                        String movieDescription, int movieRating, String moviePosterURL)
             throws AuthenticationException, InvalidInputException {
-        // Check authentication
-        if (!SessionManager.isAdminLoggedIn(adminId)) {
-            throw new AuthenticationException("Admin not logged in or session expired");
+
+        // ✅ CRITICAL: Validate session token FIRST
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
         }
 
-        // Validate input
         if (movieTitle == null || movieTitle.trim().isEmpty()) {
             throw new InvalidInputException("Movie title cannot be empty", "Movie title is required");
         }
@@ -712,21 +725,18 @@ public class MBAdminServant extends AdminServicePOA {
         }
 
         try (Connection connection = DatabaseAccess.getConnection()) {
-            // Get next movie ID
             int nextMovieId = getLatestMovieId() + 1;
             LocalDateTime timeOfCreation = LocalDateTime.now();
 
-            // ✅ PROCESS IMAGE - extract and save
             String dbPosterPath = processAndSaveImage(moviePosterURL);
 
-            // Insert new movie with ONLY the path
             String query = "INSERT INTO movies (movie_id, movie_title, movie_description, movie_rating, movie_poster_url, created_by_admin, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
             PreparedStatement statement = connection.prepareStatement(query);
             statement.setInt(1, nextMovieId);
             statement.setString(2, movieTitle.trim());
             statement.setString(3, movieDescription != null ? movieDescription.trim() : "");
             statement.setInt(4, movieRating);
-            statement.setString(5, dbPosterPath); // ✅ Store ONLY path in DB
+            statement.setString(5, dbPosterPath);
             statement.setInt(6, adminId);
             statement.setString(7, timeOfCreation.toString());
             statement.setString(8, timeOfCreation.toString());
@@ -734,7 +744,6 @@ public class MBAdminServant extends AdminServicePOA {
             int rowsAffected = statement.executeUpdate();
 
             if (rowsAffected > 0) {
-                // Insert movie_genres relationships
                 String genreQuery = "INSERT INTO movie_genres (movie_id, genre_id) VALUES (?, ?)";
                 PreparedStatement genreStatement = connection.prepareStatement(genreQuery);
 
@@ -761,30 +770,26 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public void updateMovieTitle(int adminId, int movieId, String newTitle)
+    public void updateMovieTitle(int adminId, String sessionToken, int movieId, String newTitle)
             throws AuthenticationException, MovieNotFoundException {
-        // Check authentication
-        if (!SessionManager.isAdminLoggedIn(adminId)) {
-            throw new AuthenticationException("Admin not logged in or session expired");
+
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
         }
 
-        // Validate input
         if (newTitle == null || newTitle.trim().isEmpty()) {
             throw new AuthenticationException("Movie title cannot be empty");
         }
 
         try (Connection connection = DatabaseAccess.getConnection()) {
-            // Check if movie exists
             String checkQuery = "SELECT movie_id FROM movies WHERE movie_id = ?";
             PreparedStatement checkStatement = connection.prepareStatement(checkQuery);
             checkStatement.setInt(1, movieId);
             ResultSet checkRs = checkStatement.executeQuery();
             if (!checkRs.next()) {
-                System.err.println("Movie not found: " + movieId);
                 throw new MovieNotFoundException();
             }
 
-            // Update movie title
             LocalDateTime timeOfUpdate = LocalDateTime.now();
             String query = "UPDATE movies SET movie_title = ?, updated_at = ? WHERE movie_id = ?";
             PreparedStatement statement = connection.prepareStatement(query);
@@ -793,7 +798,6 @@ public class MBAdminServant extends AdminServicePOA {
             statement.setInt(3, movieId);
 
             int rowsAffected = statement.executeUpdate();
-
             if (rowsAffected > 0) {
                 System.out.println("Successfully updated movie title for ID: " + movieId);
             } else {
@@ -806,37 +810,33 @@ public class MBAdminServant extends AdminServicePOA {
         }
     }
 
+
     @Override
-    public void updateMovieGenres(int adminId, int movieId, int[] newGenreIds)
+    public void updateMovieGenres(int adminId, String sessionToken, int movieId, int[] newGenreIds)
             throws AuthenticationException, MovieNotFoundException {
-        // Check authentication
-        if (!SessionManager.isAdminLoggedIn(adminId)) {
-            throw new AuthenticationException("Admin not logged in or session expired");
+
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
         }
 
-        // Validate input
         if (newGenreIds == null || newGenreIds.length == 0) {
             throw new AuthenticationException("At least one genre is required");
         }
 
         try (Connection connection = DatabaseAccess.getConnection()) {
-            // Check if movie exists
             String checkQuery = "SELECT movie_id FROM movies WHERE movie_id = ?";
             PreparedStatement checkStatement = connection.prepareStatement(checkQuery);
             checkStatement.setInt(1, movieId);
             ResultSet checkRs = checkStatement.executeQuery();
             if (!checkRs.next()) {
-                System.err.println("Movie not found: " + movieId);
                 throw new MovieNotFoundException();
             }
 
-            // Delete existing genres
             String deleteQuery = "DELETE FROM movie_genres WHERE movie_id = ?";
             PreparedStatement deleteStatement = connection.prepareStatement(deleteQuery);
             deleteStatement.setInt(1, movieId);
             deleteStatement.executeUpdate();
 
-            // Insert new genres
             String insertQuery = "INSERT INTO movie_genres (movie_id, genre_id) VALUES (?, ?)";
             PreparedStatement insertStatement = connection.prepareStatement(insertQuery);
 
@@ -848,7 +848,6 @@ public class MBAdminServant extends AdminServicePOA {
 
             insertStatement.executeBatch();
 
-            // Update movie timestamp
             LocalDateTime timeOfUpdate = LocalDateTime.now();
             String updateQuery = "UPDATE movies SET updated_at = ? WHERE movie_id = ?";
             PreparedStatement updateStatement = connection.prepareStatement(updateQuery);
@@ -865,11 +864,11 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public void addGenreToMovie(int adminId, int movieId, int genreId)
+    public void addGenreToMovie(int adminId, String sessionToken, int movieId, int genreId)
             throws AuthenticationException, MovieNotFoundException {
         // Check authentication
-        if (!SessionManager.isAdminLoggedIn(adminId)) {
-            throw new AuthenticationException("Admin not logged in or session expired");
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
         }
 
         try (Connection connection = DatabaseAccess.getConnection()) {
@@ -919,11 +918,11 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public void removeGenreFromMovie(int adminId, int movieId, int genreId)
+    public void removeGenreFromMovie(int adminId, String sessionToken, int movieId, int genreId)
             throws AuthenticationException, MovieNotFoundException {
         // Check authentication
-        if (!SessionManager.isAdminLoggedIn(adminId)) {
-            throw new AuthenticationException("Admin not logged in or session expired");
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
         }
 
         try (Connection connection = DatabaseAccess.getConnection()) {
@@ -966,11 +965,11 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public Genre[] getMovieGenres(int adminId, int movieId)
+    public Genre[] getMovieGenres(int adminId, String sessionToken, int movieId)
             throws AuthenticationException, MovieNotFoundException {
         // Check authentication
-        if (!SessionManager.isAdminLoggedIn(adminId)) {
-            throw new AuthenticationException("Admin not logged in or session expired");
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
         }
 
         try (Connection connection = DatabaseAccess.getConnection()) {
@@ -1012,11 +1011,11 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public void updateMovieDescription(int adminId, int movieId, String newDescription)
+    public void updateMovieDescription(int adminId, String sessionToken, int movieId, String newDescription)
             throws AuthenticationException, MovieNotFoundException {
         // Check authentication
-        if (!SessionManager.isAdminLoggedIn(adminId)) {
-            throw new AuthenticationException("Admin not logged in or session expired");
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
         }
 
         try (Connection connection = DatabaseAccess.getConnection()) {
@@ -1053,11 +1052,11 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public void updateMovieRating(int adminId, int movieId, int newRating)
+    public void updateMovieRating(int adminId, String sessionToken, int movieId, int newRating)
             throws AuthenticationException, MovieNotFoundException {
         // Check authentication
-        if (!SessionManager.isAdminLoggedIn(adminId)) {
-            throw new AuthenticationException("Admin not logged in or session expired");
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
         }
 
         // Validate rating
@@ -1099,11 +1098,11 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public void updateMoviePoster(int adminId, int movieId, String newPosterURL)
+    public void updateMoviePoster(int adminId, String sessionToken, int movieId, String newPosterURL)
             throws AuthenticationException, MovieNotFoundException {
 
-        if (!SessionManager.isAdminLoggedIn(adminId)) {
-            throw new AuthenticationException("Admin not logged in or session expired");
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
         }
 
         try (Connection connection = DatabaseAccess.getConnection()) {
@@ -1165,11 +1164,11 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public void deleteMovie(int adminId, int movieId)
+    public void deleteMovie(int adminId, String sessionToken, int movieId)
             throws AuthenticationException, MovieNotFoundException {
 
-        if (!SessionManager.isAdminLoggedIn(adminId)) {
-            throw new AuthenticationException("Admin not logged in or session expired");
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
         }
 
         Connection connection = null;
@@ -1341,10 +1340,10 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public Movie[] getAllMovies(int adminId) throws AuthenticationException {
+    public Movie[] getAllMovies(int adminId, String sessionToken) throws AuthenticationException {
         // Check authentication
-        if (!SessionManager.isAdminLoggedIn(adminId)) {
-            throw new AuthenticationException("Admin not logged in or session expired");
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
         }
 
         try (Connection connection = DatabaseAccess.getConnection()) {
@@ -1397,14 +1396,14 @@ public class MBAdminServant extends AdminServicePOA {
 
     // ===== MOVIE SCHEDULES METHODS =====
     @Override
-    public int createMovieSchedule(int adminId, String screeningDate, String screeningTime)
+    public int createMovieSchedule(int adminId, String sessionToken, String screeningDate, String screeningTime)
             throws AuthenticationException, InvalidInputException {
 
         System.out.println("🎬 createMovieSchedule called - Date: " + screeningDate + ", Time: " + screeningTime);
 
         // Check authentication
-        if (!SessionManager.isAdminLoggedIn(adminId)) {
-            throw new AuthenticationException("Admin not logged in or session expired");
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
         }
 
         // Validate inputs
@@ -1523,15 +1522,15 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public int assignMovieToSchedule(int adminId, int movieId, int movieScheduleId)
+    public int assignMovieToSchedule(int adminId, String sessionToken, int movieId, int movieScheduleId)
             throws AuthenticationException, MovieNotFoundException, ScheduleNotFoundException {
 
         System.out.println("🎬 assignMovieToSchedule called - Movie: " + movieId +
                 ", MovieSchedule: " + movieScheduleId);
 
         // Check authentication
-        if (!SessionManager.isAdminLoggedIn(adminId)) {
-            throw new AuthenticationException("Admin not logged in or session expired");
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
         }
 
         Connection connection = null;
@@ -1713,11 +1712,11 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public void updateScheduleDateTime(int adminId, int scheduleId, String newDate, String newTime)
+    public void updateScheduleDateTime(int adminId, String sessionToken, int scheduleId, String newDate, String newTime)
             throws AuthenticationException, ScheduleNotFoundException {
 
-        if (!SessionManager.isAdminLoggedIn(adminId)) {
-            throw new AuthenticationException("Admin not logged in or session expired");
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
         }
 
         try (Connection connection = DatabaseAccess.getConnection()) {
@@ -1754,11 +1753,11 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public void deleteSchedule(int adminId, int scheduleId)
+    public void deleteSchedule(int adminId, String sessionToken, int scheduleId)
             throws AuthenticationException, ScheduleNotFoundException {
 
-        if (!SessionManager.isAdminLoggedIn(adminId)) {
-            throw new AuthenticationException("Admin not logged in or session expired");
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
         }
 
         Connection connection = null;
@@ -1849,9 +1848,9 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public Schedule[] getAllSchedules(int adminId) throws AuthenticationException {
-        if (!SessionManager.isAdminLoggedIn(adminId)) {
-            throw new AuthenticationException("Admin not logged in or session expired");
+    public Schedule[] getAllSchedules(int adminId, String sessionToken) throws AuthenticationException {
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
         }
 
         try (Connection connection = DatabaseAccess.getConnection()) {
@@ -1881,12 +1880,12 @@ public class MBAdminServant extends AdminServicePOA {
         }
     }
     @Override
-    public Schedule[] getSchedulesByMovie(int adminId, int movieId)
+    public Schedule[] getSchedulesByMovie(int adminId, String sessionToken, int movieId)
             throws AuthenticationException, MovieNotFoundException {
 
         // Check authentication
-        if (!SessionManager.isAdminLoggedIn(adminId)) {
-            throw new AuthenticationException("Admin not logged in or session expired");
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
         }
 
         try (Connection connection = DatabaseAccess.getConnection()) {
@@ -1944,12 +1943,17 @@ public class MBAdminServant extends AdminServicePOA {
 
     // ===== SEATS MANAGEMENT METHODS =====
     @Override //do not use
-    public int addSeat(int adminId, String seatRow, int seatNumber, String seatType, double seatPrice) throws AuthenticationException, InvalidInputException {
+    public int addSeat(int adminId, String sessionToken, String seatRow, int seatNumber, String seatType, double seatPrice) throws AuthenticationException, InvalidInputException {
         return 0;
     }
 
     @Override
-    public void updateSeatPrice(int adminId, int seatId, double newPrice) throws AuthenticationException {
+    public void updateSeatPrice(int adminId, String sessionToken, int seatId, double newPrice) throws AuthenticationException {
+
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
+        }
+
         try (Connection connection = DatabaseAccess.getConnection()) {
             // Check if seat exists
             String checkQuery = "SELECT seat_id FROM seats WHERE seat_id = ?";
@@ -1984,8 +1988,13 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public void updateSeatType(int adminId, int seatId, String newType) throws AuthenticationException {
+    public void updateSeatType(int adminId, String sessionToken, int seatId, String newType) throws AuthenticationException {
         // Validate seat type (only allow: regular, vip, maintenance)
+
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
+        }
+
         if (!newType.equalsIgnoreCase("regular") &&
                 !newType.equalsIgnoreCase("vip") &&
                 !newType.equalsIgnoreCase("maintenance")) {
@@ -2026,12 +2035,16 @@ public class MBAdminServant extends AdminServicePOA {
 
 
     @Override //do not use
-    public void deleteSeat(int adminId, int seatId) throws AuthenticationException {
+    public void deleteSeat(int adminId, String sessionToken, int seatId) throws AuthenticationException {
 
     }
 
     @Override
-    public Seat[] getAllSeats(int adminId) throws AuthenticationException {
+    public Seat[] getAllSeats(int adminId, String sessionToken) throws AuthenticationException {
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
+        }
+
         try (Connection connection = DatabaseAccess.getConnection()) {
             // Query to get all seats ordered by row and number
             String query = "SELECT * FROM seats ORDER BY seat_row ASC, seat_number ASC";
@@ -2067,33 +2080,38 @@ public class MBAdminServant extends AdminServicePOA {
 
     // ===== SEAT SCHEDULE METHODS =====
     @Override
-    public int assignSeatToSchedule(int adminId, int scheduleId, int seatId, String status) throws AuthenticationException, ScheduleNotFoundException {
+    public int assignSeatToSchedule(int adminId, String sessionToken, int scheduleId, int seatId, String status) throws AuthenticationException, ScheduleNotFoundException {
         return 0;
     }
 
     @Override
-    public void initializeScheduleSeats(int adminId, int scheduleId) throws AuthenticationException, ScheduleNotFoundException {
+    public void initializeScheduleSeats(int adminId, String sessionToken, int scheduleId) throws AuthenticationException, ScheduleNotFoundException {
 
     }
 
     @Override
-    public void updateScheduleSeatStatus(int adminId, int scheduleListSeatId, String status) throws AuthenticationException {
+    public void updateScheduleSeatStatus(int adminId, String sessionToken, int scheduleListSeatId, String status) throws AuthenticationException {
 
     }
 
     @Override
-    public void removeScheduleSeat(int adminId, int scheduleListSeatId) throws AuthenticationException {
+    public void removeScheduleSeat(int adminId, String sessionToken, int scheduleListSeatId) throws AuthenticationException {
 
     }
 
     @Override
-    public ScheduleListSeat[] getAllScheduleSeats(int adminId, int scheduleId) throws AuthenticationException, ScheduleNotFoundException {
+    public ScheduleListSeat[] getAllScheduleSeats(int adminId, String sessionToken, int scheduleId) throws AuthenticationException, ScheduleNotFoundException {
         return new ScheduleListSeat[0];
     }
 
     // ===== BOOKINGS METHODS =====
     @Override
-    public Booking[] getAllBookings(int adminId) throws AuthenticationException {
+    public Booking[] getAllBookings(int adminId, String sessionToken) throws AuthenticationException {
+
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
+        }
+
         List<Booking> list = new ArrayList<>();
         String sql = "SELECT * FROM bookings ORDER BY created_at DESC";
 
@@ -2111,7 +2129,12 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public Booking[] getBookingsByMovie(int adminId, int movieId) throws AuthenticationException, MovieNotFoundException {
+    public Booking[] getBookingsByMovie(int adminId, String sessionToken, int movieId) throws AuthenticationException, MovieNotFoundException {
+
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
+        }
+
         List<Booking> list = new ArrayList<>();
         String sql = "SELECT b.* FROM bookings b " +
                 "JOIN schedules s ON b.schedule_id = s.schedule_id " +
@@ -2129,7 +2152,12 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public Booking[] getBookingsBySchedule(int adminId, int scheduleId) throws AuthenticationException, ScheduleNotFoundException {
+    public Booking[] getBookingsBySchedule(int adminId, String sessionToken, int scheduleId) throws AuthenticationException, ScheduleNotFoundException {
+
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
+        }
+
         List<Booking> list = new ArrayList<>();
         String sql = "SELECT * FROM bookings WHERE schedule_id = ?";
 
@@ -2144,7 +2172,12 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public Booking[] getBookingsByStatus(int adminId, String status) throws AuthenticationException {
+    public Booking[] getBookingsByStatus(int adminId, String sessionToken, String status) throws AuthenticationException {
+
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
+        }
+
         List<Booking> list = new ArrayList<>();
         String sql = "SELECT * FROM bookings WHERE booking_status = ? ORDER BY created_at DESC";
 
@@ -2159,13 +2192,18 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public void cancelBooking(int adminId, int bookingId, String reason) throws AuthenticationException, BookingException {}
+    public void cancelBooking(int adminId, String sessionToken, int bookingId, String reason) throws AuthenticationException, BookingException {}
 
     @Override
-    public void updateBookingAdmin(int adminId, int bookingId, int[] newSeatIds, String status) throws AuthenticationException, BookingException {}
+    public void updateBookingAdmin(int adminId, String sessionToken, int bookingId, int[] newSeatIds, String status) throws AuthenticationException, BookingException {}
 
     @Override
-    public BookingDetails getBookingDetailsView(int adminId, int bookingId) throws AuthenticationException, BookingException {
+    public BookingDetails getBookingDetailsView(int adminId, String sessionToken, int bookingId) throws AuthenticationException, BookingException {
+
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
+        }
+
         String sql = "SELECT b.booking_id, b.total_price, b.booking_status, b.created_at, " +
                 "c.username, c.full_name, m.movie_title, ms.screening_date, ms.screening_time " +
                 "FROM bookings b " +
@@ -2186,7 +2224,12 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public BookingDetails[] getAllBookingsWithDetails(int adminId) throws AuthenticationException {
+    public BookingDetails[] getAllBookingsWithDetails(int adminId, String sessionToken) throws AuthenticationException {
+
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
+        }
+
         List<BookingDetails> list = new ArrayList<>();
         String sql = "SELECT b.booking_id, b.total_price, b.booking_status, b.created_at, " +
                 "c.username, c.full_name, m.movie_title, ms.screening_date, ms.screening_time " +
@@ -2206,32 +2249,32 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public ScheduleDetails getScheduleDetailsView(int adminId, int scheduleId) throws AuthenticationException, ScheduleNotFoundException {
+    public ScheduleDetails getScheduleDetailsView(int adminId, String sessionToken, int scheduleId) throws AuthenticationException, ScheduleNotFoundException {
         return null;
     }
 
     @Override
-    public ScheduleDetails[] getAllSchedulesWithDetails(int adminId) throws AuthenticationException {
+    public ScheduleDetails[] getAllSchedulesWithDetails(int adminId, String sessionToken) throws AuthenticationException {
         return new ScheduleDetails[0];
     }
 
     @Override
-    public PaymentDetails getPaymentDetailsView(int adminId, int paymentId) throws AuthenticationException, PaymentNotFoundException {
+    public PaymentDetails getPaymentDetailsView(int adminId, String sessionToken, int paymentId) throws AuthenticationException, PaymentNotFoundException {
         return null;
     }
 
     @Override
-    public PaymentDetails[] getAllPaymentsWithDetails(int adminId) throws AuthenticationException {
+    public PaymentDetails[] getAllPaymentsWithDetails(int adminId, String sessionToken) throws AuthenticationException {
         return new PaymentDetails[0];
     }
 
     // ===== CUSTOMER MANAGEMENT METHODS IMPLEMENTATION =====
 
     @Override
-    public Customer[] getAllCustomers(int adminId) throws AuthenticationException {
+    public Customer[] getAllCustomers(int adminId, String sessionToken) throws AuthenticationException {
         // 1. Check Authentication
-        if (!SessionManager.isAdminLoggedIn(adminId)) {
-            throw new AuthenticationException("Unauthorized access: Admin must be logged in.");
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
         }
 
         // 2. Database Query
@@ -2281,10 +2324,10 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public Customer[] searchCustomers(int adminId, String searchString) throws AuthenticationException {
+    public Customer[] searchCustomers(int adminId, String sessionToken, String searchString) throws AuthenticationException {
         // 1. Check Authentication
-        if (!SessionManager.isAdminLoggedIn(adminId)) {
-            throw new AuthenticationException("Unauthorized access: Admin must be logged in.");
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
         }
 
         // 2. Database Query with LIKE search
@@ -2342,6 +2385,11 @@ public class MBAdminServant extends AdminServicePOA {
         }
     }
 
+    @Override
+    public Customer getCustomerDetails(int adminId, String sessionToken, int customerId) throws AuthenticationException {
+        return null;
+    }
+
 
     public Customer getCustomerDetails(int adminId, int customerId) throws AuthenticationException {
         // 1. Check Authentication
@@ -2382,11 +2430,11 @@ public class MBAdminServant extends AdminServicePOA {
 
 
     @Override
-    public void updateCustomerInfo(int adminId, int customerId, String email, String phoneNumber, String fullName)
+    public void updateCustomerInfo(int adminId, String sessionToken, int customerId, String email, String phoneNumber, String fullName)
             throws AuthenticationException {
         // 1. Check Authentication
-        if (!SessionManager.isAdminLoggedIn(adminId)) {
-            throw new AuthenticationException("Unauthorized access: Admin must be logged in.");
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
         }
 
         // 2. Database Update
@@ -2417,13 +2465,66 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public void deactivateCustomer(int adminId, int customerId, String reason) throws AuthenticationException {
+    public void deactivateCustomer(int adminId, String sessionToken, int customerId, String reason) throws AuthenticationException {
 
+    }
+
+    @Override
+    public String generateSalesReport(int adminId, String sessionToken, String startDate, String endDate)
+            throws AuthenticationException {
+
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
+        }
+
+        try (Connection connection = DatabaseAccess.getConnection()) {
+            String query = "SELECT " +
+                    "COUNT(DISTINCT b.booking_id) as total_bookings, " +
+                    "COUNT(DISTINCT b.customer_id) as unique_customers, " +
+                    "SUM(p.amount) as total_revenue, " +
+                    "AVG(p.amount) as avg_booking_value, " +
+                    "COUNT(DISTINCT s.movie_id) as movies_shown " +
+                    "FROM bookings b " +
+                    "JOIN payments p ON b.booking_id = p.booking_id " +
+                    "JOIN schedules s ON b.schedule_id = s.schedule_id " +
+                    "JOIN movie_schedules ms ON s.movie_schedule_id = ms.movie_schedule_id " +
+                    "WHERE ms.screening_date BETWEEN ? AND ? " +
+                    "AND p.payment_status = 'completed'";
+
+            PreparedStatement stmt = connection.prepareStatement(query);
+            stmt.setString(1, startDate);
+            stmt.setString(2, endDate);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                StringBuilder report = new StringBuilder();
+                report.append("=== SALES REPORT ===\n");
+                report.append("Period: ").append(startDate).append(" to ").append(endDate).append("\n\n");
+                report.append("Total Bookings: ").append(rs.getInt("total_bookings")).append("\n");
+                report.append("Unique Customers: ").append(rs.getInt("unique_customers")).append("\n");
+                report.append("Total Revenue: ₱").append(String.format("%.2f", rs.getDouble("total_revenue"))).append("\n");
+                report.append("Average Booking Value: ₱").append(String.format("%.2f", rs.getDouble("avg_booking_value"))).append("\n");
+                report.append("Movies Shown: ").append(rs.getInt("movies_shown")).append("\n");
+
+                return report.toString();
+            }
+
+            return "No data available for the selected period.";
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new AuthenticationException("Database error: " + e.getMessage());
+        }
     }
 
     // ===== PAYMENT PROCESSING METHODS =====
     @Override
-    public Payment[] getAllPayments(int adminId) throws AuthenticationException {
+    public Payment[] getAllPayments(int adminId, String sessionToken) throws AuthenticationException {
+
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
+        }
+
         System.out.println("Admin " + adminId + " requested all payments.");
         List<Payment> paymentList = new ArrayList<>();
 
@@ -2444,7 +2545,12 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public Payment getPaymentById(int adminId, int paymentId) throws AuthenticationException, PaymentNotFoundException {
+    public Payment getPaymentById(int adminId, String sessionToken, int paymentId) throws AuthenticationException, PaymentNotFoundException {
+
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
+        }
+
         String sql = "SELECT * FROM payments WHERE payment_id = ?";
 
         try (Connection conn = DatabaseAccess.getConnection();
@@ -2463,7 +2569,12 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public Payment[] getPaymentsByStatus(int adminId, String status) throws AuthenticationException {
+    public Payment[] getPaymentsByStatus(int adminId, String sessionToken, String status) throws AuthenticationException {
+
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
+        }
+
         List<Payment> paymentList = new ArrayList<>();
         String sql = "SELECT * FROM payments WHERE payment_status = ? ORDER BY payment_date DESC";
 
@@ -2483,7 +2594,12 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public Payment[] getBookingPayments(int adminId, int bookingId) throws AuthenticationException {
+    public Payment[] getBookingPayments(int adminId, String sessionToken, int bookingId) throws AuthenticationException {
+
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
+        }
+
         List<Payment> paymentList = new ArrayList<>();
         String sql = "SELECT * FROM payments WHERE booking_id = ?";
 
@@ -2503,11 +2619,12 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public void updatePaymentStatus(int adminId, int paymentId, String status)
+    public void updatePaymentStatus(int adminId, String sessionToken, int paymentId, String status)
             throws AuthenticationException, PaymentNotFoundException {
 
-        if (!SessionManager.isAdminLoggedIn(adminId)) {
-            throw new AuthenticationException("Admin not logged in");
+        // Validate session
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
         }
 
         Connection connection = null;
@@ -2523,7 +2640,7 @@ public class MBAdminServant extends AdminServicePOA {
 
             if (!bookingRs.next()) {
                 connection.rollback();
-                throw new PaymentNotFoundException();
+                throw new PaymentNotFoundException("Payment not found", paymentId);
             }
 
             int bookingId = bookingRs.getInt("booking_id");
@@ -2534,30 +2651,54 @@ public class MBAdminServant extends AdminServicePOA {
             paymentStmt.setString(1, status);
             paymentStmt.setInt(2, paymentId);
 
-            int rowsUpdated = paymentStmt.executeUpdate();
-            if (rowsUpdated == 0) {
+            int paymentUpdated = paymentStmt.executeUpdate();
+            if (paymentUpdated == 0) {
                 connection.rollback();
-                throw new PaymentNotFoundException();
+                throw new PaymentNotFoundException("Payment not found", paymentId);
             }
 
-            // 3️⃣ ✅ NEW: Update booking status based on payment status
+            // 3️⃣ ✅ FIX: Update booking status based on payment status
             String newBookingStatus = null;
+            String cancellationReason = null;
 
             if ("completed".equalsIgnoreCase(status)) {
                 newBookingStatus = "confirmed";
-            } else if ("failed".equalsIgnoreCase(status) || "refunded".equalsIgnoreCase(status)) {
+            } else if ("failed".equalsIgnoreCase(status)) {
                 newBookingStatus = "cancelled";
+                cancellationReason = "Payment not received by admin";
+            } else if ("refunded".equalsIgnoreCase(status)) {
+                newBookingStatus = "cancelled";
+                cancellationReason = "Payment refunded by admin";
             }
 
-            // Only update booking if we determined a new status
+            // Update booking if status changed
             if (newBookingStatus != null) {
-                String updateBookingQuery = "UPDATE bookings SET booking_status = ?, updated_at = NOW() WHERE booking_id = ?";
+                String updateBookingQuery = "UPDATE bookings SET " +
+                        "booking_status = ?, " +
+                        "cancellation_reason = ?, " +
+                        "updated_at = NOW() " +
+                        "WHERE booking_id = ?";
                 PreparedStatement bookingStmt = connection.prepareStatement(updateBookingQuery);
                 bookingStmt.setString(1, newBookingStatus);
-                bookingStmt.setInt(2, bookingId);
+                bookingStmt.setString(2, cancellationReason);
+                bookingStmt.setInt(3, bookingId);
                 bookingStmt.executeUpdate();
 
                 System.out.println("✅ Updated booking " + bookingId + " status to: " + newBookingStatus);
+            }
+
+            // 4️⃣ ✅ CRITICAL FIX: Release seats if payment failed/refunded
+            if ("failed".equalsIgnoreCase(status) || "refunded".equalsIgnoreCase(status)) {
+                String releaseSeatsQuery = "UPDATE schedule_list_seats SET " +
+                        "status = 'available', " +
+                        "booking_id = NULL, " +
+                        "updated_at = NOW() " +
+                        "WHERE booking_id = ?";
+                PreparedStatement releaseStmt = connection.prepareStatement(releaseSeatsQuery);
+                releaseStmt.setInt(1, bookingId);
+                int seatsReleased = releaseStmt.executeUpdate();
+
+                System.out.println("✅ Released " + seatsReleased + " seats back to available");
             }
 
             connection.commit(); // ✅ COMMIT TRANSACTION
@@ -2586,21 +2727,103 @@ public class MBAdminServant extends AdminServicePOA {
     }
 
     @Override
-    public void refundPayment(int adminId, int paymentId, String reason) throws AuthenticationException, PaymentNotFoundException, PaymentException {
-        // not sure here pa pero working on
+    public void refundPayment(int adminId, String sessionToken, int paymentId, String reason)
+            throws AuthenticationException, PaymentNotFoundException, PaymentException {
+
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
+        }
+
+        Connection connection = null;
+        try {
+            connection = DatabaseAccess.getConnection();
+            connection.setAutoCommit(false);
+
+            // Get booking info
+            String getBookingQuery = "SELECT p.booking_id, p.payment_status FROM payments p " +
+                    "WHERE p.payment_id = ?";
+            PreparedStatement getBookingStmt = connection.prepareStatement(getBookingQuery);
+            getBookingStmt.setInt(1, paymentId);
+            ResultSet rs = getBookingStmt.executeQuery();
+
+            if (!rs.next()) {
+                connection.rollback();
+                throw new PaymentNotFoundException("Payment not found", paymentId);
+            }
+
+            int bookingId = rs.getInt("booking_id");
+            String currentStatus = rs.getString("payment_status");
+
+            // Check if already refunded
+            if ("refunded".equals(currentStatus)) {
+                connection.rollback();
+                throw new PaymentException("Payment already refunded", 400);
+            }
+
+            // Update payment
+            String updatePayment = "UPDATE payments SET " +
+                    "payment_status = 'refunded', " +
+                    "refund_reason = ?, " +
+                    "updated_at = NOW() " +
+                    "WHERE payment_id = ?";
+            PreparedStatement paymentStmt = connection.prepareStatement(updatePayment);
+            paymentStmt.setString(1, reason);
+            paymentStmt.setInt(2, paymentId);
+            paymentStmt.executeUpdate();
+
+            // Update booking
+            String updateBooking = "UPDATE bookings SET " +
+                    "booking_status = 'cancelled', " +
+                    "cancellation_reason = ?, " +
+                    "updated_at = NOW() " +
+                    "WHERE booking_id = ?";
+            PreparedStatement bookingStmt = connection.prepareStatement(updateBooking);
+            bookingStmt.setString(1, "Refunded: " + reason);
+            bookingStmt.setInt(2, bookingId);
+            bookingStmt.executeUpdate();
+
+            // ✅ Release seats
+            String releaseSeats = "UPDATE schedule_list_seats SET " +
+                    "status = 'available', " +
+                    "booking_id = NULL, " +
+                    "updated_at = NOW() " +
+                    "WHERE booking_id = ?";
+            PreparedStatement releaseStmt = connection.prepareStatement(releaseSeats);
+            releaseStmt.setInt(1, bookingId);
+            int seatsReleased = releaseStmt.executeUpdate();
+
+            connection.commit();
+            System.out.println("✅ Payment " + paymentId + " refunded - " + seatsReleased + " seats released");
+
+        } catch (SQLException e) {
+            if (connection != null) {
+                try {
+                    connection.rollback();
+                } catch (SQLException rollbackEx) {
+                    rollbackEx.printStackTrace();
+                }
+            }
+            e.printStackTrace();
+            throw new PaymentException("Database error: " + e.getMessage(), 500);
+        } finally {
+            if (connection != null) {
+                try {
+                    connection.setAutoCommit(true);
+                    connection.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
     // ===== ADDITIONAL METHODS =====
-    @Override
-    public String generateSalesReport(int adminId, String startDate, String endDate) throws AuthenticationException {
-        return "";
-    }
 
     // In MBAdminServant.java
     @Override
-    public double getMovieRevenue(int adminId, int movieId) throws AuthenticationException, MovieNotFoundException {
-        if (!SessionManager.isAdminLoggedIn(adminId)) {
-            throw new AuthenticationException("Admin not logged in or session expired");
+    public double getMovieRevenue(int adminId, String sessionToken, int movieId) throws AuthenticationException, MovieNotFoundException {
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
         }
         if (movieId == 0) {
             return getTotalSystemRevenue(adminId);
@@ -2659,19 +2882,134 @@ public class MBAdminServant extends AdminServicePOA {
         }
     }
 
-    @Override
-    public double getScheduleOccupancy(int adminId, int scheduleId) throws AuthenticationException, ScheduleNotFoundException {
-        return 0;
+    public double getScheduleOccupancy(int adminId, String sessionToken, int scheduleId)
+            throws AuthenticationException, ScheduleNotFoundException {
+
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
+        }
+
+        try (Connection connection = DatabaseAccess.getConnection()) {
+            // Check if schedule exists
+            String checkQuery = "SELECT schedule_id FROM schedules WHERE schedule_id = ?";
+            PreparedStatement checkStmt = connection.prepareStatement(checkQuery);
+            checkStmt.setInt(1, scheduleId);
+            ResultSet checkRs = checkStmt.executeQuery();
+
+            if (!checkRs.next()) {
+                throw new ScheduleNotFoundException("Schedule not found", scheduleId);
+            }
+
+            // Calculate occupancy
+            String query = "SELECT " +
+                    "COUNT(*) as total_seats, " +
+                    "SUM(CASE WHEN status = 'booked' THEN 1 ELSE 0 END) as booked_seats " +
+                    "FROM schedule_list_seats WHERE schedule_id = ?";
+
+            PreparedStatement stmt = connection.prepareStatement(query);
+            stmt.setInt(1, scheduleId);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                int total = rs.getInt("total_seats");
+                int booked = rs.getInt("booked_seats");
+
+                if (total == 0) return 0.0;
+
+                double occupancy = (double) booked / total * 100.0;
+                return Math.round(occupancy * 100.0) / 100.0; // Round to 2 decimals
+            }
+
+            return 0.0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new AuthenticationException("Database error: " + e.getMessage());
+        }
     }
 
     @Override
-    public Movie[] getPopularMovies(int adminId, int top) throws AuthenticationException {
-        return new Movie[0];
+    public Movie[] getPopularMovies(int adminId, String sessionToken, int top)
+            throws AuthenticationException {
+
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
+        }
+
+        try (Connection connection = DatabaseAccess.getConnection()) {
+            String query = "SELECT m.*, COUNT(b.booking_id) as booking_count " +
+                    "FROM movies m " +
+                    "LEFT JOIN schedules s ON m.movie_id = s.movie_id " +
+                    "LEFT JOIN bookings b ON s.schedule_id = b.schedule_id " +
+                    "WHERE b.booking_status = 'confirmed' " +
+                    "GROUP BY m.movie_id " +
+                    "ORDER BY booking_count DESC " +
+                    "LIMIT ?";
+
+            PreparedStatement stmt = connection.prepareStatement(query);
+            stmt.setInt(1, top);
+            ResultSet rs = stmt.executeQuery();
+
+            List<Movie> movieList = new ArrayList<>();
+            while (rs.next()) {
+                Movie movie = new Movie();
+                movie.movieId = rs.getInt("movie_id");
+                movie.movieTitle = rs.getString("movie_title");
+                movie.movieDescription = rs.getString("movie_description");
+                movie.movieRating = rs.getInt("movie_rating");
+                movie.moviePosterURL = rs.getString("movie_poster_url");
+                movie.createdByAdmin = rs.getInt("created_by_admin");
+                movie.createdAt = rs.getString("created_at");
+                movie.updatedAt = rs.getString("updated_at");
+                movieList.add(movie);
+            }
+
+            return movieList.toArray(new Movie[0]);
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new AuthenticationException("Database error: " + e.getMessage());
+        }
     }
 
     @Override
-    public Movie[] getMoviesByGenre(int adminId, int genreId) throws AuthenticationException {
-        return new Movie[0];
+    public Movie[] getMoviesByGenre(int adminId, String sessionToken, int genreId)
+            throws AuthenticationException {
+
+        if (!SessionManager.validateAdminSession(adminId, sessionToken)) {
+            throw new AuthenticationException("Invalid session - please log in again");
+        }
+
+        try (Connection connection = DatabaseAccess.getConnection()) {
+            String query = "SELECT DISTINCT m.* FROM movies m " +
+                    "INNER JOIN movie_genres mg ON m.movie_id = mg.movie_id " +
+                    "WHERE mg.genre_id = ? " +
+                    "ORDER BY m.movie_title";
+
+            PreparedStatement stmt = connection.prepareStatement(query);
+            stmt.setInt(1, genreId);
+            ResultSet rs = stmt.executeQuery();
+
+            List<Movie> movieList = new ArrayList<>();
+            while (rs.next()) {
+                Movie movie = new Movie();
+                movie.movieId = rs.getInt("movie_id");
+                movie.movieTitle = rs.getString("movie_title");
+                movie.movieDescription = rs.getString("movie_description");
+                movie.movieRating = rs.getInt("movie_rating");
+                movie.moviePosterURL = rs.getString("movie_poster_url");
+                movie.createdByAdmin = rs.getInt("created_by_admin");
+                movie.createdAt = rs.getString("created_at");
+                movie.updatedAt = rs.getString("updated_at");
+                movieList.add(movie);
+            }
+
+            return movieList.toArray(new Movie[0]);
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new AuthenticationException("Database error: " + e.getMessage());
+        }
     }
 
     // ===== HELPER METHODS (NOT IN THE IDL) =====
@@ -2693,21 +3031,18 @@ public class MBAdminServant extends AdminServicePOA {
         return 0;
     }
 
-    private int getLatestGenreId() throws AuthenticationException {
-        try(Connection connection = DatabaseAccess.getConnection()){
+    private int getLatestGenreId() throws SQLException {
+        try (Connection connection = DatabaseAccess.getConnection()) {
             String query = "SELECT MAX(genre_id) as max_id FROM genres";
             PreparedStatement statement = connection.prepareStatement(query);
-            ResultSet resultSet = statement.executeQuery();
+            ResultSet rs = statement.executeQuery();
 
-            if(resultSet.next()){
-                int maxID = resultSet.getInt("max_id");
-                return resultSet.wasNull() ? 0 : maxID;  // Return 0 if table is empty
+            if (rs.next()) {
+                int maxId = rs.getInt("max_id");
+                return rs.wasNull() ? 0 : maxId;
             }
-        } catch (SQLException e){
-            e.printStackTrace();
-            throw new AuthenticationException("Database error: " + e.getMessage());
+            return 0;
         }
-        return 0;
     }
 
     // Helper para sa payment

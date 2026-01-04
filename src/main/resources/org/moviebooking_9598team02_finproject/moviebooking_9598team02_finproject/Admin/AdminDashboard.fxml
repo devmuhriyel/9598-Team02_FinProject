@@ -51,7 +51,6 @@
                                 <StackPane style="-fx-padding: 10;">
                                     <TableView fx:id="allMoviesTableView" style="-fx-background-color: #262626; -fx-font-size: 13;">
                                         <columns>
-                                            <TableColumn fx:id="allColId" prefWidth="40" text="ID" />
                                             <TableColumn fx:id="allColTitle" prefWidth="220" text="Title" />
                                             <TableColumn fx:id="allColGenre" prefWidth="120" text="Genre" />
                                             <TableColumn fx:id="allColStatus" prefWidth="120" text="Status" />

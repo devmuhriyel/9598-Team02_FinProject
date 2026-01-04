@@ -31,7 +31,7 @@ public class ProfileNavManager {
                 VBox root = loader.load();
 
                 // --- THE FIX: Pass the full 'customer' object ---
-                ProfileModel model = new ProfileModel(this.customer);
+                ProfileModel model = new ProfileModel();
 
                 new ProfileController(model, view);
 
