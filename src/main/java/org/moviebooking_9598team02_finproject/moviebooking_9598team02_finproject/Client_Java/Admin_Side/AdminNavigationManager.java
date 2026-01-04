@@ -170,7 +170,7 @@ public class AdminNavigationManager {
         // Call logout on server to invalidate session
         if (admin != null && AdminParentModel.adminServices != null) {
             try {
-                AdminParentModel.adminServices.logoutAdmin(admin.adminId);
+                AdminParentModel.adminServices.logoutAdmin(admin.adminId, sessionToken);
                 System.out.println("✅ Admin " + admin.adminId + " logged out from server");
             } catch (Exception e) {
                 System.err.println("⚠️ Error calling logout on server: " + e.getMessage());

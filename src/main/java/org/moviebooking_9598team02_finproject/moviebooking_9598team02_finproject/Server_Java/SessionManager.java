@@ -275,12 +275,12 @@ public class SessionManager {
     }
 
     public static boolean validateCustomerToken(String token) {
-        Integer customerId = sessionTokens.get(token);
+        Integer customerId = customerTokens.get(token);
         return customerId != null && isCustomerLoggedIn(customerId);
     }
 
     public static Integer getCustomerIdFromToken(String token) {
-        Integer customerId = sessionTokens.get(token);
+        Integer customerId = customerTokens.get(token);
         if (customerId != null && isCustomerLoggedIn(customerId)) {
             return customerId;
         }
