@@ -103,8 +103,12 @@ public class MBAdminServant extends AdminServicePOA {
     @Override
     public int createAdmin(int creatorAdminId, String sessionToken, String username, String email, String password, String fullName, String phoneNumber) throws AuthenticationException, InvalidInputException {
 
-        if (!SessionManager.validateAdminSession(creatorAdminId, sessionToken)) {
-            throw new AuthenticationException("Invalid session - please log in again");
+        // ✅ FIX: Allow signup without session validation (creatorAdminId == 0 means signup)
+        if (creatorAdminId != 0) {
+            // Only validate session if this is NOT a signup
+            if (!SessionManager.validateAdminSession(creatorAdminId, sessionToken)) {
+                throw new AuthenticationException("Invalid session - please log in again");
+            }
         }
 
         try (Connection connection = DatabaseAccess.getConnection()) {
@@ -117,13 +121,12 @@ public class MBAdminServant extends AdminServicePOA {
             statement.setInt(1, nextAdminID);
             statement.setString(2, username);
             statement.setString(3, email);
-            statement.setString(4, hashedPassword);  // Store hashed password
+            statement.setString(4, hashedPassword);
             statement.setString(5, fullName);
             statement.setString(6, phoneNumber);
             statement.setString(7, timeOfCreation.toString());
             statement.setString(8, timeOfCreation.toString());
 
-            // Use executeUpdate() for INSERT statements, not executeQuery()
             int rowsAffected = statement.executeUpdate();
 
             if (rowsAffected > 0) {
@@ -1539,7 +1542,7 @@ public class MBAdminServant extends AdminServicePOA {
             connection = DatabaseAccess.getConnection();
             connection.setAutoCommit(false); // START TRANSACTION
 
-            // Check if movie exists
+            // ✅ STEP 1: Check if movie exists
             String checkMovieQuery = "SELECT movie_id, movie_title FROM movies WHERE movie_id = ?";
             PreparedStatement checkMovieStmt = connection.prepareStatement(checkMovieQuery);
             checkMovieStmt.setInt(1, movieId);
@@ -1554,7 +1557,7 @@ public class MBAdminServant extends AdminServicePOA {
             String movieTitle = movieRs.getString("movie_title");
             System.out.println("✅ Movie found: " + movieTitle);
 
-            //  Check if movie_schedule exists
+            // ✅ STEP 2: Check if movie_schedule exists
             String checkScheduleQuery = "SELECT movie_schedule_id, screening_date, screening_time " +
                     "FROM movie_schedules WHERE movie_schedule_id = ?";
             PreparedStatement checkScheduleStmt = connection.prepareStatement(checkScheduleQuery);
@@ -1569,9 +1572,9 @@ public class MBAdminServant extends AdminServicePOA {
 
             String date = scheduleRs.getString("screening_date");
             String time = scheduleRs.getString("screening_time");
-            System.out.println("Movie schedule found: " + date + " " + time);
+            System.out.println("✅ Movie schedule found: " + date + " " + time);
 
-            // Check if this EXACT movie is already scheduled at this time
+            // ✅ STEP 3: Check if this EXACT movie is already scheduled at this time
             String checkSameMovieQuery = "SELECT schedule_id FROM schedules " +
                     "WHERE movie_id = ? AND movie_schedule_id = ?";
             PreparedStatement checkSameMovieStmt = connection.prepareStatement(checkSameMovieQuery);
@@ -1583,14 +1586,13 @@ public class MBAdminServant extends AdminServicePOA {
                 int existingScheduleId = sameMovieRs.getInt("schedule_id");
                 connection.rollback();
 
-                // FIXED: Use AuthenticationException instead of InvalidInputException
                 throw new AuthenticationException(
                         "Schedule already exists: Movie '" + movieTitle + "' is already scheduled for " +
                                 date + " at " + time + "."
                 );
             }
 
-            // NEW: Check if ANY OTHER movie is scheduled at this time
+            // ✅ STEP 4: Check if ANY OTHER movie is scheduled at this time
             String checkOtherMovieQuery =
                     "SELECT s.schedule_id, m.movie_title " +
                             "FROM schedules s " +
@@ -1606,14 +1608,13 @@ public class MBAdminServant extends AdminServicePOA {
                 String conflictingMovie = otherMovieRs.getString("movie_title");
                 connection.rollback();
 
-                // FIXED: Use AuthenticationException instead of InvalidInputException
                 throw new AuthenticationException(
                         "Time slot conflict: Movie '" + conflictingMovie + "' is already scheduled for " +
                                 date + " at " + time + ". Please choose a different time slot."
                 );
             }
 
-            //  Get next schedule_id
+            // ✅ STEP 5: Get next schedule_id
             String maxIdQuery = "SELECT MAX(schedule_id) as max_id FROM schedules";
             PreparedStatement maxIdStmt = connection.prepareStatement(maxIdQuery);
             ResultSet maxIdRs = maxIdStmt.executeQuery();
@@ -1624,7 +1625,7 @@ public class MBAdminServant extends AdminServicePOA {
                 nextScheduleId = maxId + 1;
             }
 
-            // Insert into schedules table
+            // ✅ STEP 6: Insert into schedules table
             LocalDateTime now = LocalDateTime.now();
             String query = "INSERT INTO schedules (schedule_id, movie_id, movie_schedule_id, created_at, updated_at) " +
                     "VALUES (?, ?, ?, ?, ?)";
@@ -1638,12 +1639,27 @@ public class MBAdminServant extends AdminServicePOA {
             int rowsAffected = statement.executeUpdate();
 
             if (rowsAffected > 0) {
-                // Initialize seats for this schedule
-                System.out.println("🪑 Initializing seats for schedule " + nextScheduleId + "...");
-                initializeScheduleSeatsInternal(connection, nextScheduleId);
+                // ✅ STEP 7: 🔥 CRITICAL FIX - Check if seats already exist
+                String checkSeatsQuery = "SELECT COUNT(*) FROM schedule_list_seats WHERE schedule_id = ?";
+                PreparedStatement checkSeatsStmt = connection.prepareStatement(checkSeatsQuery);
+                checkSeatsStmt.setInt(1, nextScheduleId);
+                ResultSet seatsCheckRs = checkSeatsStmt.executeQuery();
 
-                connection.commit(); // COMMIT TRANSACTION
-                System.out.println(" Assigned movie " + movieId + " ('" + movieTitle +
+                int existingSeatsCount = 0;
+                if (seatsCheckRs.next()) {
+                    existingSeatsCount = seatsCheckRs.getInt(1);
+                }
+
+                // 🔥 ONLY initialize seats if they DON'T exist yet
+                if (existingSeatsCount == 0) {
+                    System.out.println("🪑 Initializing seats for schedule " + nextScheduleId + "...");
+                    initializeScheduleSeatsInternal(connection, nextScheduleId);
+                } else {
+                    System.out.println("⚠️ Seats already exist for schedule " + nextScheduleId + " (" + existingSeatsCount + " seats) - skipping initialization");
+                }
+
+                connection.commit(); // ✅ COMMIT TRANSACTION
+                System.out.println("✅ Assigned movie " + movieId + " ('" + movieTitle +
                         "') to schedule " + nextScheduleId);
                 return nextScheduleId;
             } else {
@@ -1709,7 +1725,7 @@ public class MBAdminServant extends AdminServicePOA {
         }
 
         int[] results = insertStmt.executeBatch();
-        System.out.println("Initialized " + count + " seats for schedule " + scheduleId);
+        System.out.println("✅ Initialized " + count + " seats for schedule " + scheduleId);
     }
 
     @Override
