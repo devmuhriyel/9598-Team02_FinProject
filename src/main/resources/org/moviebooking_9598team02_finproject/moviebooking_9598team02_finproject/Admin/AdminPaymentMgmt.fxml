@@ -25,7 +25,7 @@
             </HBox>
 
             <HBox spacing="10.0" alignment="CENTER_LEFT">
-                <TextField fx:id="searchField" promptText="Search by Transaction ID or Booking ID..."
+                <TextField fx:id="searchField" promptText="Search by Customer Name or Transaction ID..."
                            prefWidth="400.0"
                            style="-fx-background-color: #404040; -fx-text-fill: white; -fx-prompt-text-fill: #888888;" />
 
@@ -41,11 +41,10 @@
     <center>
         <TableView fx:id="paymentTable" style="-fx-background-color: #333333; -fx-base: #333333; -fx-control-inner-background: #333333; -fx-text-fill: white;">
             <columns>
-                <TableColumn fx:id="colId" prefWidth="80.0" text="Pay ID" />
-                <TableColumn fx:id="colBookingId" prefWidth="100.0" text="Booking ID" />
-                <TableColumn fx:id="colAmount" prefWidth="100.0" text="Amount" />
+                <TableColumn fx:id="colCustomerName" prefWidth="180.0" text="Customer Name" />
+                <TableColumn fx:id="colAmount" prefWidth="120.0" text="Amount" />
                 <TableColumn fx:id="colMethod" prefWidth="120.0" text="Method" />
-                <TableColumn fx:id="colTxnId" prefWidth="150.0" text="Transaction Ref" />
+                <TableColumn fx:id="colTxnId" prefWidth="150.0" text="Transaction" />
                 <TableColumn fx:id="colDate" prefWidth="150.0" text="Date" />
                 <TableColumn fx:id="colStatus" prefWidth="120.0" text="Status" />
             </columns>

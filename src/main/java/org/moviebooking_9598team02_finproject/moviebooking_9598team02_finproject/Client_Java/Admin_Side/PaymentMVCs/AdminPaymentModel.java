@@ -2,7 +2,7 @@ package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finprojec
 
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.AdminParentModel;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.AuthenticationException;
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Payment;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.PaymentDetails;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.PaymentNotFoundException;
 
 public class AdminPaymentModel extends AdminParentModel {
@@ -13,9 +13,9 @@ public class AdminPaymentModel extends AdminParentModel {
         System.out.println("✅ AdminPaymentModel initialized with adminId: " + adminId);
     }
 
-    // Fetch all payments sa Server
-    public Payment[] getAllPayments(int adminId) throws AuthenticationException {
-        return adminServices.getAllPayments(adminId, sessionToken);
+    // Fetch all payments with details (includes customer name)
+    public PaymentDetails[] getAllPayments(int adminId) throws AuthenticationException {
+        return adminServices.getAllPaymentsWithDetails(adminId, sessionToken);
     }
 
     // Update status like updated or failed

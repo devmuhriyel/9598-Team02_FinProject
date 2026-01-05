@@ -1,7 +1,6 @@
 package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.CustomerMgmtMVCs.AdminMgmt;
 
 import javafx.application.Platform;
-import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -26,7 +25,6 @@ public class AdminMgmtView {
 
     // ===== LIST PANEL =====
     @FXML private TableView<Admin> adminTable;
-    @FXML private TableColumn<Admin, Integer> colAdminId;
     @FXML private TableColumn<Admin, String> colUsername;
     @FXML private TableColumn<Admin, String> colEmail;
     @FXML private TableColumn<Admin, String> colFullName;
@@ -85,9 +83,6 @@ public class AdminMgmtView {
 
     private void setupListPanel() {
         // Use SimpleProperty wrappers for CORBA objects
-        colAdminId.setCellValueFactory(cellData ->
-                new SimpleIntegerProperty(cellData.getValue().adminId).asObject());
-
         colUsername.setCellValueFactory(cellData ->
                 new SimpleStringProperty(cellData.getValue().username));
 

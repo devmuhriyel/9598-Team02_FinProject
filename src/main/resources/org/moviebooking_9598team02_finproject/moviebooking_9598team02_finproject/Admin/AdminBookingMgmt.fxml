@@ -26,7 +26,7 @@
             </HBox>
 
             <HBox spacing="10.0" alignment="CENTER_LEFT">
-                <TextField fx:id="searchField" promptText="Search ID or Customer..."
+                <TextField fx:id="searchField" promptText="Search by Customer Name..."
                            prefWidth="400.0"
                            style="-fx-background-color: #404040; -fx-text-fill: white; -fx-prompt-text-fill: #888888;" />
 
@@ -39,12 +39,9 @@
     <center>
         <TableView fx:id="bookingTable" style="-fx-background-color: #333333; -fx-base: #333333; -fx-control-inner-background: #333333; -fx-text-fill: white;">
             <columns>
-                <TableColumn fx:id="colId" prefWidth="80.0" text="ID" />
-                <TableColumn fx:id="colCustId" prefWidth="100.0" text="Customer ID" />
-                <TableColumn fx:id="colSchedId" prefWidth="100.0" text="Schedule ID" />
-                <TableColumn fx:id="colPrice" prefWidth="100.0" text="Total Price" />
-                <TableColumn fx:id="colStatus" prefWidth="120.0" text="Status" />
-                <TableColumn fx:id="colDate" prefWidth="150.0" text="Created At" />
+                <TableColumn fx:id="colCustomerName" prefWidth="200.0" text="Customer Name" />
+                <TableColumn fx:id="colPrice" prefWidth="120.0" text="Total Price" />
+                <TableColumn fx:id="colStatus" prefWidth="150.0" text="Status" />
             </columns>
             <columnResizePolicy>
                 <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />

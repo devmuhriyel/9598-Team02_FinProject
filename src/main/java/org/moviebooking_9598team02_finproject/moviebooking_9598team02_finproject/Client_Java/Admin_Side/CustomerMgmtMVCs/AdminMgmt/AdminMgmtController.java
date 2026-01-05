@@ -60,22 +60,9 @@ public class AdminMgmtController {
             view.clearListMessage();
             String trimmed = searchText.trim();
 
-            if (trimmed.matches("\\d+")) {
-                Admin admin = model.getAdminById(trimmed);
-                if (admin != null) {
-                    Admin[] result = new Admin[1];
-                    result[0] = admin;
-                    view.displayAdminList(result);
-                    view.showListMessage("✅ Found 1 admin");
-                } else {
-                    view.displayAdminList(new Admin[0]);
-                    view.showListMessage("❌ No admin found with ID: " + trimmed);
-                }
-            } else {
-                Admin[] results = model.searchAdmins(trimmed);
-                view.displayAdminList(results);
-                view.showListMessage("✅ Found " + results.length + " admin(s)");
-            }
+            Admin[] results = model.searchAdmins(trimmed);
+            view.displayAdminList(results);
+            view.showListMessage("✅ Found " + results.length + " admin(s)");
         } catch (AuthenticationException e) {
             view.showListMessage("❌ " + e.getMessage());
         }

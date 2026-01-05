@@ -30,8 +30,6 @@ public class CustomerMgmtView {
     @FXML
     private TableView<Customer> customerTable;
     @FXML
-    private TableColumn<Customer, Long> colCustomerId;
-    @FXML
     private TableColumn<Customer, String> colUsername;
     @FXML
     private TableColumn<Customer, String> colEmail;
@@ -86,9 +84,6 @@ public class CustomerMgmtView {
 
     private void setupListPanel() {
         // Use SimpleProperty wrappers for CORBA objects
-        colCustomerId.setCellValueFactory(cellData ->
-                new SimpleLongProperty(cellData.getValue().customerId).asObject());
-
         colUsername.setCellValueFactory(cellData ->
                 new SimpleStringProperty(cellData.getValue().username));
 

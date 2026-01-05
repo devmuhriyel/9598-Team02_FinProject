@@ -8,7 +8,7 @@ import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.util.StringConverter;
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Booking;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.BookingDetails;
 import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Movie;
 
 import java.util.HashSet;
@@ -19,8 +19,8 @@ public class AdminBookingController {
     private AdminBookingView view;
     private AdminBookingModel model;
     private int currentAdminId;
-    private ObservableList<Booking> bookingList = FXCollections.observableArrayList();
-    private FilteredList<Booking> filteredData;
+    private ObservableList<BookingDetails> bookingList = FXCollections.observableArrayList();
+    private FilteredList<BookingDetails> filteredData;
     private ObservableList<Movie> movieList = FXCollections.observableArrayList();
 
     public AdminBookingController(AdminBookingView view, AdminBookingModel model, int adminId) {
@@ -37,42 +37,63 @@ public class AdminBookingController {
     }
 
     private void initializeTable() {
-        view.getColId().setCellValueFactory(cell -> new SimpleObjectProperty<>(cell.getValue().bookingId));
-        view.getColCustId().setCellValueFactory(cell -> new SimpleObjectProperty<>(cell.getValue().customerId));
-        view.getColSchedId().setCellValueFactory(cell -> new SimpleObjectProperty<>(cell.getValue().scheduleId));
-        view.getColPrice().setCellValueFactory(cell -> new SimpleObjectProperty<>(cell.getValue().totalPrice));
-        view.getColStatus().setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().bookingStatus));
-        view.getColDate().setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().createdAt));
+        // Add null checks to prevent errors
+        if (view.getColCustomerName() != null) {
+            view.getColCustomerName().setCellValueFactory(cell -> 
+                    new SimpleStringProperty(cell.getValue() != null && cell.getValue().customerName != null ? 
+                            cell.getValue().customerName : "N/A"));
+        }
+        if (view.getColPrice() != null) {
+            view.getColPrice().setCellValueFactory(cell -> 
+                    new SimpleObjectProperty<>(cell.getValue() != null ? cell.getValue().totalPrice : 0.0));
+        }
+        if (view.getColStatus() != null) {
+            view.getColStatus().setCellValueFactory(cell -> 
+                    new SimpleStringProperty(cell.getValue() != null && cell.getValue().bookingStatus != null ? 
+                            cell.getValue().bookingStatus : ""));
+        }
 
         filteredData = new FilteredList<>(bookingList, p -> true);
-        SortedList<Booking> sortedData = new SortedList<>(filteredData);
-        sortedData.comparatorProperty().bind(view.getBookingTable().comparatorProperty());
+        SortedList<BookingDetails> sortedData = new SortedList<>(filteredData);
+        if (view.getBookingTable() != null) {
+            sortedData.comparatorProperty().bind(view.getBookingTable().comparatorProperty());
+        }
         view.setBookingList(sortedData);
     }
 
     private void initializeFilters() {
         // Status Filter
-        view.getComboStatus().getItems().addAll("All", "pending", "confirmed", "cancelled");
-        view.getComboStatus().getSelectionModel().selectFirst();
-        view.getComboMovie().setItems(movieList);
-        view.getComboMovie().setConverter(new StringConverter<Movie>() {
-            @Override
-            public String toString(Movie movie) {
-                if (movie == null) return "All Movies";
-                if (movie.movieId == -1) return "All Movies";
-                return movie.movieId + ": " + movie.movieTitle;
-            }
+        if (view.getComboStatus() != null) {
+            view.getComboStatus().getItems().addAll("All", "pending", "confirmed", "cancelled");
+            view.getComboStatus().getSelectionModel().selectFirst();
+            view.getComboStatus().setOnAction(e -> applyClientFilter());
+        }
+        
+        if (view.getComboMovie() != null) {
+            view.getComboMovie().setItems(movieList);
+            view.getComboMovie().setConverter(new StringConverter<Movie>() {
+                @Override
+                public String toString(Movie movie) {
+                    if (movie == null) return "All Movies";
+                    if (movie.movieId == -1) return "All Movies";
+                    return movie.movieId + ": " + movie.movieTitle;
+                }
 
-            @Override
-            public Movie fromString(String string) {
-                return null;
-            }
-        });
-
-        view.getComboStatus().setOnAction(e -> applyClientFilter());
-        view.getComboSchedule().setOnAction(e -> applyClientFilter());
-        view.getSearchField().textProperty().addListener((obs, old, newVal) -> applyClientFilter());
-        view.getComboMovie().setOnAction(e -> loadData());
+                @Override
+                public Movie fromString(String string) {
+                    return null;
+                }
+            });
+            view.getComboMovie().setOnAction(e -> loadData());
+        }
+        
+        if (view.getComboSchedule() != null) {
+            view.getComboSchedule().setOnAction(e -> applyClientFilter());
+        }
+        
+        if (view.getSearchField() != null) {
+            view.getSearchField().textProperty().addListener((obs, old, newVal) -> applyClientFilter());
+        }
     }
 
     private void initializeButtons() {
@@ -105,11 +126,11 @@ public class AdminBookingController {
 
     // LOAD DATA
     private void loadData() {
-        Movie selectedMovie = view.getComboMovie().getValue();
+        Movie selectedMovie = view.getComboMovie() != null ? view.getComboMovie().getValue() : null;
 
         new Thread(() -> {
             try {
-                Booking[] bookings;
+                BookingDetails[] bookings;
 
                 if (selectedMovie == null || selectedMovie.movieId == -1) {
                     bookings = model.getAllBookings(currentAdminId);
@@ -123,14 +144,18 @@ public class AdminBookingController {
                     uniqueSchedules.add("All");
 
                     if (bookings != null) {
-                        for (Booking b : bookings) {
-                            bookingList.add(b);
-                            uniqueSchedules.add(String.valueOf(b.scheduleId));
+                        for (BookingDetails bd : bookings) {
+                            if (bd != null) {
+                                bookingList.add(bd);
+                                uniqueSchedules.add(String.valueOf(bd.scheduleId));
+                            }
                         }
                     }
 
-                    view.getComboSchedule().getItems().setAll(uniqueSchedules);
-                    view.getComboSchedule().getSelectionModel().selectFirst();
+                    if (view.getComboSchedule() != null) {
+                        view.getComboSchedule().getItems().setAll(uniqueSchedules);
+                        view.getComboSchedule().getSelectionModel().selectFirst();
+                    }
 
                     view.setStatus("Data loaded successfully.", false);
                     applyClientFilter();
@@ -144,19 +169,26 @@ public class AdminBookingController {
 
     // CLIENT FILTER
     private void applyClientFilter() {
-        String searchText = view.getSearchField().getText().toLowerCase().trim();
-        String selectedStatus = view.getComboStatus().getValue();
-        String selectedSchedule = view.getComboSchedule().getValue();
+        if (filteredData == null) return; // Safety check
+        
+        String searchText = view.getSearchField() != null ? view.getSearchField().getText().toLowerCase().trim() : "";
+        String selectedStatus = view.getComboStatus() != null ? view.getComboStatus().getValue() : null;
+        String selectedSchedule = view.getComboSchedule() != null ? view.getComboSchedule().getValue() : null;
 
         filteredData.setPredicate(booking -> {
+            if (booking == null) return false;
+            
             if (!searchText.isEmpty()) {
+                // Search by customer name
+                boolean matchesCustomerName = booking.customerName != null && 
+                        booking.customerName.toLowerCase().contains(searchText);
+                // Also allow searching by booking ID if needed
                 boolean matchesId = String.valueOf(booking.bookingId).contains(searchText);
-                boolean matchesCust = String.valueOf(booking.customerId).contains(searchText);
-                if (!matchesId && !matchesCust) return false;
+                if (!matchesCustomerName && !matchesId) return false;
             }
 
             if (selectedStatus != null && !"All".equals(selectedStatus)) {
-                if (!selectedStatus.equalsIgnoreCase(booking.bookingStatus)) return false;
+                if (booking.bookingStatus == null || !selectedStatus.equalsIgnoreCase(booking.bookingStatus)) return false;
             }
 
             if (selectedSchedule != null && !"All".equals(selectedSchedule)) {
@@ -168,8 +200,14 @@ public class AdminBookingController {
     }
 
     private void resetFilters() {
-        view.getSearchField().clear();
-        view.getComboStatus().getSelectionModel().selectFirst();
-        view.getComboMovie().getSelectionModel().selectFirst();
+        if (view.getSearchField() != null) {
+            view.getSearchField().clear();
+        }
+        if (view.getComboStatus() != null) {
+            view.getComboStatus().getSelectionModel().selectFirst();
+        }
+        if (view.getComboMovie() != null) {
+            view.getComboMovie().getSelectionModel().selectFirst();
+        }
     }
 }
