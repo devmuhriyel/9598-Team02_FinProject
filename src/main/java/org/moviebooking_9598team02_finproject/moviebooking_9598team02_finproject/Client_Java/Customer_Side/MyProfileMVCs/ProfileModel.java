@@ -5,7 +5,17 @@ import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject
 
 public class ProfileModel extends CustomerParentModel {
 
-    public ProfileModel() {
+    // ✅ FIX: Add constructor that initializes session data
+    public ProfileModel(int customerId, String sessionToken, String username,
+                        String fullName, String email, String phoneNumber) {
+        this.customerId = customerId;
+        this.sessionToken = sessionToken;
+        this.username = username;
+        this.fullName = fullName;
+        this.email = email;
+        this.phoneNumber = phoneNumber;
+
+        System.out.println("✅ ProfileModel initialized with customerId: " + customerId);
     }
 
     // ==== UPDATE METHODS ====

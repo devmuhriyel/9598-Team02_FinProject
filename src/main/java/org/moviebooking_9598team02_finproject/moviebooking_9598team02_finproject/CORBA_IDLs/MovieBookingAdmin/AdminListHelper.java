@@ -32,7 +32,7 @@ abstract public class AdminListHelper
   {
     if (__typeCode == null)
     {
-      __typeCode = AdminHelper.type ();
+      __typeCode = org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.AdminHelper.type ();
       __typeCode = org.omg.CORBA.ORB.init ().create_sequence_tc (0, __typeCode);
       __typeCode = org.omg.CORBA.ORB.init ().create_alias_tc (AdminListHelper.id (), "AdminList", __typeCode);
       __typeCode = org.omg.CORBA.ORB.init ().create_alias_tc (org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingAdmin.AdminListHelper.id (), "AdminList", __typeCode);
@@ -48,13 +48,13 @@ abstract public class AdminListHelper
   public static Admin[] read (org.omg.CORBA.portable.InputStream istream)
   {
     Admin value[] = null;
-    value = AdminListHelper.read (istream);
+    value = org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.AdminListHelper.read (istream);
     return value;
   }
 
   public static void write (org.omg.CORBA.portable.OutputStream ostream, Admin[] value)
   {
-    AdminListHelper.write (ostream, value);
+    org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.AdminListHelper.write (ostream, value);
   }
 
 }

@@ -30,10 +30,12 @@ public class AccountNavigationManager {
     private CustomerMgmtController customerController;
 
     private int adminId;
+    private String sessionToken; // ✅ ADD
 
     // Constructor for Admin Management
-    public AccountNavigationManager(int adminId, boolean isAdminManagement) {
+    public AccountNavigationManager(int adminId, String sessionToken, boolean isAdminManagement) {
         this.adminId = adminId;
+        this.sessionToken = sessionToken; // ✅ STORE
         if (isAdminManagement) {
             initializeAdminMVC();
         } else {
@@ -42,8 +44,8 @@ public class AccountNavigationManager {
     }
 
     // Convenience constructor (defaults to Admin Management for backward compatibility)
-    public AccountNavigationManager(int adminId) {
-        this(adminId, true);
+    public AccountNavigationManager(int adminId, String sessionToken) {
+        this(adminId, sessionToken, true);
     }
 
     // ===== ADMIN MANAGEMENT INITIALIZATION =====
@@ -55,7 +57,7 @@ public class AccountNavigationManager {
             adminPane = loader.load();
             adminView = loader.getController();
 
-            adminModel = new AdminMgmtModel(adminId);
+            adminModel = new AdminMgmtModel(adminId, getSessionToken());
             adminController = new AdminMgmtController(adminModel, adminView);
 
             System.out.println("✅ Admin Management MVC initialized");
@@ -75,7 +77,7 @@ public class AccountNavigationManager {
             customerPane = loader.load();
             customerView = loader.getController();
 
-            customerModel = new CustomerMgmtModel(adminId);
+            customerModel = new CustomerMgmtModel(adminId, getSessionToken());
             customerController = new CustomerMgmtController(customerModel, customerView);
 
             System.out.println("✅ Customer Management MVC initialized");
@@ -84,6 +86,12 @@ public class AccountNavigationManager {
             e.printStackTrace();
             System.err.println("❌ Error initializing Customer Management: " + e.getMessage());
         }
+    }
+
+    private String getSessionToken() {
+        // Get from AdminParentModel static or pass it through constructor
+        // For now, we need to modify the constructor to accept it
+        return sessionToken; // This field needs to be added to this class
     }
 
     // ===== GETTERS - Admin Management =====

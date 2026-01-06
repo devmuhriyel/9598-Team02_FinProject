@@ -5,8 +5,9 @@ import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject
 
 public class AdminMgmtModel extends AdminParentModel {
 
-    public AdminMgmtModel(int adminId) {
+    public AdminMgmtModel(int adminId, String sessionToken) {
         this.adminId = adminId;
+        this.sessionToken = sessionToken;
     }
 
 

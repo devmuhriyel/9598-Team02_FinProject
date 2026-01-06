@@ -30,7 +30,7 @@ abstract public class ScheduleListSeatListHelper
   {
     if (__typeCode == null)
     {
-      __typeCode = ScheduleListSeatHelper.type ();
+      __typeCode = org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.ScheduleListSeatHelper.type ();
       __typeCode = org.omg.CORBA.ORB.init ().create_sequence_tc (0, __typeCode);
       __typeCode = org.omg.CORBA.ORB.init ().create_alias_tc (ScheduleListSeatListHelper.id (), "ScheduleListSeatList", __typeCode);
       __typeCode = org.omg.CORBA.ORB.init ().create_alias_tc (org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingAdmin.ScheduleListSeatListHelper.id (), "ScheduleListSeatList", __typeCode);
@@ -46,13 +46,13 @@ abstract public class ScheduleListSeatListHelper
   public static ScheduleListSeat[] read (org.omg.CORBA.portable.InputStream istream)
   {
     ScheduleListSeat value[] = null;
-    value = ScheduleListSeatListHelper.read (istream);
+    value = org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.ScheduleListSeatListHelper.read (istream);
     return value;
   }
 
   public static void write (org.omg.CORBA.portable.OutputStream ostream, ScheduleListSeat[] value)
   {
-    ScheduleListSeatListHelper.write (ostream, value);
+    org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.ScheduleListSeatListHelper.write (ostream, value);
   }
 
 }

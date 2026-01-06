@@ -101,7 +101,7 @@ public class CustomerNavigationManager {
     public void showBrowseMoviesView() {
         if (browseMoviesPane == null) {
             try {
-                movieNavManager = new MovieNavigationManager(customer);
+                movieNavManager = new MovieNavigationManager(customer, sessionToken);
                 browseMoviesPane = movieNavManager.getMovieBrowseView();
 
                 if (browseMoviesPane == null) {
@@ -122,7 +122,8 @@ public class CustomerNavigationManager {
     public void showMyBookingsView() {
         if (myBookingsPane == null) {
             try {
-                bookingNavManager = new CustomerBookingNavManager(customer);
+                // ✅ Pass sessionToken to the manager
+                bookingNavManager = new CustomerBookingNavManager(customer, sessionToken);
                 myBookingsPane = bookingNavManager.getMyBookingsView();
 
                 if (myBookingsPane == null) {
@@ -146,7 +147,8 @@ public class CustomerNavigationManager {
     public void showMyProfileView() {
         if (myProfilePane == null) {
             try {
-                profileNavManager = new ProfileNavManager(customer);
+                // ✅ FIX: Pass sessionToken
+                profileNavManager = new ProfileNavManager(customer, sessionToken);
                 myProfilePane = profileNavManager.getMyProfileView();
 
                 if (myProfilePane == null) {
@@ -256,8 +258,9 @@ public class CustomerNavigationManager {
                 new SessionValidator.SessionValidationCallback() {
                     @Override
                     public boolean validateSession() {
-                        CustomerLoginModel tempModel = new CustomerLoginModel();
-                        return tempModel.validateSession(customer.customerId);
+                        // ✅ FIX: Create model with session data
+                        CustomerHomeModel tempModel = new CustomerHomeModel(customer.customerId, sessionToken);
+                        return tempModel.validateSession(customer.customerId, sessionToken);
                     }
 
                     @Override
@@ -270,6 +273,7 @@ public class CustomerNavigationManager {
         sessionValidator.start();
         System.out.println("🔄 Session validation started for customer: " + customer.customerId);
     }
+
 
     /**
      * ✅ UPDATED: Shows alert for concurrent login
@@ -293,7 +297,7 @@ public class CustomerNavigationManager {
 
                 // Reopen auth stage with message
                 authNavManager.reopenAuthStage(
-                        "Your account was logged in from another location. Please log in again."
+                        "Your account was logged in from another location."
                 );
 
             } catch (Exception e) {
@@ -323,10 +327,31 @@ public class CustomerNavigationManager {
         }
     }
 
+    public void refreshCustomerData(String newFullName, String newEmail, String newPhoneNumber) {
+        // Update the customer object
+        this.customer.fullName = newFullName;
+        this.customer.email = newEmail;
+        this.customer.phoneNumber = newPhoneNumber;
+
+        // Update window title if needed
+        if (homeStage != null) {
+            homeStage.setTitle("FilmBook - " + customer.username);
+        }
+
+        // Clear cached profile pane to force reload with new data
+        myProfilePane = null;
+
+        System.out.println("✅ Customer data refreshed: " + newFullName);
+    }
+
     // ===== GETTERS =====
 
     public Customer getCustomer() {
         return customer;
+    }
+
+    public String getSessionToken() {
+        return sessionToken;
     }
 
     public CustomerHomeView getHomeView() {

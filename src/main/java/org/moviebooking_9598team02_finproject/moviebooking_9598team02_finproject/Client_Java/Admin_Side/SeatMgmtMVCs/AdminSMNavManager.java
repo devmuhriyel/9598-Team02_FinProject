@@ -8,18 +8,20 @@ import java.io.IOException;
 
 public class AdminSMNavManager {
     private final int currentAdminId;
+    private final String sessionToken; // ✅ ADD
     private Pane seatMgmtPane;
 
     private SeatController seatController;
     private SeatModel seatModel;
     private SeatView seatView;
 
-    public AdminSMNavManager(Admin admin) {
+    public AdminSMNavManager(Admin admin, String sessionToken) {
         this.currentAdminId = admin.adminId;
+        this.sessionToken = sessionToken; // ✅ STORE
     }
 
     private void initializeSeatMgmtView() throws IOException {
-        seatModel = new SeatModel();
+        seatModel = new SeatModel(currentAdminId, sessionToken);
         FXMLLoader loader = new FXMLLoader(
                 getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/Admin/AdminSeatMgmt.fxml")
         );

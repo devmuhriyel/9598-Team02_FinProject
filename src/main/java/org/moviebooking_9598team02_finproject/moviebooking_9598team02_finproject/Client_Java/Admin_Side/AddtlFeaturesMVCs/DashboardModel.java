@@ -6,7 +6,11 @@ import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject
 public class DashboardModel extends AdminParentModel {
     private final int currentAdminId;
 
-    public DashboardModel(int adminId) { this.currentAdminId = adminId;}
+    public DashboardModel(int adminId, String sessionToken) {
+        this.currentAdminId = adminId;
+        this.adminId = adminId;
+        this.sessionToken = sessionToken;
+    }
 
     // === DASHBOARD METHODS FROM THE SERVANT===
 

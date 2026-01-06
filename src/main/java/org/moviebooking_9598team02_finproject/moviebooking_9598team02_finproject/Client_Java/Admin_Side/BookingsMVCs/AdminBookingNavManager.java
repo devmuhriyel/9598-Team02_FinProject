@@ -9,10 +9,12 @@ import java.io.IOException;
 public class AdminBookingNavManager {
 
     private Admin admin;
+    private String sessionToken;
     private Pane bookingViewPane;
 
-    public AdminBookingNavManager(Admin admin) {
+    public AdminBookingNavManager(Admin admin, String sessionToken) {
         this.admin = admin;
+        this.sessionToken = sessionToken; // ✅ STORE
     }
 
     public Pane getBookingMgmtView() {
@@ -31,7 +33,7 @@ public class AdminBookingNavManager {
                 bookingViewPane = loader.load();
 
                 AdminBookingView view = loader.getController();
-                AdminBookingModel model = new AdminBookingModel();
+                AdminBookingModel model = new AdminBookingModel(admin.adminId, sessionToken);
 
                 // Wire the controller manually
                 new AdminBookingController(view, model, admin.adminId);

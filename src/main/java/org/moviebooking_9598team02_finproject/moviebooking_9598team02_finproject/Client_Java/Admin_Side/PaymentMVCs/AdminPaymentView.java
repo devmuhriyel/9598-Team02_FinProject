@@ -3,14 +3,14 @@ package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finprojec
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.Payment;
+import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.PaymentDetails;
 
 public class AdminPaymentView {
 
-    @FXML private TableView<Payment> paymentTable;
-    @FXML private TableColumn<Payment, Integer> colId, colBookingId;
-    @FXML private TableColumn<Payment, Double> colAmount;
-    @FXML private TableColumn<Payment, String> colMethod, colTxnId, colDate, colStatus;
+    @FXML private TableView<PaymentDetails> paymentTable;
+    @FXML private TableColumn<PaymentDetails, String> colCustomerName;
+    @FXML private TableColumn<PaymentDetails, Double> colAmount;
+    @FXML private TableColumn<PaymentDetails, String> colMethod, colTxnId, colDate, colStatus;
 
     @FXML private Button btnMarkReceived;
     @FXML private Button btnMarkFailed;
@@ -21,7 +21,7 @@ public class AdminPaymentView {
     @FXML private Button btnSearch;
     @FXML private Button btnClearSearch;
 
-    public void setPaymentList(ObservableList<Payment> list) {
+    public void setPaymentList(ObservableList<PaymentDetails> list) {
         paymentTable.setItems(list);
     }
 
@@ -30,7 +30,7 @@ public class AdminPaymentView {
         lblStatus.setStyle(isError ? "-fx-text-fill: #ff2525;" : "-fx-text-fill: #28a745;");
     }
 
-    public Payment getSelectedPayment() {
+    public PaymentDetails getSelectedPayment() {
         return paymentTable.getSelectionModel().getSelectedItem();
     }
 
@@ -38,15 +38,14 @@ public class AdminPaymentView {
     public Button getBtnMarkFailed() { return btnMarkFailed; }
     public Button getBtnRefresh() { return btnRefresh; }
 
-    public TableView<Payment> getPaymentTable() { return paymentTable; }
+    public TableView<PaymentDetails> getPaymentTable() { return paymentTable; }
 
-    public TableColumn<Payment, Integer> getColId() { return colId; }
-    public TableColumn<Payment, Integer> getColBookingId() { return colBookingId; }
-    public TableColumn<Payment, Double> getColAmount() { return colAmount; }
-    public TableColumn<Payment, String> getColMethod() { return colMethod; }
-    public TableColumn<Payment, String> getColTxnId() { return colTxnId; }
-    public TableColumn<Payment, String> getColDate() { return colDate; }
-    public TableColumn<Payment, String> getColStatus() { return colStatus; }
+    public TableColumn<PaymentDetails, String> getColCustomerName() { return colCustomerName; }
+    public TableColumn<PaymentDetails, Double> getColAmount() { return colAmount; }
+    public TableColumn<PaymentDetails, String> getColMethod() { return colMethod; }
+    public TableColumn<PaymentDetails, String> getColTxnId() { return colTxnId; }
+    public TableColumn<PaymentDetails, String> getColDate() { return colDate; }
+    public TableColumn<PaymentDetails, String> getColStatus() { return colStatus; }
     public TextField getSearchField() { return searchField; }
     public Button getBtnSearch() { return btnSearch; }
     public Button getBtnClearSearch() { return btnClearSearch; }

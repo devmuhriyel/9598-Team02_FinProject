@@ -30,7 +30,7 @@ abstract public class SeatHelper
   {
     if (__typeCode == null)
     {
-      __typeCode = SeatHelper.type ();
+      __typeCode = org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.SeatHelper.type ();
       __typeCode = org.omg.CORBA.ORB.init ().create_alias_tc (org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingAdmin.SeatHelper.id (), "Seat", __typeCode);
     }
     return __typeCode;
@@ -44,13 +44,13 @@ abstract public class SeatHelper
   public static Seat read (org.omg.CORBA.portable.InputStream istream)
   {
     Seat value = null;
-    value = SeatHelper.read (istream);
+    value = org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.SeatHelper.read (istream);
     return value;
   }
 
   public static void write (org.omg.CORBA.portable.OutputStream ostream, Seat value)
   {
-    SeatHelper.write (ostream, value);
+    org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.SeatHelper.write (ostream, value);
   }
 
 }

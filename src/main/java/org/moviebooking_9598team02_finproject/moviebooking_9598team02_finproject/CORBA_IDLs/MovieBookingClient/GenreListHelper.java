@@ -31,7 +31,7 @@ abstract public class GenreListHelper
   {
     if (__typeCode == null)
     {
-      __typeCode = GenreHelper.type ();
+      __typeCode = org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.GenreHelper.type ();
       __typeCode = org.omg.CORBA.ORB.init ().create_sequence_tc (0, __typeCode);
       __typeCode = org.omg.CORBA.ORB.init ().create_alias_tc (GenreListHelper.id (), "GenreList", __typeCode);
       __typeCode = org.omg.CORBA.ORB.init ().create_alias_tc (GenreListHelper.id (), "GenreList", __typeCode);
@@ -47,13 +47,13 @@ abstract public class GenreListHelper
   public static Genre[] read (org.omg.CORBA.portable.InputStream istream)
   {
     Genre value[] = null;
-    value = GenreListHelper.read (istream);
+    value = org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.GenreListHelper.read (istream);
     return value;
   }
 
   public static void write (org.omg.CORBA.portable.OutputStream ostream, Genre[] value)
   {
-    GenreListHelper.write (ostream, value);
+    org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.GenreListHelper.write (ostream, value);
   }
 
 }

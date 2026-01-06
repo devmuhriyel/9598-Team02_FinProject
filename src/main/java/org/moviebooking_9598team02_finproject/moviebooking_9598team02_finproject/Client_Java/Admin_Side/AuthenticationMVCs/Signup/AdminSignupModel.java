@@ -14,9 +14,12 @@ public class AdminSignupModel extends AdminParentModel {
             throw new IllegalArgumentException("Phone number is invalid");
         } else if (!emailAddress.endsWith(".com")){
             if(emailAddress.split("@").length != 2){
-                 throw new IllegalArgumentException("Email address is invalid");
-             }
+                throw new IllegalArgumentException("Email address is invalid");
+            }
         }
-        return adminServices.createAdmin(0, sessionToken,userName, emailAddress, password, fullName, phoneNumber);
+
+        // ✅ FIX: Pass empty string instead of null sessionToken for signup
+        // Admin ID 0 and empty token indicate this is a signup operation
+        return adminServices.createAdmin(0, "", userName, emailAddress, password, fullName, phoneNumber);
     }
 }

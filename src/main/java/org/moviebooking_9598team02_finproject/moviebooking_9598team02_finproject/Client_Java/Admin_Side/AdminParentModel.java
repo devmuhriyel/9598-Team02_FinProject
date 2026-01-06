@@ -131,14 +131,14 @@ public abstract class AdminParentModel {
      * @param adminId The admin ID to validate
      * @return true if session is valid, false if invalidated (concurrent login)
      */
-    public boolean validateSession(int adminId) {
+    public boolean validateSession(int adminId, String sessionToken) {
         try {
             if (adminServices == null) {
                 System.err.println("⚠️ AdminServices not initialized");
                 return false;
             }
 
-            // Try to get admin info - if session is invalid, this will throw exception
+            // 🔥 FIX: Use the passed sessionToken
             adminServices.getAdminById(adminId, sessionToken, adminId);
             return true;
 
@@ -148,7 +148,7 @@ public abstract class AdminParentModel {
 
         } catch (Exception e) {
             System.err.println("⚠️ Session validation error (network?): " + e.getMessage());
-            return true;
+            return true; // Don't kick out user for network errors
         }
     }
 }

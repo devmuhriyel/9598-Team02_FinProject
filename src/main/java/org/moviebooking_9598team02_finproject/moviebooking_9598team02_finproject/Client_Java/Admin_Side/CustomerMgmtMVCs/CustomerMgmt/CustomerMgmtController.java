@@ -53,22 +53,9 @@ public class CustomerMgmtController {
             view.clearListMessage();
             String trimmed = searchText.trim();
 
-            if (trimmed.matches("\\d+")) {
-                Customer customer = model.getCustomerDetails(trimmed);
-                if (customer != null) {
-                    Customer[] result = new Customer[1];
-                    result[0] = customer;
-                    view.displayCustomerList(result);
-                    view.showListMessage("✅ Found 1 customer");
-                } else {
-                    view.displayCustomerList(new Customer[0]);
-                    view.showListMessage("❌ No customer found with ID: " + trimmed);
-                }
-            } else {
-                Customer[] results = model.searchCustomers(trimmed);
-                view.displayCustomerList(results);
-                view.showListMessage("✅ Found " + results.length + " customer(s)");
-            }
+            Customer[] results = model.searchCustomers(trimmed);
+            view.displayCustomerList(results);
+            view.showListMessage("✅ Found " + results.length + " customer(s)");
         } catch (AuthenticationException e) {
             view.showListMessage("❌ " + e.getMessage());
         }

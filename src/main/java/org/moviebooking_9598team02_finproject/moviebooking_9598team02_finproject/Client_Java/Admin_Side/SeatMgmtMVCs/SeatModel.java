@@ -6,7 +6,9 @@ import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject
 
 public class SeatModel extends AdminParentModel {
 
-    public SeatModel() {
+    public SeatModel(int adminId, String sessionToken) {
+        this.adminId = adminId;
+        this.sessionToken = sessionToken;
     }
 
     // === SEAT MANAGEMENT METHODS ===

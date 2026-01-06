@@ -9,10 +9,12 @@ import java.io.IOException;
 public class AdminPaymentNavManager {
 
     private Admin admin;
+    private String sessionToken;
     private Pane paymentViewPane;
 
-    public AdminPaymentNavManager(Admin admin) {
+    public AdminPaymentNavManager(Admin admin, String sessionToken) {
         this.admin = admin;
+        this.sessionToken = sessionToken; // ✅ STORE
     }
 
     public Pane getPaymentMgmtView() {
@@ -21,7 +23,7 @@ public class AdminPaymentNavManager {
                 FXMLLoader loader = new FXMLLoader(getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/Admin/AdminPaymentMgmt.fxml"));
                 paymentViewPane = loader.load();
                 AdminPaymentView view = loader.getController();
-                AdminPaymentModel model = new AdminPaymentModel();
+                AdminPaymentModel model = new AdminPaymentModel(admin.adminId, sessionToken);
                 new AdminPaymentController(view, model, admin.adminId);
             } catch (IOException e) {
                 e.printStackTrace();

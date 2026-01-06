@@ -172,14 +172,14 @@ public abstract class CustomerParentModel {
      * @param customerId The customer ID to validate
      * @return true if session is valid, false if invalidated (concurrent login)
      */
-    public boolean validateSession(int customerId) {
+    public boolean validateSession(int customerId, String sessionToken) {
         try {
             if (clientServices == null) {
                 System.err.println("⚠️ ClientServices not initialized");
                 return false;
             }
 
-            // Try to get customer bookings - if session is invalid, this will throw exception
+            // 🔥 FIX: Use the passed sessionToken instead of instance variable
             clientServices.getCustomerBookings(customerId, sessionToken);
             return true;
 
@@ -189,7 +189,8 @@ public abstract class CustomerParentModel {
 
         } catch (Exception e) {
             System.err.println("⚠️ Session validation error (network?): " + e.getMessage());
-            return true;
+            return true; // Don't kick out user for network errors
         }
     }
+
 }

@@ -14,7 +14,7 @@ public class MovieBookingServer {
         try{
 
             Properties props = new java.util.Properties();
-            props.put("org.omg.CORBA.ORBInitialHost", "localhost");
+            props.put("org.omg.CORBA.ORBInitialHost", "26.247.11.122");
             props.put("org.omg.CORBA.ORBInitialPort", "1050");
 
             // Initialize ORB

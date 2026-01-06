@@ -9,10 +9,13 @@ import java.io.IOException;
 public class ProfileNavManager {
 
     private final Customer customer;
+    private final String sessionToken; // ✅ ADD
     private Pane profileViewPane;
 
-    public ProfileNavManager(Customer customer) {
+    // ✅ FIX: Accept sessionToken
+    public ProfileNavManager(Customer customer, String sessionToken) {
         this.customer = customer;
+        this.sessionToken = sessionToken;
     }
 
     public Pane getMyProfileView() {
@@ -22,7 +25,6 @@ public class ProfileNavManager {
                 java.net.URL resource = getClass().getResource(fxmlPath);
                 if (resource == null) {
                     System.err.println("FXML FILE NOT FOUND AT: " + fxmlPath);
-                    System.err.println("Please check your src/main/resources folder structure!");
                     return null;
                 }
                 FXMLLoader loader = new FXMLLoader(resource);
@@ -30,8 +32,15 @@ public class ProfileNavManager {
                 loader.setController(view);
                 VBox root = loader.load();
 
-                // --- THE FIX: Pass the full 'customer' object ---
-                ProfileModel model = new ProfileModel();
+                // ✅ FIX: Initialize model with session data
+                ProfileModel model = new ProfileModel(
+                        customer.customerId,
+                        sessionToken,
+                        customer.username,
+                        customer.fullName,
+                        customer.email,
+                        customer.phoneNumber
+                );
 
                 new ProfileController(model, view);
 

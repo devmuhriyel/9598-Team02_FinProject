@@ -1,6 +1,5 @@
 package org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.Client_Java.Admin_Side.AddtlFeaturesMVCs;
 
-import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
@@ -20,7 +19,7 @@ public class DashboardView {
 
     @FXML private TableColumn<Movie, String> allColTitle;
     @FXML private TableColumn<Movie, String> allColGenre;
-    @FXML private TableColumn<Movie, String> allColStatus;
+    @FXML private TableColumn<Movie, String> allColStatus; // 🔥 FIX: This will show Rating instead
 
     @FXML private TextField searchField;
     @FXML private Button btnSearch;
@@ -40,15 +39,14 @@ public class DashboardView {
             );
         }
         if (allColGenre != null) {
-            // Leave this as a placeholder, the controller will set the CellValueFactory
-            // to fetch the genre names based on movie ID.
             allColGenre.setCellValueFactory(cellData -> new SimpleStringProperty("Loading..."));
         }
         if (allColStatus != null) {
-            allColStatus.setCellValueFactory(cellData ->
-                    // Placeholder as status is not directly a field in the CORBA Movie struct
-                    new SimpleStringProperty(cellData.getValue().createdAt)
-            );
+            // 🔥 FIX: Show Rating instead of IDs
+            allColStatus.setCellValueFactory(cellData -> {
+                int rating = cellData.getValue().movieRating;
+                return new SimpleStringProperty("⭐ " + rating + "/10");
+            });
         }
     }
 

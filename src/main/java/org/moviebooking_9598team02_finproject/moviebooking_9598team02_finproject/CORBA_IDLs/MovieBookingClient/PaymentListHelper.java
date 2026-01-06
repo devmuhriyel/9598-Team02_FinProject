@@ -30,7 +30,7 @@ abstract public class PaymentListHelper
   {
     if (__typeCode == null)
     {
-      __typeCode = PaymentHelper.type ();
+      __typeCode = org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.PaymentHelper.type ();
       __typeCode = org.omg.CORBA.ORB.init ().create_sequence_tc (0, __typeCode);
       __typeCode = org.omg.CORBA.ORB.init ().create_alias_tc (PaymentListHelper.id (), "PaymentList", __typeCode);
       __typeCode = org.omg.CORBA.ORB.init ().create_alias_tc (PaymentListHelper.id (), "PaymentList", __typeCode);
@@ -46,13 +46,13 @@ abstract public class PaymentListHelper
   public static Payment[] read (org.omg.CORBA.portable.InputStream istream)
   {
     Payment value[] = null;
-    value = PaymentListHelper.read (istream);
+    value = org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.PaymentListHelper.read (istream);
     return value;
   }
 
   public static void write (org.omg.CORBA.portable.OutputStream ostream, Payment[] value)
   {
-    PaymentListHelper.write (ostream, value);
+    org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject.CORBA_IDLs.MovieBookingCommon.PaymentListHelper.write (ostream, value);
   }
 
 }

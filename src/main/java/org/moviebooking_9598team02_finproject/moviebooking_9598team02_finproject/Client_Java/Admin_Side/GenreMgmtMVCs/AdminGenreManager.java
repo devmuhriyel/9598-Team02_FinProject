@@ -6,18 +6,18 @@ import org.moviebooking_9598team02_finproject.moviebooking_9598team02_finproject
 
 import java.io.IOException;
 
-/**
- * AdminGenreManager - Manager for Genre Management MVC
- */
 public class AdminGenreManager {
     private Pane genrePane;
     private GenreMgmtView genreView;
     private GenreMgmtModel genreModel;
     private GenreMgmtController genreController;
     private int adminId;
+    private String sessionToken; // ✅ ADD
 
-    public AdminGenreManager(int adminId) {
+    // ✅ FIX: Accept sessionToken in constructor
+    public AdminGenreManager(int adminId, String sessionToken) {
         this.adminId = adminId;
+        this.sessionToken = sessionToken; // ✅ STORE
         initializeGenreMVC();
     }
 
@@ -29,7 +29,8 @@ public class AdminGenreManager {
             genrePane = loader.load();
             genreView = loader.getController();
 
-            genreModel = new GenreMgmtModel(adminId);
+            // ✅ FIX: Use stored sessionToken
+            genreModel = new GenreMgmtModel(adminId, sessionToken);
             genreController = new GenreMgmtController(genreModel, genreView);
 
             System.out.println("✅ Genre Management MVC initialized");

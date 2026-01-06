@@ -29,7 +29,7 @@
                             </Label>
 
                             <HBox spacing="10.0" alignment="CENTER_LEFT" style="-fx-background-color: #1A1A1A; -fx-background-radius: 8; -fx-padding: 15;">
-                                <TextField fx:id="searchField" promptText="Search by username, email, name, or Admin ID..."
+                                <TextField fx:id="searchField" promptText="Search by username, email, or name..."
                                            HBox.hgrow="ALWAYS" prefWidth="400.0"
                                            style="-fx-background-color: #404040; -fx-text-fill: #FFFFFF; -fx-prompt-text-fill: #AAAAAA;"/>
                                 <Button fx:id="searchButton" text="Search"
@@ -62,7 +62,6 @@
                                 <TableView fx:id="adminTable" VBox.vgrow="ALWAYS"
                                            style="-fx-background-color: #292929; -fx-control-inner-background: #292929;">
                                     <columns>
-                                        <TableColumn fx:id="colAdminId" text="Admin ID" prefWidth="80.0"/>
                                         <TableColumn fx:id="colUsername" text="Username" prefWidth="150.0"/>
                                         <TableColumn fx:id="colEmail" text="Email" prefWidth="250.0"/>
                                         <TableColumn fx:id="colFullName" text="Full Name" prefWidth="200.0"/>
