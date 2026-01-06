@@ -25,13 +25,20 @@ public class PaymentController {
         view.setPaymentMethodChangeAction(this::handleMethodChange);
     }
 
-    public void setPaymentData(int custId, String custName, int bookId, double amount) {
+    // In PaymentController.java - REPLACE the existing setPaymentData method
+
+    public void setPaymentData(int custId, String custName, int bookId, double amount,
+                               String movieTitle, String showDate, String showTime,
+                               String cinema, String seats, int ticketCount, double ticketPrice) {
         this.customerId = custId;
         this.bookingId = bookId;
         this.totalAmount = amount;
 
         view.setCustomerDetails(custName, String.valueOf(bookId));
-        view.setFinancials(amount);
+        view.setMovieInfo(movieTitle, showDate, showTime, cinema, seats);
+
+        // ✅ Set detailed financials with ticket breakdown
+        view.setDetailedFinancials(amount, ticketCount, ticketPrice);
     }
 
     private void handleMethodChange() {
@@ -117,10 +124,18 @@ public class PaymentController {
         }).start();
     }
 
+
+
     private void startAutoClose(long delayMillis) {
         new Thread(() -> {
             try { Thread.sleep(delayMillis); view.runOnUIThread(view::closeWindow); }
             catch (InterruptedException e) { e.printStackTrace(); }
         }).start();
     }
-}
+
+    // 🔥 ADD THIS NEW METHOD HERE:
+    public boolean isPaymentSubmitted() {
+        return paymentSubmitted;
+    }
+
+} // <- End of PaymentController class

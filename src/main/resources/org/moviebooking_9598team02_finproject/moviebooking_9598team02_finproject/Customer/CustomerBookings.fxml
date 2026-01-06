@@ -28,9 +28,9 @@
             <children>
                 <Label text="Filter:" textFill="WHITE" style="-fx-font-weight: bold;" />
 
-                <ComboBox fx:id="comboFilterWatched" prefWidth="150.0" promptText="Time Period" style="-fx-background-color: #2D2D2D; -fx-text-fill: white;" />
+                <ComboBox fx:id="comboFilterWatched" prefWidth="150.0" promptText="Time Period" style="-fx-background-color: #FFFFFF; -fx-text-fill: white;" />
 
-                <ComboBox fx:id="comboFilterStatus" prefWidth="150.0" promptText="Status" style="-fx-background-color: #2D2D2D; -fx-text-fill: white;" />
+                <ComboBox fx:id="comboFilterStatus" prefWidth="150.0" promptText="Status" style="-fx-background-color: #FFFFFF; -fx-text-fill: white;" />
 
                 <Button fx:id="btnRefresh" text="Refresh" style="-fx-background-color: #FF6B6B; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5; -fx-cursor: hand;" />
 

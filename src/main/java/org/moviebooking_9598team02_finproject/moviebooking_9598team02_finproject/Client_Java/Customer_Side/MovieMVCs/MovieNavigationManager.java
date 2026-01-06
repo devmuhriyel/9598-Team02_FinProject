@@ -144,31 +144,77 @@ public class MovieNavigationManager {
     /**
      * Show payment window after booking
      */
-    public void showPayment(int bookingId, double totalAmount) {
+    // In MovieNavigationManager.java - REPLACE the showPayment method
+
+    // ✅ CORBA-Safe: Receives all data from Controller, no server calls
+    // In MovieNavigationManager.java - REPLACE the showPayment method
+
+    // In MovieNavigationManager.java - REPLACE the showPayment method
+
+    public void showPayment(int bookingId, double totalAmount, int seatCount, double avgSeatPrice,
+                            String movieTitle, String showDate, String showTime,
+                            String cinema, String seats) {
         System.out.println("💳 Opening payment for booking ID: " + bookingId);
 
         try {
+            // Close seat selection window if open
             if (seatSelectionStage != null) {
                 seatSelectionStage.close();
             }
 
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/Customer/CustomerPayment.fxml"));
+            // Load Payment FXML
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/org/moviebooking_9598team02_finproject/moviebooking_9598team02_finproject/Customer/CustomerPayment.fxml")
+            );
             Pane paymentPane = loader.load();
 
             PaymentView view = loader.getController();
-
-            // ✅ FIX: Initialize model with session data
-            // We need to get sessionToken from somewhere - add it to MovieNavigationManager
-            PaymentModel model = new PaymentModel(customer.customerId, getSessionToken());
-
+            PaymentModel model = new PaymentModel(customer.customerId, sessionToken);
             PaymentController controller = new PaymentController(view, model);
-            controller.setPaymentData(customer.customerId, customer.fullName, bookingId, totalAmount);
+
+            // Pass all received data to payment controller
+            controller.setPaymentData(
+                    customer.customerId,
+                    customer.fullName,
+                    bookingId,
+                    totalAmount,
+                    movieTitle,
+                    showDate,
+                    showTime,
+                    cinema,
+                    seats,
+                    seatCount,
+                    avgSeatPrice
+            );
 
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.setTitle("Payment - Booking #" + bookingId);
             stage.setScene(new Scene(paymentPane));
+
+            // 🔥 FIX: Handle window close (X button) - cancel booking if payment wasn't submitted
+            stage.setOnCloseRequest(event -> {
+                if (!controller.isPaymentSubmitted()) {
+                    // User closed window without completing payment - cancel the booking
+                    System.out.println("⚠️ Payment window closed without completion - cancelling booking " + bookingId);
+
+                    new Thread(() -> {
+                        try {
+                            model.cancelBooking(customer.customerId, bookingId);
+                            System.out.println("✅ Booking " + bookingId + " cancelled due to window close");
+                        } catch (Exception e) {
+                            System.err.println("❌ Failed to cancel booking on window close: " + e.getMessage());
+                            e.printStackTrace();
+                        }
+                    }).start();
+                } else {
+                    System.out.println("✅ Payment was completed - booking " + bookingId + " not cancelled");
+                }
+            });
+
             stage.show();
+
+            System.out.println("✅ Payment window opened successfully!");
 
         } catch (Exception e) {
             System.err.println("❌ ERROR opening payment:");

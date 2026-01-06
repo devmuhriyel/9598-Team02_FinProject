@@ -71,6 +71,51 @@ public class PaymentView {
     public void setConfirmButtonAction(Runnable action) { btnConfirmPayment.setOnAction(e -> action.run()); }
     public void setCancelButtonAction(Runnable action) { btnCancel.setOnAction(e -> action.run()); }
     public void setPaymentMethodChangeAction(Runnable action) { comboPaymentMethod.setOnAction(e -> action.run()); }
+    public void setMovieInfo(String movieTitle, String showDate, String showTime,
+                             String cinema, String seats) {
+        if (lblMovieTitle != null) {
+            lblMovieTitle.setText(movieTitle);
+        }
+        if (lblShowDate != null) {
+            lblShowDate.setText(showDate);
+        }
+        if (lblShowTime != null) {
+            lblShowTime.setText(showTime);
+        }
+        if (lblCinema != null) {
+            lblCinema.setText(cinema);
+        }
+        if (lblSeats != null) {
+            lblSeats.setText(seats);
+        }
+    }
+
+    public void setDetailedFinancials(double totalAmount, int ticketCount, double ticketPrice) {
+        // Total Amount
+        if (lblAmount != null) {
+            lblAmount.setText(String.format("₱ %.2f", totalAmount));
+        }
+
+        // Individual Ticket Price
+        if (lblTicketPrice != null) {
+            lblTicketPrice.setText(String.format("₱ %.2f", ticketPrice));
+        }
+
+        // Number of Tickets
+        if (lblTicketCount != null) {
+            lblTicketCount.setText("x " + ticketCount);
+        }
+
+        // Subtotal (same as total for now)
+        if (lblSubtotal != null) {
+            lblSubtotal.setText(String.format("₱ %.2f", totalAmount));
+        }
+
+        // Service Fee (currently 0)
+        if (lblServiceFee != null) {
+            lblServiceFee.setText("₱ 0.00");
+        }
+    }
 
     public void closeWindow() {
         Stage stage = (Stage) btnCancel.getScene().getWindow();

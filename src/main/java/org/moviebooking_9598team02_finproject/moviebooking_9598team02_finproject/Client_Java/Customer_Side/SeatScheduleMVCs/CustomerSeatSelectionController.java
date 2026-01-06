@@ -186,37 +186,66 @@ public class CustomerSeatSelectionController {
         }
 
         try {
-            // 1. Map Keys to IDs
+            // 1. Map Keys to IDs and collect seat details
             int[] scheduleListSeatIds = new int[selectedSeatKeys.length];
-            int i = 0;
-            for(String key : selectedSeatKeys) {
+            List<Seat> selectedSeats = new ArrayList<>();
+            double totalPrice = 0.0;
+
+            int validSeatCount = 0;
+            for (String key : selectedSeatKeys) {
                 ScheduleListSeat sls = findScheduleListSeatByKey(key);
-                if(sls != null) scheduleListSeatIds[i++] = sls.scheduleListSeatId;
+                if (sls != null) {
+                    scheduleListSeatIds[validSeatCount++] = sls.scheduleListSeatId;
+
+                    Seat seat = seatMap.get(sls.seatId);
+                    if (seat != null) {
+                        selectedSeats.add(seat);
+                        totalPrice += seat.seatPrice;
+                    }
+                }
             }
 
             showStatus("Creating booking...");
 
-            // 2. ✅ FIX: Pass all 4 required parameters
+            // 2. ✅ Get schedule details from model (already has the data)
+            ScheduleDetails scheduleDetails = model.getScheduleDetailsView();
+
+            // 3. Create Booking via CORBA
             int bookingId = model.createBooking(
-                    model.getCustomerId(),      // customerId from parent model
-                    model.getSessionToken(),    // sessionToken from parent model
-                    currentScheduleId,          // scheduleId (already stored)
-                    scheduleListSeatIds         // selected seat IDs
+                    model.getCustomerId(),
+                    model.getSessionToken(),
+                    currentScheduleId,
+                    scheduleListSeatIds
             );
 
-            // 3. Calculate Total Price
-            double totalPrice = calculateTotalPrice(scheduleListSeatIds);
+            // 4. ✅ Calculate ticket breakdown
+            double avgSeatPrice = (validSeatCount > 0) ? (totalPrice / validSeatCount) : 0.0;
 
-            System.out.println("✅ Booking created: #" + bookingId + " | Total: ₱" + totalPrice);
+            // 5. ✅ Format seat string (e.g., "A4, B4, C4")
+            String seatString = String.join(", ", selectedSeatKeys);
 
-            // 4. CALL NAV MANAGER TO SHOW PAYMENT
+            System.out.println("✅ Booking created: #" + bookingId +
+                    " | Total: ₱" + totalPrice +
+                    " | Seats: " + validSeatCount);
+
+            // 6. ✅ PASS ALL DATA TO NAV MANAGER (no server call needed)
             if (navManager != null) {
-                navManager.showPayment(bookingId, totalPrice);
+                navManager.showPayment(
+                        bookingId,
+                        totalPrice,
+                        validSeatCount,
+                        avgSeatPrice,
+                        scheduleDetails.movieTitle,
+                        scheduleDetails.screeningDate,
+                        scheduleDetails.screeningTime,
+                        "Screen: " + currentScheduleId,
+                        seatString
+                );
             } else {
-                System.err.println("❌ CRITICAL: NavManager is null! Cannot open payment.");
+                System.err.println("❌ NavManager is null!");
             }
 
-            // 5. Close this window
+            // 7. Close this window
             view.closeWindow();
 
         } catch (Exception e) {

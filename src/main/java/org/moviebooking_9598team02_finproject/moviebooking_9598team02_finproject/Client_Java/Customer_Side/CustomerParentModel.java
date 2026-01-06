@@ -16,16 +16,15 @@ import java.util.Properties;
  * ✅ FIXED: Now stores sessionToken AND customer profile data
  */
 public abstract class CustomerParentModel {
+    protected int customerId;
+    protected String sessionToken;
+    protected String username;
 
-    protected static ClientService clientServices;
+    // ✅ Make this protected so subclasses like CustomerMovieModel can access it
+    public static ClientService clientServices;
     protected static CommonService commonServices;
     private static String hostIP;
     private static int hostPort;
-
-    // ✅ Session storage - STATIC so accessible by all child models
-    protected static int customerId;
-    protected static String sessionToken;
-    protected static String username;
 
     // ✅ NEW: Customer profile data - STATIC
     protected static String fullName;
