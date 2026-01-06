@@ -22,15 +22,15 @@ public abstract class CustomerParentModel {
     private static String hostIP;
     private static int hostPort;
 
-    // ✅ Session storage - accessible by all child models
-    protected int customerId;
-    protected String sessionToken;
-    protected String username;
+    // ✅ Session storage - STATIC so accessible by all child models
+    protected static int customerId;
+    protected static String sessionToken;
+    protected static String username;
 
-    // ✅ NEW: Customer profile data
-    protected String fullName;
-    protected String email;
-    protected String phoneNumber;
+    // ✅ NEW: Customer profile data - STATIC
+    protected static String fullName;
+    protected static String email;
+    protected static String phoneNumber;
 
     public static void initializeCORBAConnection(String[] args) {
         try {

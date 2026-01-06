@@ -59,6 +59,11 @@ public class CustomerNavigationManager {
         // Initialize CORBA connection
         CustomerParentModel.initializeCORBAConnection(new String[]{});
 
+        // ✅ UPDATED: Set session credentials on parent model so they're available for all child models
+        CustomerHomeModel parentModel = new CustomerHomeModel();
+        parentModel.setSession(customer.customerId, sessionToken, customer.username, 
+                customer.fullName, customer.email, customer.phoneNumber);
+
         initializeHomeView();
         startSessionValidation();
         homeStage.setOnCloseRequest(event -> {
