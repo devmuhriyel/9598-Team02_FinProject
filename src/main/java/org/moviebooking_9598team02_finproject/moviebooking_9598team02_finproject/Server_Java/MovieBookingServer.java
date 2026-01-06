@@ -14,7 +14,7 @@ public class MovieBookingServer {
         try{
 
             Properties props = new java.util.Properties();
-            props.put("org.omg.CORBA.ORBInitialHost", "26.247.11.122");
+            props.put("org.omg.CORBA.ORBInitialHost", "localhost");
             props.put("org.omg.CORBA.ORBInitialPort", "1050");
 
             // Initialize ORB
@@ -41,22 +41,28 @@ public class MovieBookingServer {
             org.omg.CORBA.Object clientRef = rootPOA.servant_to_reference(clientServant);
             org.omg.CORBA.Object commonRef = rootPOA.servant_to_reference(commonServant);
 
-            // Get naming service reference
-            org.omg.CORBA.Object namingServiceObj = orb.resolve_initial_references("NameService");
-            NamingContextExt namingContextExt = NamingContextExtHelper.narrow(namingServiceObj);
+            // Get naming service reference with error handling
+            try {
+                org.omg.CORBA.Object namingServiceObj = orb.resolve_initial_references("NameService");
+                NamingContextExt namingContextExt = NamingContextExtHelper.narrow(namingServiceObj);
 
-            // Bind servants to naming service
-            NameComponent[] adminPath = namingContextExt.to_name("AdminService");
-            namingContextExt.rebind(adminPath, adminRef);
-            System.out.println("AdminService bound to naming service");
+                // Bind servants to naming service
+                NameComponent[] adminPath = namingContextExt.to_name("AdminService");
+                namingContextExt.rebind(adminPath, adminRef);
+                System.out.println("AdminService bound to naming service");
 
-            NameComponent[] clientPath = namingContextExt.to_name("ClientService");
-            namingContextExt.rebind(clientPath, clientRef);
-            System.out.println("ClientService bound to naming service");
+                NameComponent[] clientPath = namingContextExt.to_name("ClientService");
+                namingContextExt.rebind(clientPath, clientRef);
+                System.out.println("ClientService bound to naming service");
 
-            NameComponent[] commonPath = namingContextExt.to_name("CommonService");
-            namingContextExt.rebind(commonPath, commonRef);
-            System.out.println("CommonService bound to naming service");
+                NameComponent[] commonPath = namingContextExt.to_name("CommonService");
+                namingContextExt.rebind(commonPath, commonRef);
+                System.out.println("CommonService bound to naming service");
+            } catch (Exception e) {
+                System.out.println("⚠️  WARNING: Could not bind to naming service: " + e.getMessage());
+                System.out.println("⚠️  Ensure CORBA Naming Service (orbd) is running on localhost:1050");
+                System.out.println("⚠️  Server will continue without naming service binding");
+            }
 
             // Add shutdown hook for graceful cleanup
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {

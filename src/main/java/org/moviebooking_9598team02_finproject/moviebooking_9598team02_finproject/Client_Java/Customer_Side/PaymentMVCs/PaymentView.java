@@ -31,7 +31,7 @@ public class PaymentView {
         lblReceiptDate.setText("Date: " + now.format(DateTimeFormatter.ofPattern("MMMM dd, yyyy")));
         lblReceiptTime.setText("Time: " + now.format(DateTimeFormatter.ofPattern("hh:mm a")));
 
-        comboPaymentMethod.getItems().addAll("credit_card", "cash", "online");
+        comboPaymentMethod.getItems().addAll("credit_card", "online");
     }
 
     // ===== METHODS CALLED BY CONTROLLER =====

@@ -35,7 +35,7 @@
             <children>
                 <VBox spacing="5.0">
                     <children>
-                        <Label text="Booking Date:" textFill="#cccccc" />
+                        <Label text="Booking Date:" textFill="WHITE" />
                         <Label fx:id="lblBookingDate" text="2025-12-01" textFill="WHITE">
                             <font>
                                 <Font name="System Bold" size="14.0" />
@@ -45,7 +45,7 @@
                 </VBox>
                 <VBox spacing="5.0">
                     <children>
-                        <Label text="Screening Date/Time:" textFill="#cccccc" />
+                        <Label text="Screening Date/Time:" textFill="WHITE" />
                         <Label fx:id="lblScreeningDateTime" text="2025-12-25 @ 19:00" textFill="WHITE">
                             <font>
                                 <Font name="System Bold" size="14.0" />
@@ -55,7 +55,7 @@
                 </VBox>
                 <VBox spacing="5.0">
                     <children>
-                        <Label text="Seats:" textFill="#cccccc" />
+                        <Label text="Seats:" textFill="WHITE" />
                         <Label fx:id="lblSeats" text="G10, G11" textFill="WHITE">
                             <font>
                                 <Font name="System Bold" size="14.0" />
@@ -65,8 +65,8 @@
                 </VBox>
                 <VBox spacing="5.0">
                     <children>
-                        <Label text="Total Paid:" textFill="#cccccc" />
-                        <Label fx:id="lblTotalPaid" text="P 850.00" textFill="#FFD700">
+                        <Label text="Total Paid:" textFill="WHITE" />
+                        <Label fx:id="lblTotalPaid" text="P 850.00" textFill="WHITE">
                             <font>
                                 <Font name="System Bold" size="14.0" />
                             </font>
